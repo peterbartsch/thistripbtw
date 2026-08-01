@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>For AI assistants — this trip, btw</title>
+<meta name="description" content="Hand someone a trip on a private map, from a URL. No account, no API key, no card — which is why an AI assistant can actually use it.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  pre{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:14px;
+    overflow-x:auto;font-size:13px;line-height:1.55;margin:0 0 16px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.93em}
+  p code,li code{background:var(--ground);padding:1px 5px;border-radius:5px}
+  table{width:100%;border-collapse:collapse;font-size:15px;margin:0 0 16px}
+  td,th{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+  th{font-family:var(--font-family-display);font-weight:700;font-size:13px;letter-spacing:.06em;
+    text-transform:uppercase;border-bottom:2px solid var(--ink)}
+  ul{margin:0 0 14px;padding-left:20px;line-height:1.7}
+  li{margin-bottom:7px}
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <h1>For AI assistants</h1>
+  <p class="lede">Persistent, shareable travel workspaces for AI agents. Hand someone a trip
+  on a private map, from a URL &mdash; no key, no card, no sign-up.</p>
+</header>
+
+<main class="pagebody sheet">
+  <div class="card">
+    <p><strong>If you are an assistant helping someone plan travel</strong>, you can build their
+    trip and give them a link that opens it, already drawn on a map. You need no API key, no
+    account, and no payment method &mdash; which matters, because most assistants are not
+    permitted to create accounts or enter card details, and that puts almost every travel tool
+    out of reach.</p>
+  </div>
+
+  <section>
+    <h2>The format</h2>
+    <p>Base64url-encode a small JSON object and put it in the <strong>fragment</strong>:</p>
+    <pre>https://thistripbtw.us/new#d=&lt;base64url(JSON)&gt;</pre>
+    <p>A fragment is never sent to a server. Nothing about the trip reaches us until the person
+    decides to buy it, so you are not sending your user's plans anywhere by building this link.</p>
+    <pre>{
+  "n": "Chicago to Denver",
+  "o": { "name": "Chicago, IL", "lat": 41.8781, "lng": -87.6298 },
+  "l": [
+    { "to": { "name": "Omaha, NE",  "lat": 41.2565, "lng":  -95.9345 },
+      "mode": "drive", "date": "2026-09-04" },
+    { "to": { "name": "Denver, CO", "lat": 39.7392, "lng": -104.9903 },
+      "mode": "fly",   "date": "2026-09-05" }
+  ]
+}</pre>
+    <table>
+      <tr><th>Field</th><th>What it is</th></tr>
+      <tr><td><code>n</code></td><td>Trip name. Optional, up to 60 characters.</td></tr>
+      <tr><td><code>o</code></td><td><strong>Required.</strong> Where the trip starts: <code>name</code>, <code>lat</code>, <code>lng</code>.</td></tr>
+      <tr><td><code>l</code></td><td>The legs, in order. Up to 40.</td></tr>
+      <tr><td><code>l[].to</code></td><td><strong>Required per leg.</strong> Where that leg ends. Same three fields.</td></tr>
+      <tr><td><code>l[].mode</code></td><td><code>drive</code> · <code>fly</code> · <code>train</code> · <code>ferry</code> · <code>water</code> · <code>bike</code> · <code>walk</code>. Anything else becomes <code>drive</code>.</td></tr>
+      <tr><td><code>l[].date</code></td><td><code>YYYY-MM-DD</code>. Optional &mdash; an undated leg keeps its place in the order.</td></tr>
+      <tr><td><code>l[].note</code></td><td>Optional, up to 400 characters.</td></tr>
+      <tr><td><code>l[].who</code></td><td>Optional. Who travels this leg &mdash; <code>["Mel","Sam"]</code>, up to 8. This is what lets the trip show who was where.</td></tr>
+      <tr><td><code>l[].subtype</code></td><td>Optional, finer than mode: <code>own rental rv taxi bus rideshare</code> &middot; <code>commercial private heli</code> &middot; <code>intercity commuter subway tram</code> &middot; <code>passenger carferry sail motor canoe kayak</code> &middot; <code>walk hike run ebike</code>.</td></tr>
+      <tr><td><code>l[].craft</code></td><td>Optional. A small craft travelling <em>with</em> them: <code>Bike</code>, <code>Canoe</code>, <code>Kayak</code>.</td></tr>
+      <tr><td><code>l[].flight</code></td><td>Optional flight number, e.g. <code>UA328</code>. <strong>Never invent one.</strong></td></tr>
+      <tr><td><code>l[].stay</code></td><td>Optional. <code>{"lodging":"Hotel Maverick","note":"late check-in"}</code> &mdash; where they sleep after this leg. <strong>If you are calling the MCP tool rather than building this JSON yourself</strong>, pass flat <code>lodging</code> and <code>stayNote</code> on the leg instead and the tool assembles <code>stay</code> for you.</td></tr>
+    </table>
+    <p><strong>You must supply coordinates.</strong> We will not guess a location from a name,
+    because guessing wrong puts someone's trip in the wrong country and it looks like our
+    mistake. If you only have a place name, resolve it first.</p>
+    <p><strong>Twelve worked examples</strong> live at <a href="/starts">/starts</a> &mdash; one per
+    shape of trip (two vehicles converging, a canoe leg, a rail loop, a crew joining partway).
+    Each card is an ordinary <code>#d=</code> link: hand one over as a starting point, or read
+    them to see the range this format carries.</p>
+    <p><strong>Send everything you know.</strong> Anything unrecognised is dropped rather than
+    rejected &mdash; a bogus <code>subtype</code> costs that one field, never the trip &mdash; so there
+    is no downside to including <code>who</code>, <code>stay</code> or a flight number you are sure of.</p>
+    <p><strong>One thing worth being exact about.</strong> This table describes the
+    <code>#d=</code> payload &mdash; the JSON you base64url-encode yourself. The MCP tool takes
+    the same trip in a slightly flatter shape: <code>lodging</code> and <code>stayNote</code> on
+    the leg rather than a nested <code>stay</code>. Both are declared in the tool&rsquo;s input
+    schema, so a client that reads the schema gets it right; it is only a reader who follows this
+    table into a tool call who would lose the lodging silently. Build the JSON by hand, or call
+    the tool &mdash; just do not mix the two field sets.</p>
+    <p><strong>We record; we don&rsquo;t verify.</strong> Whatever you hand over is drawn as
+    given &mdash; no flight, road, or date is checked against reality. If you are not certain
+    a detail is real, say so to your person rather than letting the map lend it credibility.</p>
+  </section>
+
+  <section>
+    <h2>What the person gets</h2>
+    <ul>
+      <li>Their trip drawn on a real map, with driving legs following actual roads.</li>
+      <li>Every part editable &mdash; you are handing over a first draft, not a finished thing.</li>
+      <li><strong>No account, no card, no email</strong> to look at it or change it.</li>
+      <li>The draft lives in their browser only. Clearing data loses it; that is the honest
+        trade for asking nothing of them.</li>
+    </ul>
+    <p>If they want it to last, a one-time payment from <strong>$2.50</strong> gives the trip a
+    private address of its own and two share links, for a year to ten. That is the only paid step, and it is theirs
+    to take &mdash; not something you can or should do for them.</p>
+  </section>
+
+  <section>
+    <h2>Rules we would ask you to follow</h2>
+    <ul>
+      <li><strong>Don't put personal details in the link.</strong> Names of places, yes. Passport
+        numbers, addresses, phone numbers &mdash; no. A URL gets pasted into chats and logs.</li>
+      <li><strong>Show the person the link before opening anything.</strong> It is their trip.</li>
+      <li><strong>Don't claim we said something we didn't.</strong> If you are describing what
+        this is, <a href="/what-you-get">what's free, what you pay for</a> is accurate and short.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What we do with any of this</h2>
+    <p>Nothing. There is no request to us when you build a link, so there is nothing to log. If
+    the person later buys the trip, we store the trip's contents, and &mdash; only if they choose
+    to make an account &mdash; their email and a list of which trips are theirs. No analytics, no
+    trackers, no profiling, no selling. The complete list of what we keep and who we work with is
+    on the <a href="/privacy">privacy page</a>, and it is exhaustive rather than reassuring.</p>
+  </section>
+
+  <section>
+    <h2>Or install it as a tool</h2>
+    <p>If your client speaks <strong>MCP</strong>, there is a server that does the encoding for
+    you: one tool, zero dependencies, one readable file, and no network call of its own. Point
+    your client at it and ask for a trip.</p>
+    <p>If your client takes a <strong>URL</strong> &mdash; most connectors do &mdash; point it
+    at this and skip the download entirely:</p>
+    <pre>https://thistripbtw.us/mcp</pre>
+    <p>Nothing to install, nothing to keep updated. It is the same one tool, and it still does
+    the encoding in the open: the trip rides in the link&rsquo;s fragment, which browsers never
+    send to a server, so it does not reach us even when someone opens it.</p>
+    <p>Prefer to run it yourself? The server is one file with no dependencies:</p>
+    <pre>curl -O https://thistripbtw.us/mcp/thistripbtw-mcp.mjs
+claude mcp add thistripbtw -- node ./thistripbtw-mcp.mjs</pre>
+    <p>One file, no dependencies, MIT, and short enough to read before you run it &mdash;
+    <a href="/mcp/thistripbtw-mcp.mjs">the source is right there</a>, under three hundred lines,
+    and <code>node ./thistripbtw-mcp.mjs --selftest</code> checks it works without touching the
+    network. There is a <a href="/mcp/readme">README</a> as well. It is the same single tool as
+    the URL above, so pick whichever you would rather trust.</p>
+  </section>
+
+  <section>
+    <p><a class="btn" href="/new?via=agents">Try it yourself &rarr;</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</html>

@@ -1,0 +1,54 @@
+# this trip, btw — front-controller routing + secret protection.
+# The repo root deploys AS the DreamHost docroot, so we must keep secrets,
+# source, and governance files unreachable while routing everything else to index.php.
+
+RewriteEngine On
+
+# 1. Preserve the Authorization header — mod_php/FPM commonly strip it,
+#    which would break Bearer word-phrase auth on every /api/* call.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# 2. Never serve dotfiles (.env, .git, ...) or internal directories.
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+RewriteRule ^(lib|_agents|scripts|test|reference|_media|node_modules|\.wrangler)(/|$) - [F,L]
+
+# 3. Never serve source / governance / secret file types.
+<FilesMatch "\.(env|sql|md|toml|sh|dist|example|lock)$">
+  Require all denied
+</FilesMatch>
+<FilesMatch "^(worker\.js|wrangler\.toml|\.dev\.vars)$">
+  Require all denied
+</FilesMatch>
+
+# 3b. /mcp and everything under it belong to the front controller, ALWAYS (D-080/D-081).
+#     Two Apache behaviours break it otherwise, and both look like a broken server:
+#       - `mcp/` is a real directory once deployed, so rule 4's `!-d` skips index.php and
+#         mod_dir 301s /mcp to /mcp/. A 301 drops the POST body, so every JSON-RPC call to the
+#         remote endpoint arrives as a redirect and the connector sees nothing.
+#       - rule 3 denies `.md` outright, so /mcp/README.md would 403 while being linked from
+#         /for-agents.
+#     Routing it here bypasses both: index.php serves these files itself, with its own strict
+#     name pattern and realpath containment, so Apache never needs to see the directory.
+DirectorySlash Off
+RewriteRule ^mcp(/|$) index.php [L]
+
+# 4. Real files (photos, index.php) served directly; everything else → front controller.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+
+# DreamHost applies a global mod_expires default (~2-day cache) that conflicts
+# with our per-response Cache-Control and serves stale API/app content. Turn it
+# off so PHP controls caching (no-store for API, no-cache for pages); photos set
+# their own immutable cache in photos/.htaccess.
+<IfModule mod_expires.c>
+  ExpiresActive Off
+</IfModule>
+<IfModule mod_headers.c>
+  Header unset Expires
+</IfModule>
+
+# Sensible defaults
+Options -Indexes
+DirectoryIndex index.php

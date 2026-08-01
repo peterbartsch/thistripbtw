@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your trips — this trip, btw</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  .card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:22px}
+  label{display:block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin:0 0 5px}
+  input{width:100%;min-height:48px;padding:12px 14px;border:2px solid var(--line);border-radius:11px;
+    background:var(--ground);color:var(--ink);font-family:var(--font-family-body);font-size:16px}
+  input:focus{outline:0;border-color:var(--brand)}
+  .fld{margin-bottom:14px}
+  .msg{margin:12px 0 0;font-size:14px;line-height:1.5}
+  .msg.bad{color:#B23A24}
+  .trip{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .trip:last-child{border-bottom:0}
+  .trip a{font-family:var(--font-family-display);font-weight:700;font-size:18px;letter-spacing:.02em;
+    text-decoration:none;color:var(--link)}
+  .trip .meta{font-size:13px;color:var(--soft)}
+  .tag{font-family:var(--font-family-display);font-weight:700;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1.5px solid var(--line);
+    color:var(--soft);flex:none}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .trip .meta a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+  .trip .meta a:hover{color:var(--link)}
+  .openbtn{flex:none;text-decoration:none;display:inline-flex;align-items:center;min-height:38px;padding:0 14px}
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <h1 id="head">Your trips</h1>
+  <p class="lede" id="lede">Sign in to open the trips you own and the ones you were invited to.</p>
+</header>
+
+<main class="pagebody sheet">
+
+  <section id="signin">
+    <div class="fld">
+      <label for="em">Email</label>
+      <input id="em" type="email" autocomplete="username" inputmode="email" placeholder="your email">
+    </div>
+    <div class="fld">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="your password">
+    </div>
+    <p><button class="btn" id="go">Sign in</button>
+       <button class="btn btn-quiet" id="forgot" style="margin-left:8px">Forgot it</button></p>
+    <p class="msg" id="msg"></p>
+    <p class="msg" style="color:var(--soft)">
+      No account yet? Anyone can make one — you do not need to have bought anything. Put your
+      address in above and we will send you a link to finish.
+      <button class="btn btn-quiet" id="signup" style="margin-left:6px">Make one</button>
+    </p>
+    <p class="msg" style="color:var(--soft)">
+      An account is one email and a list of the trips you own or were invited to. Nothing else.
+      And <a href="/what-you-get">building a trip still asks for nothing at all</a> — an account
+      is for getting back to the ones you keep.
+    </p>
+  </section>
+
+  <section id="mine" hidden>
+    <div id="list"></div>
+    <p class="msg" id="none" hidden style="color:var(--soft)">
+      Nothing attached to this account yet. Buying a trip attaches it automatically; a trip
+      someone invited you to attaches when you add its personal link below.
+    </p>
+  </section>
+
+  <section id="addinvite" hidden>
+    <h2>Add a trip you were invited to</h2>
+    <p>If someone sent you your <b>own</b> link to a trip &mdash; not the shared one &mdash; paste
+    its address and phrase and it will show up here from now on.</p>
+    <div class="fld">
+      <label for="slug">Trip address</label>
+      <input id="slug" type="text" placeholder="thistripbtw.us/xvsbe4r or just xvsbe4r">
+    </div>
+    <div class="fld">
+      <label for="phr">Your personal phrase</label>
+      <input id="phr" type="text" placeholder="four-words-like-this" autocapitalize="off" spellcheck="false">
+    </div>
+    <p><button class="btn btn-quiet" id="attach">Add it</button></p>
+    <p class="msg" id="amsg"></p>
+  </section>
+
+  <section id="out" hidden>
+    <p><button class="btn btn-quiet" id="signout">Sign out</button></p>
+  </section>
+
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+<script>
+/* The account page (D-046). Deliberately thin: sign in, see your trips, attach one you were
+   invited to, sign out. No profile, no settings, nothing to fill in — the account holds an
+   email, a password hash, and a list of trips, so there is nothing else to show. */
+(function(){
+  const $ = id => document.getElementById(id);
+  const esc = t => { const d=document.createElement("div"); d.textContent = t==null?"":t; return d.innerHTML; };
+
+  async function call(path, opts){
+    const r = await fetch("/api/"+path, Object.assign({credentials:"same-origin",
+      headers:{"content-type":"application/json"}}, opts||{}));
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error || "something went wrong");
+    return d;
+  }
+
+  const fmt = ms => new Date(ms).toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+
+  function show(me){
+    const signedIn = !!me.signed_in;
+    $("signin").hidden = signedIn;
+    ["mine","addinvite","out"].forEach(id => $(id).hidden = !signedIn);
+    if(!signedIn) return;
+    $("head").textContent = "Your trips";
+    $("lede").textContent = me.email;
+    const trips = me.trips || [];
+    $("none").hidden = trips.length > 0;
+    $("list").innerHTML = trips.map(t => {
+      // Trips bought before D-059 carry no expiry and keep the promise they were sold under.
+      const life = t.expires ? "until " + fmt(t.expires) : "kept indefinitely";
+      /* Every part of this that looks like a way in IS one. The address reads as a URL and was
+         plain text, while the only link was the title styled as a heading — so the row showed a
+         trip and offered no obvious way to open it. */
+      return `<div class="trip">
+        <div style="flex:1;min-width:0">
+          <a href="/${esc(t.slug)}">${esc(t.name || "our trip")}</a>
+          <div class="meta"><a href="/${esc(t.slug)}">thistripbtw.us/${esc(t.slug)}</a> &middot; ${esc(life)}</div>
+        </div>
+        <span class="tag">${t.role === "member" ? "invited" : "yours"}</span>
+        <a class="btn btn-quiet openbtn" href="/${esc(t.slug)}">Open</a>
+      </div>`;
+    }).join("");
+  }
+
+  /* A trip link opens with its phrase, which we do not have — the list is a way back to the
+     door, not a key to it. Say that once, here, rather than letting someone think the account
+     unlocks anything. */
+  function noteAboutLinks(){
+    if(!$("list").children.length) return;
+    const p = document.createElement("p");
+    p.className = "msg";
+    p.style.color = "var(--soft)";
+    p.textContent = "These open because you are signed in. Sealed drops left for other people stay "
+                  + "shut — being signed in opens the trip, not a person.";
+    $("mine").appendChild(p);
+  }
+
+  $("go").onclick = async () => {
+    const b=$("go"), m=$("msg");
+    m.textContent=""; m.className="msg"; b.disabled=true; const l=b.textContent; b.textContent="…";
+    try{
+      await call("account/login",{method:"POST",
+        body:JSON.stringify({email:$("em").value.trim(), password:$("pw").value})});
+      show(await call("account/me")); noteAboutLinks();
+    }catch(e){ m.textContent=e.message; m.className="msg bad"; }
+    finally{ b.disabled=false; b.textContent=l; }
+  };
+  $("pw").addEventListener("keydown", e => { if(e.key==="Enter") $("go").click(); });
+
+  /* Always the same answer, whether or not that address has an account — a reset form that
+     says "no such account" tells a stranger which addresses do. */
+  $("forgot").onclick = async () => {
+    const m=$("msg"), email=$("em").value.trim();
+    m.className="msg";
+    if(!email){ m.textContent="Put your email in first."; m.className="msg bad"; $("em").focus(); return; }
+    try{ await call("account/reset-request",{method:"POST",body:JSON.stringify({email})}); }catch(e){}
+    m.textContent = "If that address has an account, a reset link is on its way. It works for an hour.";
+  };
+
+  /* Signup answers identically whether or not that address already has an account (D-076), so
+     this message must be identical too. "Check your inbox" for a new address and anything else
+     for an existing one would hand back exactly the oracle the endpoint refuses to be. */
+  $("signup").onclick = async () => {
+    const b=$("signup"), m=$("msg"), email=$("em").value.trim();
+    m.className="msg";
+    if(!email){ m.textContent="Put your email in first."; m.className="msg bad"; $("em").focus(); return; }
+    b.disabled=true;
+    try{ await call("account/signup",{method:"POST",body:JSON.stringify({email})}); }catch(e){}
+    m.textContent = "Check that address — there is a link on its way. It works for an hour, and "
+                  + "opening it is what sets your password.";
+    b.disabled=false;
+  };
+
+  $("attach").onclick = async () => {
+    const b=$("attach"), m=$("amsg");
+    m.textContent=""; m.className="msg"; b.disabled=true;
+    // Accept a whole pasted URL or a bare slug — people paste what they were sent.
+    const slug = ($("slug").value.trim().match(/([a-z2-9]{7})\s*$/i)||[])[1] || $("slug").value.trim();
+    try{
+      await call("account/claim-trip",{method:"POST",
+        body:JSON.stringify({slug:slug.toLowerCase(), phrase:$("phr").value.trim()})});
+      $("slug").value=""; $("phr").value="";
+      m.textContent="Added."; show(await call("account/me"));
+    }catch(e){ m.textContent=e.message; m.className="msg bad"; }
+    finally{ b.disabled=false; }
+  };
+
+  $("signout").onclick = async () => {
+    await call("account/logout",{method:"POST"});
+    location.reload();
+  };
+
+  call("account/me").then(me => { show(me); noteAboutLinks(); }).catch(()=>{});
+})();
+</script>
+</html>

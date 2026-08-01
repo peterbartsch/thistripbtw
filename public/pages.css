@@ -1,0 +1,275 @@
+/* pages.css — the non-trip pages, as a set.
+ *
+ * Before this, each of the seven marketing pages carried its own :root palette. Three
+ * definitions were fighting: this file's ancestors, tokens.css (D-030), and sky.css's
+ * time-of-day overrides. The visible result was the brand sign and every link turning
+ * cyan (#3FB6BC) after dark — a colour that appears nowhere in D-022.
+ *
+ * The split now: sky.css owns SURFACES, because the page changing with the time of day is
+ * a feature worth keeping. This file pins BRAND — teal, orange, the sign, the buttons — to
+ * the token values, so they read the same at noon and midnight.
+ *
+ * Load order matters: tokens.css, then sky.css, then this.
+ */
+
+/* ── brand, pinned. sky.css may repaint the page around these; it must not repaint these ──
+   Palette is D-026 (which superseded the D-022 values still quoted in CLAUDE.md).
+   The first version of this file "lifted" the teal after dark to keep it legible — which
+   is exactly how you arrive at cyan, and cyan is the thing Peter flagged. D-026 already
+   answers it: the light BOARD is load-bearing, it keeps the sign legible on every sky.
+   So the teal never moves. The board does the work, and links fall back to the other
+   brand anchor (sign orange) on dark skies rather than to an invented hue. */
+:root {
+  --brand:      var(--color-brand-teal,   #035A83);
+  --brand-deep: #024260;
+  --accent:      var(--color-brand-orange, #F7B304);
+  --accent-deep: #C38D00;                 /* the pressed edge under a gold button */
+  --sign-ink:    var(--color-brand-ink, #141414);
+  --board:      var(--color-brand-board,  #ECECEC);
+  --link:       var(--brand);
+
+  /* Legacy aliases (F1/F3, 2026-07-29). Six content pages each carried their own :root with
+     the D-022 palette hardcoded — six copies of a palette two revisions out of date, which is
+     how #006B70 and #ED9F17 were still shipping. Those blocks are gone; the old names now
+     resolve here, once, so the page-specific rules that still use them cannot drift again.
+     Do not write new CSS against these — they exist to retire, not to build on. */
+  --pine:   var(--brand);
+  --disp:   var(--font-family-display);
+  --body:   var(--font-family-body);
+  --page-max:   640px;
+  --step:       clamp(28px, 6vw, 48px);   /* one vertical rhythm unit for the whole set */
+}
+/* Dark skies: teal text on plum fails contrast, so LINKS move to the sign orange — the
+   other D-026 anchor, not a new colour. Filled things (the sign, .btn) stay teal: a solid
+   plate with white text reads at any hour, which is the whole point of a highway sign. */
+html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: var(--accent); }
+@media (prefers-color-scheme: dark) { :root { --link: var(--accent); } }
+
+/* ── shared header ────────────────────────────────────────────────────────────────────
+   Every non-trip page gets the same one: the sign, and the same menu the landing page has.
+   Previously About and friends had no menu at all, so arriving from the footer was a
+   one-way trip back to the browser's back button. */
+.pagehead {
+  max-width: var(--page-max); margin: 0 auto;
+  padding: calc(var(--step) * .8) 22px 0;
+  text-align: center;
+}
+.pagehead .sign {
+  display: inline-block; background: var(--brand); color: #fff;
+  border: 3px solid var(--board); outline: 2px solid var(--brand-deep);
+  box-shadow: var(--shadow-sign, 0 5px 16px rgba(0,0,0,.4));
+  border-radius: 10px; padding: 6px 16px 7px; text-decoration: none;
+}
+.pagehead .sign b {
+  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+  font-size: 20px; letter-spacing: .05em; text-transform: uppercase;
+}
+.pagehead h1 {
+  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+  font-size: clamp(28px, 6.6vw, 38px); text-transform: uppercase; letter-spacing: .03em;
+  line-height: 1.06; margin: calc(var(--step) * .55) 0 8px;
+  /* Long titles ("What's free, what you pay for") broke into a long line and an orphan.
+     Balance evens the lines out and max-width stops a single word stranding on line two. */
+  text-wrap: balance; max-width: 18ch; margin-inline: auto;
+}
+.pagehead .lede {
+  color: var(--soft); font-size: 18px; max-width: 32ch;
+  margin: 0 auto; text-wrap: balance;
+}
+
+/* ── rhythm ───────────────────────────────────────────────────────────────────────────
+   One unit between sections, half a unit inside them. The pages used to set spacing
+   ad hoc per element, which is why the vertical rhythm read as arbitrary. */
+.pagebody { max-width: var(--page-max); margin: 0 auto; padding: 0 22px; }
+.pagebody > section,
+.pagebody > .block { margin-top: var(--step); }
+.pagebody h2 {
+  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+  font-size: 21px; text-transform: uppercase; letter-spacing: .05em;
+  margin: 0 0 calc(var(--step) * .3);
+}
+.pagebody p { margin: 0 0 calc(var(--step) * .35); line-height: 1.65; }
+.pagebody p:last-child { margin-bottom: 0; }
+
+/* ── long-form pages sit on a sheet ───────────────────────────────────────────────────
+   Mission, Help and FAQ break into cards and read well. About, Privacy, Terms and
+   What's-free were bare prose laid straight on the sky gradient — which changes colour down
+   the page, so the same ink met a light background at the top and a much darker one by the
+   footer. A sheet fixes the contrast and gives the reading somewhere to live. Same border
+   treatment as every other card in the product, so it reads as a sign rather than a panel. */
+.pagebody.sheet {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 18px;
+  /* The sheet replaces .pagebody's own side padding, so without this it runs to the screen
+     edge and the border lands on the bezel. min() keeps a 16px gutter on a phone and still
+     centres at 640px on a desktop. */
+  max-width: min(640px, calc(100vw - 32px));
+  margin: calc(var(--step) * .55) auto 0;
+  padding: 26px 22px 30px;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,.15));
+}
+.pagebody.sheet > section:first-of-type,
+.pagebody.sheet > *:first-child { margin-top: 0; }
+.pagebody.sheet > section { margin-top: calc(var(--step) * .9); }
+.pagebody.sheet .card + section,
+.pagebody.sheet .card { margin-bottom: 4px; }
+/* A card inside the sheet would be a box in a box. Make it a tinted callout instead —
+   it is the lede of the page, and it should read as emphasis, not as another container. */
+.pagebody.sheet .card {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border: 0; border-left: 4px solid var(--accent);
+  border-radius: 0 10px 10px 0; padding: 16px 18px;
+}
+@supports not (background: color-mix(in srgb, red 9%, transparent)) {
+  .pagebody.sheet .card { background: rgba(247,142,4,.09); }
+}
+
+/* ── one button, everywhere ─────────────────────────────────────────────────────────────
+   Primary actions are GOLD, not teal (Peter, 2026-07-27). Both are D-026 anchors; this makes
+   the sign orange mean "the thing to press" and leaves teal to mean "this is us".
+
+   The text is ink, never white. White on #F7B304 is 2.4:1 and fails WCAG AA outright; ink
+   #141414 on it is 7.8:1. It is also just how a highway sign works — black on amber — so the
+   accessible choice and the on-brand one are the same choice here. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 13px 28px;
+  background: var(--accent); color: var(--sign-ink, #141414); text-decoration: none;
+  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+  font-size: 16px; letter-spacing: .06em; text-transform: uppercase;
+  border: 0; border-radius: 10px; cursor: pointer;
+  box-shadow: 0 2px 0 var(--accent-deep, #C38D00);
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.btn:hover { filter: brightness(1.06); }
+/* Presses down onto its own shadow rather than changing colour — the colour IS the meaning. */
+.btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--accent-deep, #C38D00); }
+.btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.btn-quiet {
+  background: transparent; color: var(--link);
+  box-shadow: inset 0 0 0 2px var(--link);
+}
+.btn-quiet:hover { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); filter: none; }
+.btn-quiet:active { transform: none; }
+
+/* ── base (F1, 2026-07-29) ─────────────────────────────────────────────────────────────
+   pages.css was a COMPONENT sheet. It styled .pagehead, .pagebody, .btn and the footer and
+   assumed something else had already set a reset, a font, a colour and a link colour. On six
+   pages that something else was a per-page :root — which is how the D-022 palette was still
+   shipping in July, and why identical markup rendered differently depending on the order of
+   two <link> tags. The base belongs here, once.
+   The reset is the aggressive one the six legacy pages were authored against, margins and
+   padding included, because their markup assumes it. */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family-body);
+  color: var(--ink);
+  line-height: 1.6;
+}
+a { color: var(--link); font-weight: 600; }
+
+/* ── footer ───────────────────────────────────────────────────────────────────────────
+   The links used to sit flush against the bottom edge with nowhere to go, and on a phone
+   they wrap to two lines, which made it worse. Generous bottom padding, and enough
+   line-height that the wrapped row does not look like a mistake. */
+.pagefoot {
+  /* The links used to sit on the bare sky, which is the problem `.pagebody.sheet` was built
+     to solve one element higher up and the footer was left out of. Measured on the day
+     gradient: brand teal on #3E8FC4 is 2.12:1, and the separators and the support line in
+     --soft are 1.55:1 — invisible rather than merely low. Day only, because --link is
+     already gold on the darker skies.
+     So the footer takes the sheet's own surface. --card is themed per sky, so this fixes all
+     four at once and cannot drift from the sheet above it: teal on white reads 6.36:1 and
+     --soft 4.65:1, both clear of AA. A --line border rather than the sheet's 2px ink —
+     a footer is not a sign, and shouldn't read as one. */
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  max-width: min(640px, calc(100vw - 32px));
+  /* And the space below, which was 80px of gradient with the links pressed into it. */
+  margin: var(--step) auto calc(var(--step) * 2.2);
+  padding: 16px 22px 18px;
+  text-align: center; color: var(--soft); font-size: 13px; line-height: 2.2;
+}
+/* F9 (audit 2026-07-29). These were 16px tall against DESIGN.md's 44px minimum — the smallest
+   interactive targets in the product, in the one place people go when they are lost.
+   Settled by making the TARGET 44px without making the type any bigger: inline-block with
+   vertical padding, and line-height dropped to 1 so the padding is the row height rather than
+   adding to it. The footer reads the same and is twice as easy to hit. */
+.pagefoot a {
+  color: var(--link); font-weight: 600; text-decoration: none;
+  /* min-height rather than padding arithmetic: padding round a 13px line box gave 41px, and
+     a target that depends on the font's metrics is a target that breaks when the font does. */
+  display: inline-flex; align-items: center; vertical-align: middle;
+  min-height: 44px; padding: 0 7px;
+}
+.pagefoot a:hover { color: var(--accent); text-decoration: underline; }
+.pagefoot .sep { opacity: .45; padding: 0 2px; }
+
+@media (max-width: 640px) {
+  .pagehead { padding-top: calc(var(--step) * .6); }
+}
+
+/* ── the same menu the landing page has ───────────────────────────────────────────────
+   About and friends previously had no nav at all: arriving from a footer link left you
+   with the browser's back button as the only way out. Same markup and behaviour as the
+   landing page, so the header reads as one system.
+   These links open in the SAME tab — between info pages a new tab per hop is noise. The
+   landing page keeps target="_blank" because leaving a trip behind is the thing to avoid;
+   changing that is the queued in-trip panel work, not this pass. */
+#menuBtn {
+  position: fixed; top: 14px; right: 14px; z-index: 50;
+  background: var(--card); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 50%;
+  width: 44px; height: 44px; font-size: 19px; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,.16);
+}
+#themeBtn {
+  position: fixed; top: 14px; right: 66px; z-index: 50;
+  background: var(--card); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 50%;
+  width: 44px; height: 44px; font-size: 19px; line-height: 1; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,.16);
+}
+#menu {
+  position: fixed; top: 66px; right: 14px; z-index: 50;
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: 12px; padding: 6px; display: none;
+  box-shadow: 0 12px 30px rgba(0,0,0,.2);
+}
+#menu.show { display: block; }
+#menu a {
+  display: block; min-height: 44px; padding: 11px 20px;
+  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+  font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink); text-decoration: none; border-radius: 8px; white-space: nowrap;
+}
+#menu a:hover { background: var(--ground); color: var(--link); }
+#menu a[aria-current="page"] { color: var(--link); }
+
+/* ── links in prose ─────────────────────────────────────────────────────────────────────
+   The last cyan on the set: body links were still falling through to sky.css's --pine
+   (#5FD0D6 at night). Same rule as the footer — teal by day, sign orange after dark. */
+/* :not(.btn) matters — `.pagebody a` is class+type and outranks a bare `.btn`, so without it
+   every button inside prose silently took the link colour instead of its own. */
+.pagebody a:not(.btn) { color: var(--link); font-weight: 600; }
+.pagebody a:not(.btn):hover { color: var(--accent); }
+.pagehead .lede a { color: var(--link); font-weight: 600; }
+
+/* ── two-column tables on a phone ──────────────────────────────────────────────────────
+   The sub-processor table splits 55/45 on a 390px screen, which squeezes every
+   description into a four-word ribbon. Below 560px the row becomes a block: the name is
+   a heading, the description is a paragraph under it. Same content, actually readable. */
+@media (max-width: 560px) {
+  .pagebody table { display: block; }
+  .pagebody tbody, .pagebody tr, .pagebody td { display: block; width: auto; }
+  .pagebody tr { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .pagebody tr:last-child { border-bottom: 0; }
+  .pagebody td { padding: 0; border: 0; }
+  .pagebody td:first-child {
+    font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
+    font-size: 17px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ink); margin-bottom: 5px;
+  }
+  .pagebody td + td { color: var(--soft); line-height: 1.6; }
+}

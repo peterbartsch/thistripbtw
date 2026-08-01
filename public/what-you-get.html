@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What's free, what you pay for — this trip, btw</title>
+<meta name="description" content="Building a trip is free — no account, no card, no email. Here is exactly what paying adds, and what it doesn't.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{padding:0 8px 8px;border-bottom:2px solid var(--ink);text-align:left;
+    font-family:var(--font-family-display);font-weight:700;font-size:14px;
+    letter-spacing:.06em;text-transform:uppercase}
+  .card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:22px}
+  .card p:last-child{margin-bottom:0}
+  ul{margin:0 0 14px;padding-left:20px;line-height:1.7}
+  li{margin-bottom:7px}
+  .compare td{width:50%}
+  /* The shared stacked-table rule (pages.css) promotes the first cell to a heading, which is
+     right for the sub-processor table — name, then description — and wrong here, where both
+     columns are equal-weight prose. Stacking that way turned "the draft lives in this browser"
+     into a headline and lost which half was which. So this table labels each cell instead. */
+  @media (max-width:560px){
+    .compare td{width:auto}
+    .compare tr.head{display:none}
+    .compare tr{padding:0 0 4px}
+    .compare td{position:relative;padding:10px 0 12px !important;font-size:15px;
+      font-family:var(--font-family-body) !important;font-weight:400 !important;
+      letter-spacing:normal !important;text-transform:none !important;line-height:1.6}
+    .compare td::before{content:attr(data-l);display:block;margin-bottom:3px;
+      font-family:var(--font-family-display);font-weight:700;font-size:11px;
+      letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+    .compare td[data-l="Before"]{color:var(--soft)}
+    .compare td[data-l="After"]{color:var(--ink)}
+    .compare td[data-l="After"]{border-top:1px solid var(--line)}
+  }
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <h1>What's free, what you pay for</h1>
+  <p class="lede">Building a trip costs nothing. Paying is what makes it last, and shareable.</p>
+</header>
+
+<main class="pagebody sheet">
+  <div class="card">
+    <p><strong>There is no free tier and no trial.</strong> Those are different things, and the
+    difference matters. A trial is a countdown. This is simpler: you can build a whole trip —
+    every stop, every leg, the real map — without an account, a card, or an email address.
+    What you're paying for is an address that stays put for years and links you can hand to people.</p>
+  </div>
+
+  <section>
+    <h2>Before you pay anything</h2>
+    <ul>
+      <li><strong>Build the whole trip.</strong> Add stops, set dates, chain the legs, watch the route draw along real roads.</li>
+      <li><strong>No account, no card, no email.</strong> Not asked for, not optional-but-nagged. Not collected.</li>
+      <li><strong>Ask can start it for you.</strong> Type &ldquo;drive from Denver to Moab on the 4th&rdquo; and it builds the legs — two turns per draft before you buy.</li>
+      <li><strong>Open the demo</strong> and click around a finished trip, no strings.</li>
+    </ul>
+    <p><strong>The catch, stated plainly:</strong> until you buy, the draft lives in your browser
+    and nowhere else. Clear your data, use private browsing, or pick up a different phone, and
+    it's gone. There is no copy on our side, because we never asked who you are. Buying is what
+    moves it somewhere it can survive.</p>
+  </section>
+
+  <section>
+    <h2>What paying adds</h2>
+    <table class="compare">
+      <tr class="head">
+        <th scope="col">Before you pay</th>
+        <th scope="col">After you pay</th>
+      </tr>
+      <tr>
+        <td data-l="Before">The draft lives in this browser.</td>
+        <td data-l="After">The trip gets its own address &mdash; <strong>thistripbtw.us/xvsbe4r</strong> &mdash; that nobody can guess.</td>
+      </tr>
+      <tr>
+        <td data-l="Before">Only you, on this device.</td>
+        <td data-l="After">Two word-phrase links: one that lets people <strong>edit</strong>, one that only lets them <strong>look</strong>. Anyone you send them to needs no account.</td>
+      </tr>
+      <tr>
+        <td data-l="Before">Gone when the browser forgets.</td>
+        <td data-l="After">A life span you chose &mdash; <strong>one year</strong> on $2.50, <strong>five</strong> on $5, <strong>ten</strong> on $10. Roughly a dollar a year, paid once.</td>
+      </tr>
+      <tr>
+        <td data-l="Before">Stops, notes and the map.</td>
+        <td data-l="After">Photos and video pinned to the map, on <strong>$10</strong>.</td>
+      </tr>
+      <tr>
+        <td data-l="Before">Ask does two turns per draft, and won't look up flights.</td>
+        <td data-l="After">Ask keeps going with no per-trip limit, and can look up a real flight's scheduled times from its number.</td>
+      </tr>
+    </table>
+    <p>Flight lookups are the one genuinely scarce thing here &mdash; they're a metered service we
+    pay for per call, which is why they sit behind the purchase rather than in front of it.</p>
+  </section>
+
+  <section>
+    <h2>Why the free part is free</h2>
+    <p>Because a planner you can't try is a planner nobody tries. Asking for a card before you
+    know whether the thing works is how you end up with a signup funnel instead of a product.</p>
+    <p>And because there's nothing to harvest. A free tier normally has to earn its keep some
+    other way &mdash; ads, data, an upsell that follows you around. We take a few dollars once,
+    so the free part can just be free.</p>
+  </section>
+
+  <section>
+    <h2>The account is made for you, and it comes after</h2>
+    <p>Buying never sends you through a signup form &mdash; you never fill in one to buy
+    something. Afterwards, we make you an account from the email Stripe already has for your
+    receipt, so your trips are findable later. Setting a password is optional: without one,
+    we'll email you a link to set one whenever you need it. Your trip links keep working either
+    way &mdash; they never needed an account.</p>
+    <p>An account holds three things: your email, a one-way hash of your password, and the list
+    of your trips. That's it &mdash; no name, no profile, nothing about what you did.</p>
+    <p><strong>Worth knowing either way:</strong> opening a trip still asks for its phrase, and
+    we only ever stored a one-way hash of that. So an account remembers <em>which</em> trips are
+    yours, not <em>how to get into them</em>. Keep the edit link somewhere you'll find it.</p>
+    <p>The people you share a trip with don't need an account at all. The link is the key.</p>
+  </section>
+
+  <section>
+    <p><a class="btn" href="/#pricing">See the three tiers &rarr;</a>
+       <a class="btn btn-quiet" href="/new" style="margin-left:8px">Start building, free</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</html>

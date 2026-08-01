@@ -1,0 +1,92 @@
+/* this trip, btw — design tokens as CSS custom properties.
+   GENERATED from design/tokens.json (the source of truth). Do not hand-edit;
+   change tokens.json and regenerate (Style Dictionary) so Figma + code stay in sync.
+   Palette locked 2026-07-23 (D-026). Not yet adopted by the app — wired in during the flow work. */
+
+:root {
+  /* ── brand (the sign) ── */
+  --color-brand-teal:   #035A83;
+  --color-brand-orange: #F7B304;
+  --color-brand-board:  #ECECEC;
+  --color-brand-ink:    #141414;
+
+  /* ── warm ramp — earth & sun ── */
+  --color-warm-gold:   #F2A63B;
+  --color-warm-orange: #EE7A21;
+  --color-warm-ember:  #D9531F;
+  --color-warm-clay:   #B23A24;
+  --color-warm-maroon: #7E2B2E;
+
+  /* ── cool ramp — clean day sky ── */
+  --color-cool-haze:  #F0F7FB;
+  --color-cool-light: #A8DBEC;
+  --color-cool-blue:  #3E8FC4;
+  --color-cool-deep:  #1B3F72;
+
+  /* ── steel ramp — cold dawn ── */
+  --color-steel-1: #2C3A47;
+  --color-steel-2: #556B7D;
+  --color-steel-3: #8A9CAA;
+  --color-steel-4: #AEBEC8;
+
+  /* ── route — functional vehicle tracks (D-011) ── */
+  --color-route-amber:      #F2A900;
+  --color-route-amber-deep: #B57F00;
+  --color-route-blue:       #3E7CB1;
+  --color-route-blue-deep:  #2C5A82;
+  --color-route-rail:       #8A6FB0;
+  --color-route-self:       #1B9AAA;
+
+  /* ── time-of-day skies (assembled, ~162deg) ── */
+  --gradient-sky-dawn:  linear-gradient(162deg, #2C3A47 0%, #556B7D 52%, #AEBEC8 100%);
+  --gradient-sky-day:   linear-gradient(162deg, #F0F7FB 0%, #3E8FC4 100%);
+  --gradient-sky-night: linear-gradient(162deg, #1A1730 0%, #26203A 100%);
+  --gradient-sky-dusk:  linear-gradient(162deg, #2A2450 0%, #8A3B6E 40%, #D9531F 72%, #F2A63B 100%);
+
+  /* ── type ── */
+  --font-family-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-family-body:    "Barlow", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 17px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-display: 38px;
+  --font-tracking-tight: 0.02em;
+  --font-tracking-wide: 0.08em;
+  --font-tracking-wider: 0.14em;
+
+  /* ── space ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ── radius ── */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ── shadow ── */
+  --shadow-sign:  0 5px 16px rgba(0,0,0,0.40);
+  --shadow-card:  0 1px 3px rgba(0,0,0,0.15);
+  --shadow-sheet: 0 6px 18px rgba(0,0,0,0.35);
+
+  /* ── motion ── */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-sky: 1200ms;
+}

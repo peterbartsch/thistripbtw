@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start a trip — this trip, btw</title>
+<meta name="description" content="Build your trip on a private map — nothing to install, no sign-up to build.">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<style>
+  /* /new — build-before-pay canvas (D-029) on the D-030 design system.
+     D-037: the card is a LEG, not a stop; stays are their own card type. */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font-family-body);font-size:var(--font-size-md);color:var(--color-brand-ink);
+    line-height:1.5;background:var(--sky,linear-gradient(172deg,#F0F7FB 0%,#DCEBF5 100%));min-height:100vh}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+  .sign{display:inline-block;background:var(--color-brand-teal);border:2px solid #fff;outline:2px solid #024260;
+    border-radius:9px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+  .sign .top{color:#fff;font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:15px;
+    letter-spacing:var(--font-tracking-wide);text-transform:uppercase;padding:5px 14px 4px}
+  .sign .band{background:var(--color-brand-orange);height:8px}
+
+  .signbtn{display:inline-flex;align-items:center;justify-content:center;background:var(--color-brand-teal);
+    color:var(--color-brand-board);border:none;border-radius:var(--radius-md);min-height:44px;
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-board);font-family:var(--font-family-display);
+    font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:var(--font-tracking-wide);
+    cursor:pointer;transition:box-shadow var(--duration-fast),color var(--duration-fast),background var(--duration-fast)}
+  .signbtn:hover:not(:disabled){box-shadow:inset 0 0 0 1.5px var(--color-brand-orange);color:var(--color-brand-orange)}
+  .signbtn:disabled{background:var(--color-steel-4);box-shadow:inset 0 0 0 1.5px var(--color-steel-2);color:var(--color-steel-2);cursor:default}
+
+  /* ── HERO ── */
+  .hero{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;background:var(--sky,var(--gradient-sky-day));transition:opacity .5s ease,transform .5s ease}
+  body:not(.pre) .hero{opacity:0;transform:translateY(-24px);pointer-events:none;visibility:hidden}
+  .hero .sign{margin-bottom:26px;transform:scale(1.15)}
+  .hero h1{font-family:var(--font-family-display);font-weight:var(--font-weight-bold);color:var(--color-brand-ink);
+    font-size:clamp(30px,5vw,var(--font-size-display));line-height:1.03;letter-spacing:var(--font-tracking-tight);
+    text-transform:uppercase;max-width:15ch;margin-bottom:14px;text-wrap:balance}
+  .hero p{color:var(--color-cool-deep);font-size:clamp(15px,2.2vw,18px);max-width:34ch;margin-bottom:26px}
+  /* D-089: gold means press, teal means us. This is the primary action on the page, so it
+     takes the same gold the homepage buy buttons take, with the ink ring that makes a sign a
+     sign. It was teal while the ALTERNATIVE below it was gold, which pointed the one colour
+     that says "do this" at the path fewer people should take. Ink on gold is 10.00:1; white
+     on this gold is 1.84:1 and is never used (DESIGN.md §1). */
+  .cta{font-size:var(--font-size-xl);padding:18px 30px;border-radius:var(--radius-lg);
+    background:var(--color-brand-orange);color:var(--color-brand-ink);
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #C38D00,0 10px 24px rgba(195,141,0,.26)}
+  .cta:hover:not(:disabled){background:var(--color-brand-orange);color:var(--color-brand-ink);filter:brightness(1.06);
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #C38D00,0 10px 24px rgba(195,141,0,.26)}
+  .cta:active{transform:translateY(3px);
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 0 0 #C38D00,0 4px 12px rgba(195,141,0,.22)}
+  /* D-090: the board does the work. Following the sky still failed three skies of four —
+     dawn 3.03, day 3.60, dusk 2.42 — because no one mid-tone teal clears 4.5:1 against both
+     a pale blue sky and an orange one. That is arithmetic, not taste. DESIGN.md's answer is
+     the board, and it is the same move the sign itself makes: an opaque plate makes the sky
+     irrelevant, so a single colour pair works everywhere. */
+  .reassure{display:inline-block;margin-top:16px;background:var(--color-brand-board);
+    color:var(--color-brand-ink);border-radius:999px;padding:6px 14px;
+    font-size:13px;font-weight:var(--font-weight-semibold)}
+  .reassure b{color:var(--color-brand-teal)}
+  /* F6 (audit 2026-07-29): the chat had exactly one entry point site-wide — a 46px button
+     labelled "Ask", fourth in a stack of icons — and body.pre hid even that on a cold visit,
+     so a first-time visitor had no route to it at all. Two more, both where someone is
+     already looking. Ink on gold per D-061; never white. */
+  /* Outlined, not gold (D-089). It stays a full 44px pill so it is still obviously pressable —
+     F6's point was that the chat had no findable entry, and that stands — but gold now belongs
+     to the primary above it. Colour follows the sky, like .hero h1, or it is near-black ink on
+     a night gradient. */
+  .hero-alt{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-height:44px;margin-top:14px;padding:0 18px;border:0;cursor:pointer;
+    background:transparent;color:var(--ink,var(--color-brand-ink));
+    font-family:var(--font-family-display);font-weight:700;font-size:14px;
+    letter-spacing:.04em;text-transform:uppercase;border-radius:999px;
+    box-shadow:inset 0 0 0 1.5px var(--ink,var(--color-brand-ink))}
+  /* On the three dark skies the outline alone left it at 3.75:1 against dusk's ember. A scrim
+     of ink at alpha — no new colour — carries it, and it is the same html:not([data-sky="day"])
+     hook the hero text-shadow already uses. Day needs none: dark ink there measures 6.06:1. */
+  html:not([data-sky="day"]) .hero-alt{background:rgba(20,20,20,.34)}
+  .hero-alt:hover{background:color-mix(in srgb,var(--ink,#141414) 10%,transparent)}
+  html:not([data-sky="day"]) .hero-alt:hover{background:rgba(20,20,20,.48)}
+  .hero-alt:active{transform:translateY(2px)}
+  .pask{margin-left:6px;min-height:38px;padding:0 12px;border:0;cursor:pointer;white-space:nowrap;
+    background:var(--color-brand-orange);color:var(--color-brand-ink);
+    font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.04em;text-transform:uppercase;border-radius:999px}
+  /* On its own board too (D-090) — it failed the same three skies at the same numbers. The
+     underline goes with the sky-teal that needed it: on a board the plate is the affordance,
+     and an underline under a pill reads as a mistake. */
+  .demo-link{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;
+    background:var(--color-brand-board);color:var(--color-brand-teal);
+    border-radius:999px;padding:0 18px;text-decoration:underline;text-underline-offset:3px;
+    text-decoration-color:rgba(3,90,131,.45);
+    font-weight:var(--font-weight-semibold);font-size:14px;border-bottom:0}
+
+  /* ── BUILD CANVAS ── */
+  body.pre .app,body.pre .keepbar{display:none}
+  /* The map is the ground, not a card on a page: it fills the viewport and everything
+     else floats above it. .app itself must not swallow map taps, so it's pointer-transparent
+     and each floating piece re-enables its own. */
+  .app{position:static;pointer-events:none}
+  .app > *{pointer-events:auto}
+  .bar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;padding:10px 12px;pointer-events:none}
+  .bar > *{pointer-events:auto}
+  .name-trip{font-family:var(--font-family-display);text-transform:uppercase;letter-spacing:var(--font-tracking-wide);
+    font-weight:var(--font-weight-semibold);font-size:16px;color:var(--color-brand-ink);min-height:44px;
+    display:inline-flex;align-items:center;border:2px solid var(--color-brand-ink);border-radius:var(--radius-pill);
+    padding:4px 16px;background:#fff;min-width:150px;outline:none}
+  .name-trip:focus{border-color:var(--color-brand-orange)}
+  .name-trip:empty::before{content:"Name your trip";color:var(--color-steel-2)}
+
+  .maprap{position:fixed;inset:0;z-index:0;border:0;border-radius:0;overflow:hidden}
+  /* z-index:0 is load-bearing. Leaflet's panes carry z-index 200–700 of their own; without a
+     stacking context here they escape into .maprap and outrank every overlay below 700 —
+     .prompt (14) and .mapbtns (20) were painted UNDER the map tiles and invisible. Containing
+     them keeps the overlay order the numbers below actually describe. */
+  #map{height:100vh;background:#dfe9ef;cursor:crosshair;position:relative;z-index:0}
+  /* Zoom sits bottom-LEFT, lifted clear of both floating layers. Bottom-right is where the
+     keepbar lands: it covered zoom-out completely and zoom-in by 70%, on desktop and phone
+     alike, and only "hide cards" ever revealed them. Same sum .prompt uses, so the three
+     stack off the same two measurements instead of guessing at each other's heights. */
+  /* The sum has to be CLAMPED, not just computed. rail + keep + prompt is a fixed height; on a
+     short viewport (laptop chrome, landscape phone) it exceeds the screen and pushed the control
+     up through the top bar and then off the top entirely — y36 at 620px tall, y-3 at 560px.
+     The ceiling keeps it under .bar (64px) with room for the ~115px stack. Past that it sits over
+     .prompt, which is fine: the prompt's content is centred and this column is at x 12-56. */
+  .leaflet-bottom.leaflet-left{
+    bottom:max(8px, min(calc(var(--rail-h,238px) + var(--keep-h,64px) + var(--prompt-h,0px) + 8px),
+                        calc(100vh - 200px)))}
+  /* "hide cards" clears the overlay so the whole map is visible */
+  body.full .railwrap,body.full .keepbar,body.full .prompt{display:none}
+  /* Menu + theme control, styled locally (no pages.css on this page) and placed inside .bar:
+     the top-right corner already belongs to `.card.zoom .zoombtn` at the very same offsets. */
+  .bar #themeBtn,.bar #menuBtn{flex:none;width:38px;height:38px;border-radius:50%;cursor:pointer;
+    background:var(--card);color:var(--ink);border:2px solid var(--ink);font-size:17px;line-height:1}
+  #menu{position:fixed;top:56px;right:12px;z-index:900;background:var(--card);border:2px solid var(--ink);
+    border-radius:12px;padding:6px;display:none;box-shadow:0 12px 30px rgba(0,0,0,.2)}
+  #menu.show{display:block}
+  #menu a{display:block;min-height:44px;padding:11px 20px;font-family:var(--disp);font-weight:700;
+    font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);text-decoration:none;
+    border-radius:8px;white-space:nowrap}
+  #menu a:hover{background:var(--ground);color:var(--link)}
+  .mapbtns{position:fixed;top:60px;right:12px;z-index:20;display:flex;flex-direction:column;gap:8px}
+  .mbtn{font-family:var(--font-family-display);text-transform:uppercase;letter-spacing:var(--font-tracking-wide);
+    font-weight:var(--font-weight-semibold);font-size:12px;color:var(--color-brand-teal);background:#fff;
+    border:1.5px solid var(--color-brand-teal);border-radius:var(--radius-pill);padding:0 13px;min-height:44px;
+    cursor:pointer;box-shadow:var(--shadow-card);display:inline-flex;align-items:center;gap:6px}
+  .mbtn:hover{border-color:var(--color-brand-orange);color:var(--color-brand-orange)}
+  /* the prompt IS the instruction — it always says what the next tap does */
+  /* --rail-h is the rail's own height, and the rail itself sits --keep-h off the bottom
+     (see .railwrap). Stacking on top of it means adding both, or the prompt lands inside
+     the rail card — which it did, invisibly, for as long as the map painted over it. */
+  .prompt{position:fixed;left:0;right:0;bottom:calc(var(--rail-h,238px) + var(--keep-h,64px) + 8px);z-index:14;
+    padding:8px 14px;text-align:center;pointer-events:none}
+  .psearch{position:relative;max-width:340px;margin:9px auto 0;padding:0 12px}
+  .psearch input{width:100%;min-height:44px;padding:10px 13px;border:2px solid var(--color-brand-ink);
+    border-radius:var(--radius-md);background:#fff;color:var(--color-brand-ink);font-size:16px;
+    font-family:var(--font-family-body);box-shadow:0 3px 12px rgba(0,0,0,.14)}
+  .psearch input:focus{outline:0;border-color:var(--color-brand-teal)}
+  body.full .psearch{display:none}
+  .prompt b,.prompt span{display:inline-block;background:rgba(240,247,251,.94);border-radius:var(--radius-pill);
+    padding:4px 12px;backdrop-filter:blur(4px)}
+  .prompt b{font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:15px;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--color-brand-teal)}
+  .prompt span{display:block;font-size:12.5px;color:var(--color-steel-2);margin-top:2px}
+  .toast{position:fixed;left:50%;bottom:calc(var(--rail-h,238px) + var(--keep-h,64px) + 56px);transform:translateX(-50%);z-index:650;background:var(--color-brand-ink);
+    color:var(--color-brand-board);font-size:13px;padding:9px 14px;border-radius:var(--radius-pill);
+    box-shadow:var(--shadow-sheet);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+  .toast.on{opacity:.97}
+  .pin{background:var(--color-route-amber);color:var(--color-brand-ink);border:3px solid #fff;border-radius:50%;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:var(--font-family-display);
+    font-weight:var(--font-weight-semibold);font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+  .pin.pending{background:#fff;color:var(--color-brand-teal);border-color:var(--color-brand-teal);border-style:dashed}
+  .legglyph{color:var(--color-brand-ink);filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));pointer-events:none}
+  /* Leaflet zeroes this control's margin with .leaflet-container .leaflet-control-attribution,
+     so matching that specificity is what makes it line up with the zoom buttons below it. */
+  .leaflet-container .leaflet-control-attribution{font-size:11px;margin:0 0 8px 12px}
+  .leaflet-bar a,.leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px}
+
+  /* draw-a-path (D-027) */
+  .drawbar{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:700;display:none;
+    align-items:center;gap:8px;background:var(--color-brand-ink);color:var(--color-brand-board);
+    padding:6px 8px 6px 14px;border-radius:var(--radius-pill);box-shadow:var(--shadow-sheet)}
+  .drawbar.on{display:flex}
+  .drawbar .tip{font-size:12.5px}
+  .drawbar button{font-family:var(--font-family-display);text-transform:uppercase;letter-spacing:.04em;
+    font-weight:var(--font-weight-semibold);font-size:12px;border:1px solid rgba(255,255,255,.32);
+    background:transparent;color:inherit;border-radius:var(--radius-pill);padding:0 12px;min-height:44px;cursor:pointer}
+  .drawbar .done{background:var(--color-brand-teal);border-color:var(--color-brand-teal)}
+
+  /* ── the rail of legs + stays ── */
+  .railwrap{position:fixed;left:0;right:0;bottom:var(--keep-h,64px);z-index:16;padding:0 10px 6px;pointer-events:none}
+  .railwrap > *{pointer-events:auto}
+  .railhead{display:flex;align-items:baseline;gap:10px;margin:0 4px 6px;
+    text-shadow:0 1px 3px rgba(255,255,255,.85)}
+  .railhead h2{font-family:var(--font-family-display);text-transform:uppercase;letter-spacing:var(--font-tracking-wide);
+    font-weight:var(--font-weight-semibold);font-size:var(--font-size-xl);color:var(--color-brand-teal)}
+  .railhead .sub{color:var(--color-steel-2);font-size:13px}
+  /* D-091: this header sits ON the map with no plate of its own, and the white halo above was
+     tuned for light tiles. Once the base can go dark it measured 2.32:1 for "your trip" and
+     3.14:1 for the count. Two backgrounds here, both ours, so a per-state colour is tractable
+     in a way the hero's four-sky gradient was not (D-090) — same two states the tiles use. */
+  html[data-sky="night"] .railhead,html[data-sky="dusk"] .railhead{text-shadow:0 1px 3px rgba(0,0,0,.85)}
+  html[data-sky="night"] .railhead h2,html[data-sky="dusk"] .railhead h2{color:var(--color-brand-board)}
+  html[data-sky="night"] .railhead .sub,html[data-sky="dusk"] .railhead .sub{color:var(--color-steel-4)}
+  .rail{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;align-items:start;
+    max-height:58vh}
+  .card{max-height:56vh;overflow-y:auto}
+  .rail::-webkit-scrollbar{height:8px}
+  .rail::-webkit-scrollbar-thumb{background:var(--color-steel-4);border-radius:8px}
+
+  .card{flex:0 0 330px;scroll-snap-align:center;background:var(--color-cool-haze);
+    border:2px solid var(--color-brand-ink);border-radius:var(--radius-lg);padding:14px;position:relative}
+  .card.stay{background:#fff;border-style:dashed}
+  .card.flash{animation:pop .4s ease}
+  @keyframes pop{0%{transform:scale(.97)}100%{transform:none}}
+  .ctype{font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--color-brand-teal);display:flex;align-items:center;gap:5px}
+  .card.stay .ctype{color:var(--color-warm-orange)}
+  .saved{position:absolute;top:12px;right:14px;font-size:12px;color:#237A42;
+    font-weight:var(--font-weight-semibold);opacity:0;transition:opacity .25s}
+  .saved.on{opacity:1}
+  .route{display:flex;align-items:center;gap:8px;margin:6px 0 0}
+  .place{flex:1;min-width:0;font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);
+    font-size:19px;letter-spacing:.01em;text-transform:uppercase;border:0;background:none;outline:none;
+    color:var(--color-brand-ink);text-overflow:ellipsis;min-height:44px}
+  .place[readonly]{color:var(--color-steel-2)}
+  .place:focus-visible{outline:2px solid var(--color-brand-orange);outline-offset:2px}
+  .from-note{font-size:11.5px;color:var(--color-steel-2)}
+  label.f{display:block;font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-teal);margin:12px 0 4px}
+  label.f .opt{color:var(--color-steel-2);font-weight:var(--font-weight-medium);text-transform:none;letter-spacing:0;font-family:var(--font-family-body)}
+  .fld{width:100%;min-height:44px;border:2px solid var(--color-brand-ink);border-radius:var(--radius-md);
+    padding:8px 12px;font-family:var(--font-family-body);font-size:16px;background:#fff;outline:none;color:var(--color-brand-ink)}
+  .fld:focus{border-color:var(--color-brand-orange)}
+  .fld::placeholder{color:var(--color-steel-2)}
+  textarea.fld{min-height:56px;resize:vertical}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:6px 12px;cursor:pointer;
+    border:1.5px solid var(--color-brand-ink);border-radius:var(--radius-pill);background:#fff;
+    font-family:var(--font-family-body);font-size:13px;font-weight:var(--font-weight-medium);color:var(--color-brand-ink)}
+  .chip.sel{background:var(--color-brand-teal);border-color:var(--color-brand-teal);color:var(--color-brand-board)}
+  .chip.addp{border-style:dashed;color:var(--color-brand-teal)}
+  .chip:focus-visible{outline:2px solid var(--color-brand-orange);outline-offset:2px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .ic{flex:none;vertical-align:-2px}
+  .addp-in{min-height:44px;border:1.5px dashed var(--color-brand-teal);border-radius:var(--radius-pill);
+    padding:4px 14px;font-family:var(--font-family-body);font-size:13px;outline:none;width:150px}
+  .cardfoot{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  .lnk{background:none;border:0;cursor:pointer;min-height:44px;padding:0 4px;display:inline-flex;align-items:center;gap:5px;
+    font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:11.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-teal)}
+  .lnk.del{color:var(--color-steel-2);margin-left:auto}
+  .lnk.done{color:#237A42}
+  .lnk:focus-visible{outline:2px solid var(--color-brand-orange);outline-offset:2px}
+  .moretog{margin-top:12px;width:100%;min-height:44px;background:none;cursor:pointer;
+    border:1.5px dashed var(--color-steel-3);border-radius:var(--radius-md);color:var(--color-brand-teal);
+    font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);font-size:12px;
+    letter-spacing:var(--font-tracking-wider);text-transform:uppercase}
+  .moretog:hover{border-color:var(--color-brand-teal);border-style:solid}
+  .detail{display:none}
+  .card.open .detail{display:block}
+
+  .routehead{flex:0 0 auto;align-self:stretch;min-height:44px;display:flex;flex-direction:column;
+    align-items:flex-start;justify-content:center;gap:2px;padding:10px 12px;cursor:pointer;
+    border:2px solid var(--color-steel-3);border-radius:var(--radius-lg);background:rgba(255,255,255,.6)}
+  .routehead.on{border-color:var(--color-brand-ink);background:#fff}
+  .routehead .rdot{width:10px;height:10px;border-radius:50%;display:block}
+  .routehead .rlab{font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);
+    font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-brand-ink);white-space:nowrap}
+  .routehead .rn{font-size:11px;color:var(--color-steel-2);white-space:nowrap}
+  /* expanded card — a plain reading/editing surface. No map, no gradient behind it. */
+  .card.zoom{position:fixed;inset:0;z-index:40;max-height:none;max-width:none;flex:none;
+    border:0;border-radius:0;overflow-y:auto;padding:64px 18px 28px;background:#F4F7F9}
+  /* the zoomed card lives inside .railwrap, so hide its SIBLINGS — not its ancestor */
+  body.carded .keepbar,body.carded .prompt,body.carded .mapbtns,body.carded .bar{display:none}
+  body.carded .railwrap{position:static;padding:0}
+  body.carded .rail{max-height:none;overflow:visible;display:block}
+  body.carded .railhead,body.carded .routehead,body.carded .addtile,
+  body.carded .card:not(.zoom){display:none}
+  .card .zoombtn{position:absolute;top:12px;right:12px;min-height:44px;min-width:44px;display:inline-flex;
+    align-items:center;justify-content:center;background:none;border:0;cursor:pointer;color:var(--color-steel-2)}
+  .card.zoom .zoombtn{position:fixed;top:14px;right:14px;background:#fff;border-radius:50%;
+    border:1.5px solid var(--color-brand-ink);color:var(--color-brand-ink);z-index:41}
+  .card.zoom .detail{display:block}
+  .card.zoom .moretog{display:none}
+  @media (prefers-color-scheme:dark){
+    .card.zoom{background:#12181D;color:#E8EEF2}
+    .card.zoom .fld{background:#1A2229;color:#E8EEF2;border-color:#2C3A45}
+    .card.zoom .chip{background:#1A2229;color:#E8EEF2;border-color:#2C3A45}
+    .card.zoom .chip.sel{background:var(--color-brand-teal);border-color:var(--color-brand-teal)}
+    .card.zoom .place{color:#E8EEF2}
+    .card.zoom .zoombtn{background:#1A2229;color:#E8EEF2;border-color:#2C3A45}
+  }
+  .empty{flex:1 1 100%;border:2px dashed var(--color-steel-3);border-radius:var(--radius-lg);background:#fff;
+    padding:26px 18px;text-align:center;color:var(--color-steel-2)}
+  .empty b{display:block;font-family:var(--font-family-display);font-size:17px;letter-spacing:.03em;
+    text-transform:uppercase;color:var(--color-brand-ink);margin-bottom:6px}
+
+  /* ── keep-it bar ── */
+  .keepbar{position:fixed;left:0;right:0;bottom:0;z-index:22;background:rgba(240,247,251,.97);
+    border-top:2px solid var(--color-brand-ink);box-shadow:0 -8px 24px rgba(20,30,40,.12);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 16px;flex-wrap:wrap}
+  .kb-msg{color:var(--color-steel-2);font-size:13.5px}
+  .kb-msg b{color:var(--color-brand-ink)}
+  .kb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-route-amber);margin-right:6px;vertical-align:middle}
+  .kb-actions{display:flex;align-items:center;gap:14px}
+  .kb-btn{font-size:14px;padding:0 20px;min-height:44px;border-radius:var(--radius-md)}
+  .kb-up{display:inline-flex;align-items:center;min-height:44px;background:none;border:0;cursor:pointer;font-size:12.5px;
+    color:var(--color-brand-teal);font-weight:var(--font-weight-semibold);border-bottom:1px solid rgba(3,107,131,.4);white-space:nowrap}
+  /* F5 (audit 2026-07-29). The keepbar reserved a fixed strip of every screen for the whole
+     session, and on a phone it was TWO rows — three lines of prose plus the buttons — for a
+     decision most people make once. The prose is only true while there is nothing to keep:
+     once a leg exists you can see for yourself that you are building something. So it goes
+     then, automatically, with no dismiss state to remember and no way to lose the buttons. */
+  body.hasleg .kb-msg{display:none}
+  /* …except the handover line, which the trip itself can never say (F11, 2026-07-29). */
+  body.hasleg.handover .kb-msg{display:inline}
+  /* F7 (audit 2026-07-29) — see the hero rule above. */
+  .card{backdrop-filter:none;-webkit-backdrop-filter:none}
+  html:not([data-sky="day"]) body{text-shadow:none}
+  html:not([data-sky="day"]) .hero{text-shadow:0 1px 2px rgba(0,0,0,.32)}
+  /* and the hero's text follows the sky, or it is near-black ink on a night gradient */
+  .hero h1{color:var(--ink,var(--color-brand-ink))}
+  .hero p{color:var(--ink,var(--color-brand-ink))}
+  /* These two are on a board now (D-090), so they must NOT follow the sky — the plate is
+     opaque and the sky behind it is irrelevant. Pinning brand over sky is the same thing
+     pages.css does after sky.css loads. The earlier fix here moved .reassure b onto --pine,
+     which lifted night from 2.31 to 9.49 but left dawn, day and dusk failing; the board
+     retires that approach rather than tuning it further.
+     text-shadow off with it: the hero's shadow exists for text on the sky, and on a light
+     plate it only muddies 13px type. */
+  .reassure{color:var(--color-brand-ink)}
+  .reassure b{color:var(--color-brand-teal)}
+  .demo-link{color:var(--color-brand-teal)}
+  .reassure,.demo-link{text-shadow:none}
+  .hidden{display:none!important}
+
+  .askwrap{display:flex;flex-direction:column;gap:10px;padding:10px 14px 4px;pointer-events:auto;
+    background:rgba(255,255,255,.95);border-radius:var(--radius-lg);margin:0 2px 8px;
+    border:2px solid var(--color-brand-ink)}
+  .askwrap[hidden]{display:none}
+  .chat-log{display:flex;flex-direction:column;gap:8px;max-height:34vh;overflow-y:auto}
+  .chat-hint{color:var(--color-steel-2);font-size:14px;line-height:1.5;padding:4px 2px}
+  .chat-b{max-width:88%;padding:9px 13px;border-radius:14px;font-size:15px;line-height:1.45;white-space:pre-wrap}
+  .chat-b.me{align-self:flex-end;background:var(--color-brand-teal);color:#fff;border-bottom-right-radius:5px}
+  .chat-b.them{align-self:flex-start;background:var(--color-cool-haze);border:1.5px solid var(--color-steel-3);border-bottom-left-radius:5px}
+  .chat-note{align-self:flex-start;font-size:12.5px;color:var(--color-steel-2);padding:2px 4px}
+  .chat-in{display:flex;gap:8px;align-items:flex-end}
+  .chat-in textarea{flex:1;min-height:44px;border:2px solid var(--color-brand-ink);border-radius:10px;
+    padding:10px 12px;font-family:var(--font-family-body);font-size:16px;resize:none}
+  .chat-in textarea:focus{outline:none;border-color:var(--color-brand-orange)}
+  .chat-send{min-height:44px;padding:0 18px;border-radius:10px;font-size:14px}
+  .chat-foot{font-size:11.5px;color:var(--color-steel-2);text-align:center;margin:0 0 4px}
+  @media (max-width:640px){
+    .card{flex-basis:86vw}
+    .mbtn span.lbl{display:none}
+    .mbtn{padding:0 12px}
+    .keepbar{gap:6px;padding:8px 10px}
+    .kb-msg{flex:1 1 100%;text-align:center;font-size:11.5px;line-height:1.35}
+    /* with the message gone the actions are the whole bar, so one row instead of two */
+    body.hasleg .kb-actions{width:auto}
+    .kb-actions{width:100%;justify-content:space-between;gap:8px}
+    .kb-btn{flex:1 1 auto;font-size:13px;padding:0 12px}
+    .kb-up{font-size:11.5px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+      transition-duration:.01ms!important;scroll-behavior:auto!important}
+  }
+</style>
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+</head>
+<body class="pre">
+
+  <div class="hero" id="hero">
+    <span class="sign"><span class="top">this trip, btw</span><span class="band"></span></span>
+    <h1>Start your trip in one tap.</h1>
+    <p>Drop the first leg on a shared map. Add the crew, build it together, live it — all from one private link.</p>
+    <button class="signbtn cta" onclick="enterBuild()">Start your first leg</button>
+    <div class="reassure"><b>nothing to install</b> · <b>no sign-up to build</b> · you only pay when you want to keep it</div>
+    <button class="hero-alt" type="button" onclick="enterBuildAsk()">✦ or describe it in a sentence</button>
+    <a class="demo-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener">or explore a live demo →</a>
+  </div>
+
+  <main class="app">
+    <h1 class="vh">Build a trip</h1>
+    <div class="bar">
+      <a href="/" class="sign" style="text-decoration:none"><span class="top">this trip, btw</span><span class="band"></span></a>
+      <span class="name-trip" id="tripName" contenteditable="true" role="textbox" aria-label="Name your trip"></span>
+      <button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+      <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+    </div>
+    <nav id="menu">
+      <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+    </nav>
+
+    <div class="maprap">
+      <div class="mapbtns">
+        <button class="mbtn" id="askBtn" type="button" onclick="toggleAsk()" aria-label="Describe your trip in words">✦ <span class="lbl">Describe</span></button>
+        <button class="mbtn" id="fsBtn" type="button" onclick="toggleFull()">⤢ <span class="lbl">Hide cards</span></button>
+        <button class="mbtn" type="button" onclick="nearMe()" aria-label="Use my location">◎ <span class="lbl">Near me</span></button>
+        <button class="mbtn" type="button" onclick="undoLast()" aria-label="Undo the last leg">↺ <span class="lbl">Undo</span></button>
+        <button class="mbtn" type="button" onclick="document.getElementById('openCopy').click()" aria-label="Open a saved copy">↥ <span class="lbl">Open</span></button>
+        <button class="mbtn" type="button" onclick="saveCopy()" aria-label="Save a copy of this trip">↧ <span class="lbl">Save</span></button>
+        <!-- D-063: the other half of the toggle. /quick is where a trip is STARTED; this is
+             where it is edited. Same v3 draft either way, so switching loses nothing. -->
+        <a class="mbtn" href="/quick" aria-label="Switch to the ring builder">◎ <span class="lbl">Ring</span></a>
+      </div>
+      <div id="map"></div>
+      <div class="prompt"><b id="pTitle">Tap where you're starting</b><span id="pSub">Then tap where you're going — that's your first leg.</span>
+        <!-- Typing was never an option here: you could only tap. Fine for a place you can find
+             on a map, useless for a town you know by name and not by sight. -->
+        <div class="psearch"><input id="pFind" type="text" placeholder="…or type a place" aria-label="Search for a place"><button type="button" class="pask" onclick="toggleAsk()" aria-label="Describe the whole trip in words">✦ describe it</button></div></div>
+      <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+      <div class="drawbar" id="drawbar">
+        <span class="tip">Tap the map to trace the route</span>
+        <button type="button" onclick="clearDraw()">Clear</button>
+        <button type="button" onclick="cancelDraw()">Cancel</button>
+        <button type="button" class="done" onclick="finishDraw()">Done</button>
+      </div>
+    </div>
+
+    <div class="railwrap" id="railwrap">
+      <div class="railhead"><h2>your trip</h2><span class="sub" id="legCount">no legs yet</span></div>
+      <div class="askwrap" id="askwrap" hidden>
+        <div class="chat-log" id="askLog"></div>
+        <form class="chat-in" id="askForm">
+          <label class="vh" for="askText">Describe part of your trip</label>
+          <textarea id="askText" rows="2" placeholder="drive to portland thursday, mel flies in saturday"></textarea>
+          <button class="signbtn chat-send" type="submit">Send</button>
+        </form>
+        <p class="chat-foot" id="askFoot">Two goes before you buy. Your conversation isn't stored.</p>
+      </div>
+      <div class="rail" id="rail"></div>
+    </div>
+  </main>
+
+  <div class="keepbar">
+    <span class="kb-msg" id="kbMsg"><span class="kb-dot"></span><b>Draft</b><span class="kb-long"> &mdash; only on this device, so
+      <b>nobody else can open it yet</b>. Keeping it gives the trip its own private link, and then the
+      crew can see it and add to it. Free to build for as long as you like.</span></span>
+    <div class="kb-actions">
+      <input type="file" id="openCopy" accept="application/json,.json" class="vh" onchange="openCopyFile(this)">
+      <button type="button" class="kb-up" onclick="keepIt('plan')">just one year · $2.50</button>
+        <button type="button" class="kb-up" onclick="keepIt('works')">+ video · $10</button>
+      <button type="button" class="signbtn kb-btn" id="keepBtn" onclick="keepIt('keep')" disabled>Keep it, with photos · $5</button>
+    </div>
+  </div>
+
+<script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
+<script src="/places.js?v=2"></script>
+<script>
+/* Stripe payment links — mirror public/index.html #pricing (flip test→live together). */
+/* Live Payment Links. Verified against the Stripe API on 2026-07-27 — the label in the
+   dashboard is not authoritative, the line item is, and two of these were mis-paired once
+   already. keep -> $5.00 "Save It", works -> $10.00 "The Works".
+   These were still test_ links until 2026-07-27: the Stripe live flip updated index.html and
+   missed this file, so the promoted default path (D-029) sent every buyer to a test checkout
+   that rejects real cards. `make check` now fails on a test_ link in public/. */
+const PAY={plan :"https://buy.stripe.com/4gM00jazY6Uf3ak28jaIM02",   // $2.50 · one year
+           keep :"https://buy.stripe.com/eVqbJ1gYm4M726gcMXaIM00",   // $5    · five years
+           works:"https://buy.stripe.com/00w5kD8rQ0vRbGQ7sDaIM01"};  // $10   · ten years
+const SCRATCH_KEY="ttb_scratch";
+
+/* ── flat icon set (no emoji — they render differently on every device) ── */
+const P={drive:'<path d="M3 16.5v-3l1.8-4.6A2 2 0 0 1 6.7 7.6h10.6a2 2 0 0 1 1.9 1.3L21 13.5v3z"/><circle cx="7.2" cy="16.6" r="1.5"/><circle cx="16.8" cy="16.6" r="1.5"/>',
+ fly:'<path d="M21 3 3 10.6l7.1 2.6 2.6 7.1z"/><path d="M21 3 10.6 13.4"/>',
+ train:'<rect x="6" y="3.2" width="12" height="12.6" rx="2.4"/><path d="M6 10.2h12"/><path d="M9 18.4 7 21M15 18.4 17 21"/>',
+ ferry:'<path d="M5.2 14.6V9.4h13.6l-2.2 5.2"/><path d="M9 9.4V6.2h6v3.2"/><path d="M2.8 18.2c1.6 1.1 3.2 1.1 4.8 0s3.2-1.1 4.8 0 3.2 1.1 4.8 0 3.2-1.1 4.8 0"/>',
+ water:'<path d="M12 3.2v11.4M12 14.6H5.6L12 3.2z"/><path d="M2.8 18.2c1.6 1.1 3.2 1.1 4.8 0s3.2-1.1 4.8 0 3.2 1.1 4.8 0 3.2-1.1 4.8 0"/>',
+ bed:'<path d="M3 18v-8M3 13h18v5M7 10.5h4.5a2 2 0 0 1 2 2V13H7z"/><circle cx="5.6" cy="9.4" r="1.4"/>',
+ pencil:'<path d="M15.3 4.6 19.4 8.7M4 20h4.1L19.4 8.7a1.7 1.7 0 0 0 0-2.4l-1.7-1.7a1.7 1.7 0 0 0-2.4 0L4 15.9z"/>',
+ arrow:'<path d="M4 12h15M13.5 6.5 20 12l-6.5 5.5"/>'};
+const icon=(n,s)=>'<svg class="ic" viewBox="0 0 24 24" width="'+(s||15)+'" height="'+(s||15)+'" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(P[n]||'')+'</svg>';
+const MODES=[["drive","Drive"],["fly","Fly"],["train","Rail"],["ferry","Ferry"],["water","Boat"],["bike","Bike"],["walk","Walk"]];
+const MODE_COLOR={drive:"#F2A900",fly:"#3E7CB1",train:"#7E57C2",ferry:"#2F8F52",water:"#035A83",bike:"#035A83",walk:"#035A83"};
+
+/* ── map ── */
+const map=L.map("map",{zoomControl:false}).setView([39.5,-98.35],4);
+L.control.zoom({position:"bottomleft"}).addTo(map);
+/* Attribution joins zoom on the left rather than getting an offset of its own: bottom-right
+   is the keepbar's, and lifting it clear there walks it into the .mapbtns column. OSM and
+   CARTO both require it to be legible, so it does not get to sit under a bar. Leaflet's own
+   .leaflet-control{clear:both} stacks it under the zoom buttons. */
+map.attributionControl.setPosition("bottomleft");
+/* D-091: the tiles follow the sky this page already computes. D-087 gave /quick and
+   /quicktree a two-state map control because a full-viewport map hides the gradient and a sky
+   control there would be theatre. This page is the exception it did not cover: the hero sits ON
+   the gradient and the map only covers it afterwards, so /new keeps theme.js's three states and
+   the map reads the result instead of carrying a second control. Before this, a visitor with
+   ttb_theme=dark saw the moon glyph in this page's own bar and a white map under it.
+
+   Light stays light_all rather than moving to maptheme.js's voyager: this page's overlays are
+   cards and pills sitting ON the map, and light_all is the paler ground for them. Matching
+   voyager would be consistency bought with legibility.
+
+   setUrl on the one layer, never a second addTo — D-087 learned that a second base layer sits
+   under the themed one forever. */
+const TILE_LIGHT="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const TILE_DARK ="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const skyIsDark=()=>{const s=document.documentElement.getAttribute("data-sky");return s==="night"||s==="dusk";};
+let baseIsDark=skyIsDark();
+const baseTiles=L.tileLayer(baseIsDark?TILE_DARK:TILE_LIGHT,
+  {maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap © CARTO"}).addTo(map);
+/* Observing the attribute rather than hooking theme.js: it owns data-sky, and it changes it from
+   a click AND from a five-minute timer that follows the clock through dusk on `auto`. */
+new MutationObserver(()=>{const d=skyIsDark();if(d===baseIsDark)return;baseIsDark=d;
+  baseTiles.setUrl(d?TILE_DARK:TILE_LIGHT);})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-sky"]});
+const layer=L.layerGroup().addTo(map), drawGroup=L.layerGroup().addTo(map);
+
+/* ── STATE (D-037): legs are the unit. A leg owns its destination; its origin is
+   inherited from the previous leg, so one point is never edited from two cards. ── */
+/* A trip is one or two ROUTES (D-011: two tracks, fixed colours). Each route is its own
+   chain — its own origin and its own legs — which is how "Mel flies in and joins us" is
+   expressed: a second route that happens to end where the first one is. */
+const TRACKS=[{key:"truck",label:"Vehicle 1",color:"#F2A900"},{key:"rental",label:"Vehicle 2",color:"#3E7CB1"}];
+let routes=[{origin:null,legs:[]}];   // routes[i] maps to TRACKS[i]
+let active=0;                          // which route the next map tap builds
+const R=()=>routes[active];
+Object.defineProperty(window,"origin",{get:()=>R().origin,set:v=>{R().origin=v;},configurable:true});
+Object.defineProperty(window,"legs",{get:()=>R().legs,set:v=>{R().legs=v;},configurable:true});
+let pending=null;     // first tap of the very first leg
+let PEOPLE=[];        // real crew only — never invented placeholder names
+let uid=0, restoring=false, drawing=null, draft=[];
+const PERSON_COLORS=["#F2A900","#3E7CB1","#7E57C2","#2F8F52","#D9531F","#556B7D"];
+
+const esc=t=>{const d=document.createElement("div");d.textContent=t==null?"":t;return d.innerHTML;};
+const coordLabel=p=>"Dropped pin · "+p.lat.toFixed(3)+", "+p.lng.toFixed(3);
+const shortPlace=d=>{const p=(d||"").split(",");return (p.length>2?p.slice(0,2).join(","):d).trim()||d;};
+const lastPoint=()=>legs.length?legs[legs.length-1].to:origin;
+
+async function revName(lat,lng){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),4000);
+  // Through our own server (D-045): Nominatim's cache sometimes serves a variant with no CORS
+  // header, and the browser then throws a perfectly good name away and shows raw coordinates.
+  try{const r=await fetch("/api/geocode?lat="+lat+"&lon="+lng,
+        {headers:{accept:"application/json"},signal:c.signal});
+      const d=await r.json();clearTimeout(t);return (d&&d.name)?d.name:null;}
+  catch(e){clearTimeout(t);return null;}
+}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2200);}
+
+function enterBuild(){document.body.classList.remove("pre");
+  setTimeout(()=>{map.invalidateSize();syncLayout();},380);}
+/* The hero's second path. Opens build with the chat already up, so "describe it" lands
+   somewhere ready to type into rather than on a map with a hidden button. */
+function enterBuildAsk(){enterBuild();
+  setTimeout(()=>{const w=document.getElementById("askwrap");
+    if(w&&w.hidden) toggleAsk(); else document.getElementById("askText")&&document.getElementById("askText").focus();},420);}
+/* the map is the ground; the floating overlays need to know how much of it the cards cover */
+function syncLayout(){
+  const rw=document.getElementById("railwrap"), kb=document.querySelector(".keepbar"),
+        pr=document.querySelector(".prompt");
+  const rh=(rw&&!document.body.classList.contains("full"))?Math.round(rw.getBoundingClientRect().height):0;
+  const kh=kb?Math.round(kb.getBoundingClientRect().height):0;
+  /* the prompt is the third floating layer and the widest one on a phone — its place field
+     runs nearly edge to edge, so the zoom control has to clear it too, not just the rail.
+     display:none in body.full measures 0, which is the offset we want there anyway. */
+  const ph=pr?Math.round(pr.getBoundingClientRect().height):0;
+  document.documentElement.style.setProperty("--rail-h",rh+"px");
+  document.documentElement.style.setProperty("--keep-h",kh+"px");
+  document.documentElement.style.setProperty("--prompt-h",ph+"px");
+}
+window.addEventListener("resize",()=>{map.invalidateSize();syncLayout();});
+/* the map is already fullscreen — this clears the cards off it */
+function toggleFull(){const on=document.body.classList.toggle("full");
+  document.getElementById("fsBtn").innerHTML=on
+    ? '⤡ <span class="lbl">Show cards</span>' : '⤢ <span class="lbl">Hide cards</span>';
+  syncLayout(); setTimeout(()=>{map.invalidateSize();frameTrip(true);},60);}
+
+/* ── scratch (D-029): client-side only, nothing on a server until they keep it ── */
+function saveScratch(){
+  if(restoring) return;
+  const d={v:3,created:Date.now(),name:document.getElementById("tripName").textContent.trim(),
+    /* D-075: same rule on the way out. `id` is this editor's own in-memory handle and must not
+       reach the draft; everything else the leg happens to carry — subtype, craft, flight — is
+       written back untouched. Rebuilding from a fixed list here is what made the first edit
+       after an agent handover delete the flight number for good. */
+    people:PEOPLE,routes:routes.map(r=>({origin:r.origin,
+      legs:r.legs.map(({id,...l})=>({...l,to:l.to,mode:l.mode,date:l.date,who:l.who,
+        path:l.path||null,stay:l.stay||null,note:l.note||""}))}))};
+  try{localStorage.setItem(SCRATCH_KEY,JSON.stringify(d));}catch(e){}
+  updateKeep();
+}
+function updateKeep(){document.getElementById("keepBtn").disabled = routes.every(r=>!r.legs.length);}
+/* Build-before-pay only stays honest if there's a free way to keep your work.
+   localStorage is fragile in ways people don't expect (incognito, clearing data,
+   iOS eviction, another device), and if paying were the ONLY way to make a draft
+   durable, that fragility would read as manufactured pressure. So: export/import,
+   no server, no account, no email. */
+function saveCopy(){
+  saveScratch();
+  const raw=localStorage.getItem(SCRATCH_KEY);
+  if(!raw){toast("Nothing to save yet");return;}
+  const name=(document.getElementById("tripName").textContent.trim()||"trip")
+    .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"trip";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([raw],{type:"application/json"}));
+  a.download=name+".thistripbtw.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast("Saved a copy to your device");
+}
+function openCopyFile(inp){
+  const f=inp.files&&inp.files[0]; inp.value="";
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d||(!d.routes&&!d.legs&&!d.stops)) throw new Error("not a trip file");
+      localStorage.setItem(SCRATCH_KEY,JSON.stringify(d));
+      location.reload();
+    }catch(e){toast("That file isn't a saved trip");}
+  };
+  r.readAsText(f);
+}
+/* ── which door they came in by (D-055) ─────────────────────────────────────────────────
+   The one measurement compatible with promising no analytics. `?via=agents` is remembered
+   for this draft and handed to Stripe as `client_reference_id` on the checkout link, so the
+   Stripe dashboard can say "this purchase came from the agents page" and nothing else can.
+
+   What it is not: not a cookie, not an identifier, not persistent, not cross-site, and not
+   attached to a person. It is a word on a payment Stripe already has in full. Without it the
+   choice is between guessing whether a channel works and building a tracker, and neither is
+   acceptable. Allowlisted so a stranger cannot stuff arbitrary text into our payment records
+   by handing someone a crafted link.
+   Attribution is first-touch for the tab: sessionStorage keeps the first door you came in
+   by until the tab closes, so wandering off to /about and back does not relabel the visit.
+   A rejected token stores nothing rather than truncating to something plausible. */
+const VIA_KEY = "ttb_via";
+(function(){
+  const m = (location.search.match(/[?&]via=([a-z0-9-]{1,16})\b/) || [])[1];
+  if (m) { try { sessionStorage.setItem(VIA_KEY, m); } catch(e){} }
+})();
+function viaParam(){
+  let v = ""; try { v = sessionStorage.getItem(VIA_KEY) || ""; } catch(e){}
+  return /^[a-z0-9-]{1,16}$/.test(v) ? "?client_reference_id=via_" + v : "";
+}
+
+function keepIt(tier){
+  if(routes.every(r=>!r.legs.length)){toast("Add a leg first — then you can keep it");return;}
+  saveScratch();
+  /* The draft rides to checkout in this browser's localStorage and is picked up again on the
+     way back. That is the whole design — we never had a copy, because we never asked who you
+     are — but it means paying somewhere else (a different phone, an in-app browser that opens
+     Stripe elsewhere) buys an empty trip and silently loses the build. It is the one moment in
+     the product where money changes hands and work can vanish, so it gets a sentence and a
+     chance to take the file with you. */
+  const go = () => {
+    /* Was `PAY[tier] || PAY.keep`, which sent an unrecognised tier to the $5 checkout with no
+       error and nothing in the logs — a customer paying a price nobody chose. A payment link
+       is the last place in the product that should guess. */
+    const url = PAY[tier];
+    if(!url){ toast("Couldn't open checkout — tell me and I'll fix it"); return; }
+    window.location.href = url + viaParam();
+  };
+  if (sessionStorage.getItem("ttb_handoff_ack")) return go();
+  const legs = routes.reduce((n,r)=>n+r.legs.length, 0);
+  const ok = confirm(
+    "Finish checkout in this browser.\n\n" +
+    "Your " + legs + "-leg trip is saved on this device and comes with you when you get back. " +
+    "Paying on a different phone or browser would give you an empty trip instead.\n\n" +
+    "OK to continue — or Cancel to save a copy of the trip first.");
+  if(!ok){ saveCopy(); return; }
+  sessionStorage.setItem("ttb_handoff_ack","1");
+  go();
+}
+
+/* ── creating legs: tap origin, tap destination; after that one tap per leg ── */
+function setPrompt(){
+  const t=document.getElementById("pTitle"),s=document.getElementById("pSub");
+  if(drawing){t.textContent="Tracing the route";s.textContent="Tap along the way, then hit Done.";return;}
+  if(!origin&&!pending){t.textContent="Tap where you're starting";s.textContent="Then tap where you're going — that's your first leg.";}
+  else if(pending){t.textContent="Now tap where you're going";s.textContent="Those two points make your first leg.";}
+  else{t.textContent="Tap where you're going next";
+    s.textContent=(routes.length>1?TRACKS[active].label+" — ":"")+"each leg starts from "+((lastPoint()||{}).name||"your last stop")+".";}
+}
+function addLeg(to){legs.push({id:++uid,to,mode:"drive",date:"",who:[],path:null,stay:null,note:""});
+  render(); frameTrip(true);}
+
+/* ── Ask: describe the trip, get legs (D-035 pre-purchase — structure only) ──────────
+   The draft never leaves the browser except as coordinates and text for this one request:
+   /api/draft-chat writes nothing, it hands legs back and we keep them in the same scratch
+   the map taps use. Two goes per draft, enforced server-side; the count shown here is
+   whatever the server says is left, not a number this page can talk itself out of. */
+let askMsgs = [], askBusy = false, askNote = "", askLeft = 2;
+
+document.addEventListener("DOMContentLoaded", () => {
+  const f = document.getElementById("askForm");
+  if(!f) return;
+  f.onsubmit = e => { e.preventDefault(); askSend(); };
+  document.getElementById("askText").addEventListener("keydown", e => {
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); askSend(); }
+  });
+});
+
+function toggleAsk(){
+  const w = document.getElementById("askwrap");
+  w.hidden = !w.hidden;
+  document.getElementById("askBtn").classList.toggle("sel", !w.hidden);
+  if(!w.hidden){ drawAsk(); document.getElementById("askText").focus(); }
+}
+
+/* Nominatim's first hit for a bare city name is not necessarily the right continent —
+   "Reno" resolves to a place in Germany before Nevada. Ask for several, then prefer the one
+   nearest what the trip already contains; with an empty draft, fall back to the most
+   prominent. Taking hits[0] draws a leg from Koblenz to Utah and looks like a bug in us. */
+async function fwdGeocode(q, near){
+  try{
+    const r = await fetch("/api/geocode?q=" + encodeURIComponent(q),
+      {headers:{accept:"application/json"}});
+    const j = r.ok ? ((await r.json()).results || []) : [];
+    return pickPlace(j, near);
+  }catch(e){ return null; }
+}
+
+/* The choice, separated from the fetch so it can be tested without the network.
+   Nearest-to-anchor beats Nominatim's own ranking: for "Reno" the German one outranks
+   Nevada on importance, and an anchor anywhere in North America settles it correctly. */
+function pickPlace(cands, near){
+  if(!cands || !cands.length) return null;
+  let best = cands[0];
+  if(near){
+    let bd = Infinity;
+    for(const h of cands){
+      const d = Math.hypot(+h.lat - near.lat, +h.lon - near.lng);
+      if(d < bd){ bd = d; best = h; }
+    }
+  }else{
+    for(const h of cands) if((+h.importance || 0) > (+best.importance || 0)) best = h;
+  }
+  return {lat:+best.lat, lng:+best.lon};
+}
+
+/* Anchor for the above: the middle of what's drafted, else where the map is pointed.
+   The empty draft is the COMMON case — it's someone's first sentence — and importance
+   alone still lands "Reno" in Germany. The map centre is a real signal about which part
+   of the world this person is planning in, and it costs nothing to use. */
+function draftCentre(){
+  const s = draftStops();
+  if(s.length) return {lat: s.reduce((a,x)=>a+x.lat,0)/s.length, lng: s.reduce((a,x)=>a+x.lng,0)/s.length};
+  try{ const c = map.getCenter(); return {lat:c.lat, lng:c.lng}; }catch(e){ return null; }
+}
+
+/* Server speaks pins; this page speaks {origin, legs}. A track's first pin is its origin
+   (D-037) and carries no inbound leg; everything after it becomes a leg into that place. */
+function applyDraftLegs(pins){
+  let added = 0;
+  for(const p of pins || []){
+    const ti = p.track === "rental" ? 1 : 0;
+    while(routes.length <= ti) routes.push({origin:null, legs:[]});
+    const to = {name:p.title || "Stop", lat:+p.lat, lng:+p.lng};
+    if(!routes[ti].origin && !routes[ti].legs.length){ routes[ti].origin = to; added++; continue; }
+    routes[ti].legs.push({id:++uid, to,
+      mode: ["drive","fly","train","ferry","water","bike","walk"].includes(p.mode) ? p.mode : "drive",
+      date: p.date || "", who: p.author ? String(p.author).split(" & ") : [],
+      path: null, stay: null, note: p.notes || ""});
+    added++;
+  }
+  if(added){ saveScratch(); render(); frameTrip(true); }
+  return added;
+}
+
+/* What the model is allowed to see: the shape of the draft, not the person's notes. */
+function draftStops(){
+  const out = [];
+  routes.forEach((r, ti) => {
+    const track = TRACKS[ti] ? TRACKS[ti].key : "truck";
+    let seq = 0;
+    if(r.origin) out.push({track, seq:seq++, lat:r.origin.lat, lng:r.origin.lng, title:r.origin.name, mode:"drive", date:""});
+    (r.legs||[]).forEach(l => out.push({track, seq:seq++, lat:l.to.lat, lng:l.to.lng,
+      title:l.to.name, mode:l.mode || "drive", date:l.date || ""}));
+  });
+  return out;
+}
+
+function drawAsk(){
+  const log = document.getElementById("askLog");
+  log.innerHTML = "";
+  if(!askMsgs.length && !askNote)
+    log.innerHTML = '<div class="chat-hint">Tell me the trip the way you\'d tell a friend. '
+      + 'I\'ll add the legs — you can fix anything I get wrong.</div>';
+  askMsgs.forEach(m => {
+    const t = typeof m.content === "string" ? m.content
+            : (m.content||[]).filter(b => b.type === "text").map(b => b.text).join(" ");
+    if(!t.trim()) return;
+    const b = document.createElement("div");
+    b.className = "chat-b " + (m.role === "user" ? "me" : "them");
+    b.textContent = t; log.appendChild(b);
+  });
+  if(askNote){ const n = document.createElement("div"); n.className = "chat-note"; n.textContent = askNote; log.appendChild(n); }
+  log.scrollTop = log.scrollHeight;
+  const ta = document.getElementById("askText"), btn = document.querySelector(".chat-send");
+  ta.disabled = askBusy || askLeft <= 0; btn.disabled = ta.disabled;
+  btn.textContent = askBusy ? "…" : "Send";
+  document.getElementById("askFoot").textContent = askLeft > 0
+    ? (askLeft === 1 ? "One more go before you buy. Your conversation isn't stored."
+                     : "Two goes before you buy. Your conversation isn't stored.")
+    : "That's both goes — keep building by hand, it all carries over when you buy.";
+}
+
+async function askSend(){
+  const ta = document.getElementById("askText");
+  const text = ta.value.trim();
+  if(!text || askBusy || askLeft <= 0) return;
+  askMsgs.push({role:"user", content:text});
+  askBusy = true; askNote = "thinking…"; ta.value = ""; drawAsk();
+  const post = async body => {
+    const r = await fetch("/api/draft-chat", {method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify(body)});
+    const d = await r.json().catch(() => ({error:"the assistant didn't answer"}));
+    if(!r.ok) throw new Error(d.error || "that didn't work");
+    return d;
+  };
+  try{
+    let d = await post({messages:askMsgs, stops:draftStops()});
+    for(let i = 0; i < 3 && d.needs_places && d.needs_places.length; i++){
+      askNote = "finding " + d.needs_places.join(", ") + "…"; drawAsk();
+      const places = {};
+      for(const nm of d.needs_places){
+        const hit = await fwdGeocode(nm, draftCentre());
+        if(hit){ places[nm] = hit; }
+        await new Promise(r => setTimeout(r, 1100));      // Nominatim asks ~1 req/sec
+      }
+      if(!Object.keys(places).length){ askNote = "I couldn't place " + d.needs_places.join(", ") + " — try a nearby town?"; break; }
+      d = await post({messages:d.messages, stops:draftStops(), places});
+    }
+    askMsgs = d.messages || askMsgs;
+    if(typeof d.turns_left === "number") askLeft = d.turns_left;
+    const n = applyDraftLegs(d.legs);
+    askNote = n ? "added " + (d.added || []).join(", ") : askNote.startsWith("I couldn't") ? askNote : "";
+  }catch(err){
+    askNote = err.message || "that didn't work";
+  }finally{
+    askBusy = false; drawAsk();
+  }
+}
+/* Zoom so the whole trip sits in the band of map that the floating cards leave visible —
+   otherwise the route hides behind them (Peter, 2026-07-27). */
+function frameTrip(animate){
+  const b=routeBounds(); if(!b) return;
+  requestAnimationFrame(()=>{
+    syncLayout();
+    const rail=parseInt(getComputedStyle(document.documentElement).getPropertyValue("--rail-h"))||0;
+    const keep=parseInt(getComputedStyle(document.documentElement).getPropertyValue("--keep-h"))||0;
+    const bottom=document.body.classList.contains("full")?40:rail+keep+24;
+    try{map.fitBounds(b,{paddingTopLeft:[28,76],paddingBottomRight:[28,bottom],
+      animate:!!animate,duration:.7,maxZoom:13});}catch(e){}
+  });
+}
+
+map.on("click",async e=>{
+  if(drawing){draft.push([e.latlng.lat,e.latlng.lng]);renderDraft();return;}
+  const pt={name:"Locating…",lat:e.latlng.lat,lng:e.latlng.lng};
+  if(!origin&&!pending){pending=pt;render();pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt);render();saveScratch();return;}
+  if(pending){origin=pending;pending=null;addLeg(pt);} else addLeg(pt);
+  pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt);render();saveScratch();
+});
+/* A typed place enters the trip through the map's own click handler, not a parallel copy of
+   it. One path means the leg-chaining rules, the naming and the save can only behave one way. */
+(function(){
+  var i = document.getElementById("pFind");
+  if(!i || typeof attachSuggest !== "function") return;
+  attachSuggest(i, {
+    near: function(){ try{ var c = map.getCenter(); return {lat:c.lat, lng:c.lng}; }catch(e){ return null; } },
+    onPick: function(p){
+      i.value = "";
+      i.blur();
+      map.setView([p.lat, p.lng], 9);
+      map.fire("click", { latlng: L.latLng(p.lat, p.lng) });
+    }
+  });
+})();
+
+function undoLast(){
+  if(drawing) return cancelDraw();
+  if(pending) pending=null; else if(legs.length) legs.pop(); else origin=null;
+  render();saveScratch();
+}
+function nearMe(){
+  if(!navigator.geolocation){toast("Location isn't available");return;}
+  toast("Asking your browser for location…");
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude:lat,longitude:lng}=pos.coords; map.setView([lat,lng],12);
+    const pt={name:"Locating…",lat,lng};
+    if(!origin&&!pending){origin=pt;} else if(pending){origin=pending;pending=null;addLeg(pt);} else addLeg(pt);
+    render(); pt.name=(await revName(lat,lng))||coordLabel(pt); render(); saveScratch();
+  },()=>toast("No location — tap the map instead"),{enableHighAccuracy:true,timeout:8000});
+}
+
+/* ── road routing (D-027): drive follows roads, fly arcs, boat/rail use the drawn path ── */
+const routeCache=new Map(),routePending=new Set();
+const sig=p=>p.map(x=>x[0].toFixed(4)+","+x[1].toFixed(4)).join(";");
+function cachedRoute(k){if(routeCache.has(k))return routeCache.get(k);
+  try{const s=localStorage.getItem("ttb_route_"+k);if(s){const v=JSON.parse(s);routeCache.set(k,v);return v;}}catch(e){}return undefined;}
+async function fetchRoute(pts,k){
+  if(routePending.has(k))return; routePending.add(k);
+  // Item 14: our own endpoint — OSRM stops seeing user IPs, and it answers [lat,lng].
+  try{const r=await fetch("/api/route?c="+encodeURIComponent(pts.map(p=>p[0]+","+p[1]).join(";")));
+    const d=await r.json();
+    const geo=Array.isArray(d&&d.path)?d.path:null; routeCache.set(k,geo);
+    try{localStorage.setItem("ttb_route_"+k,JSON.stringify(geo));}catch(e){}}
+  catch(e){routeCache.set(k,null);}
+  routePending.delete(k); drawMap();
+}
+function arcPoints(a,b,steps=40,curve=.18){
+  const dx=b[0]-a[0],dy=b[1]-a[1],cx=(a[0]+b[0])/2-dy*curve,cy=(a[1]+b[1])/2+dx*curve,o=[];
+  for(let i=0;i<=steps;i++){const t=i/steps;
+    o.push([(1-t)*(1-t)*a[0]+2*(1-t)*t*cx+t*t*b[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*cy+t*t*b[1]]);}
+  return o;
+}
+function drawMap(){
+  layer.clearLayers();
+  if(pending) L.marker([pending.lat,pending.lng],{icon:L.divIcon({className:"",iconSize:[30,30],
+    iconAnchor:[15,15],html:'<div class="pin pending">?</div>'})}).addTo(layer);
+  routes.forEach((rt,ri)=>drawRoute(rt,ri));
+}
+function drawRoute(rt,ri){
+  const tint=TRACKS[ri].color, dim=(routes.length>1&&ri!==active);
+  const pts=[]; if(rt.origin) pts.push(rt.origin); rt.legs.forEach(l=>pts.push(l.to));
+  pts.forEach((p,i)=>{
+    L.marker([p.lat,p.lng],{icon:L.divIcon({className:"",iconSize:[30,30],iconAnchor:[15,15],
+      html:'<div class="pin" style="background:'+tint+';opacity:'+(dim?.55:1)+'">'+(i+1)+'</div>'})}).addTo(layer)
+      .bindTooltip(esc((routes.length>1?TRACKS[ri].label+" · ":"")+p.name),{direction:"top",offset:[0,-14]});
+  });
+  let from=rt.origin;
+  rt.legs.forEach(l=>{
+    if(!from) return;
+    const A=[from.lat,from.lng],B=[l.to.lat,l.to.lng],col=tint,op=dim?.45:.9;
+    if(l.mode==="drive"){
+      const k=sig([A,B]),geo=cachedRoute(k);
+      if(geo&&geo.length) L.polyline(geo,{color:col,weight:4,opacity:op,lineCap:"round"}).addTo(layer);
+      else{L.polyline([A,B],{color:col,weight:4,opacity:op*.7,dashArray:"1 9"}).addTo(layer);
+        if(geo===undefined) fetchRoute([A,B],k);}
+    } else if(l.mode==="fly"){
+      L.polyline(arcPoints(A,B),{color:col,weight:2.5,opacity:op,dashArray:"2 6"}).addTo(layer);
+    } else if(Array.isArray(l.path)&&l.path.length){
+      L.polyline([A,...l.path,B],{color:col,weight:3.5,opacity:op,lineCap:"round"}).addTo(layer);
+    } else {
+      L.polyline([A,B],{color:col,weight:3.5,opacity:op,dashArray:"5 7"}).addTo(layer);
+    }
+    const mid=[(A[0]+B[0])/2,(A[1]+B[1])/2];
+    L.marker(mid,{interactive:false,icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],
+      html:'<div class="legglyph">'+icon(l.mode,20)+'</div>'})}).addTo(layer);
+    from=l.to;
+  });
+}
+function routeBounds(){const p=[];
+  routes.forEach(r=>{if(r.origin)p.push([r.origin.lat,r.origin.lng]);r.legs.forEach(l=>p.push([l.to.lat,l.to.lng]));});
+  return p.length?L.latLngBounds(p):null;}
+
+/* ── draw-a-path for boat/rail legs (D-027) ── */
+function startDraw(i){
+  const l=legs[i],from=i===0?origin:legs[i-1].to;
+  if(!from){toast("This leg needs a starting point first");return;}
+  drawing={leg:l,from};draft=Array.isArray(l.path)?l.path.slice():[];
+  document.getElementById("drawbar").classList.add("on");setPrompt();
+  try{map.fitBounds(L.latLngBounds([[from.lat,from.lng],[l.to.lat,l.to.lng]]).pad(.6));}catch(e){}
+  renderDraft();
+}
+function renderDraft(){
+  drawGroup.clearLayers(); if(!drawing) return;
+  const f=drawing.from,t=drawing.leg.to;
+  L.polyline([[f.lat,f.lng],...draft,[t.lat,t.lng]],{color:"#035A83",weight:3,opacity:.9,dashArray:"6 6"}).addTo(drawGroup);
+  draft.forEach(p=>L.circleMarker(p,{radius:4,color:"#035A83",fillColor:"#fff",fillOpacity:1,weight:2}).addTo(drawGroup));
+}
+function clearDraw(){if(drawing){draft=[];renderDraft();}}
+function cancelDraw(){drawing=null;draft=[];drawGroup.clearLayers();document.getElementById("drawbar").classList.remove("on");setPrompt();}
+function finishDraw(){
+  if(!drawing) return;
+  drawing.leg.path=draft.length?draft.slice():null;
+  drawing=null;draft=[];drawGroup.clearLayers();
+  document.getElementById("drawbar").classList.remove("on");
+  render();saveScratch();toast("Route drawn");
+}
+
+/* ── crew ── */
+function renderWho(box,l){
+  box.textContent="";
+  PEOPLE.forEach(p=>{
+    const c=document.createElement("button");
+    c.type="button";c.setAttribute("role","checkbox");
+    const on=l.who.includes(p.name);
+    c.setAttribute("aria-checked",on?"true":"false");
+    c.className="chip"+(on?" sel":"");
+    const d=document.createElement("span");d.className="dot";d.style.background=p.color;
+    c.appendChild(d);c.appendChild(document.createTextNode(p.name));
+    c.onclick=()=>{l.who=on?l.who.filter(x=>x!==p.name):l.who.concat(p.name);render();saveScratch();};
+    box.appendChild(c);
+  });
+  const add=document.createElement("button");
+  add.type="button";add.className="chip addp";add.textContent=PEOPLE.length?"+ add":"+ add someone";
+  add.onclick=()=>{
+    const inp=document.createElement("input");
+    inp.className="addp-in";inp.placeholder="their name";inp.maxLength=24;
+    add.replaceWith(inp);inp.focus();
+    let done=false;
+    const commit=()=>{if(done)return;done=true;
+      const v=inp.value.trim();
+      if(v&&!PEOPLE.some(p=>p.name.toLowerCase()===v.toLowerCase()))
+        PEOPLE.push({name:v,color:PERSON_COLORS[PEOPLE.length%PERSON_COLORS.length]});
+      render();saveScratch();};
+    inp.addEventListener("blur",commit);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commit();}
+      else if(e.key==="Escape"){done=true;render();}});
+  };
+  box.appendChild(add);
+}
+
+/* ── render ── */
+function render(){
+  setPrompt();drawMap();
+  const rail=document.getElementById("rail");rail.innerHTML="";
+  const total=routes.reduce((n,r)=>n+r.legs.length,0);
+  document.getElementById("legCount").textContent=total?total+(total===1?" leg":" legs")+(routes.length>1?" · "+routes.length+" routes":""):"no legs yet";
+  document.body.classList.toggle("hasleg", total>0);   // F5: the keepbar's explanation retires itself
+  updateKeep();
+
+  if(routes.every(r=>!r.legs.length)){
+    const e=document.createElement("div");e.className="empty";
+    e.innerHTML=pending
+      ? "<b>Good — now tap your destination</b>Those two points become your first leg."
+      : "<b>Tap the map to start</b>A trip is made of legs: where you're going, how, and who's along.";
+    rail.appendChild(e);requestAnimationFrame(syncLayout);return;
+  }
+  requestAnimationFrame(syncLayout);
+  routes.forEach((rt,ri)=>{
+    if(!rt.legs.length && ri!==active) return;
+    if(routes.length>1) rail.appendChild(routeHead(rt,ri));
+    let from=rt.origin;
+    rt.legs.forEach((l,i)=>{
+      rail.appendChild(legCard(l,i,from,rt,ri));
+      if(l.stay) rail.appendChild(stayCard(l,i,rt));
+      from=l.to;
+    });
+  });
+  // a second route is how "someone flies in and joins us" gets expressed (D-011: two tracks)
+  if(routes.length<TRACKS.length && routes[0].legs.length){
+    const b=document.createElement("button");
+    b.type="button";b.className="addtile";
+    b.innerHTML='<span class="plus">+</span><span>add another route</span>';
+    b.onclick=()=>{routes.push({origin:null,legs:[]});active=routes.length-1;pending=null;
+      render();saveScratch();toast(TRACKS[active].label+" — tap where they start");};
+    rail.appendChild(b);
+  }
+}
+function routeHead(rt,ri){
+  const el=document.createElement("button");
+  el.type="button";el.className="routehead"+(ri===active?" on":"");
+  el.setAttribute("aria-pressed",ri===active?"true":"false");
+  el.innerHTML='<span class="rdot" style="background:'+TRACKS[ri].color+'"></span>'+
+    '<span class="rlab">'+TRACKS[ri].label+'</span>'+
+    '<span class="rn">'+rt.legs.length+(rt.legs.length===1?" leg":" legs")+'</span>';
+  el.onclick=()=>{active=ri;pending=null;render();toast("Building "+TRACKS[ri].label);};
+  return el;
+}
+
+function legCard(l,i,from,rt,ri){
+  const el=document.createElement("div");el.className="card";
+  const drawable=(l.mode==="water"||l.mode==="train"), hasPath=Array.isArray(l.path)&&l.path.length;
+  el.innerHTML=`
+    <div class="ctype">${routes.length>1?esc(TRACKS[ri].label)+" · ":""}Leg ${i+1}</div>
+    <span class="saved" role="status" aria-live="polite">saved ✓</span>
+    <button type="button" class="zoombtn" aria-label="Expand this leg">⤢</button>
+    <div class="route"><input class="place from" value="${esc(from?from.name:"")}" ${i===0?"":"readonly"} aria-label="${i===0?"Where the trip starts":"Starts where the last leg ended"}"></div>
+    <div class="from-note">${i===0?"Where the trip starts — edit freely.":"Starts where leg "+i+" ended."}</div>
+    <div class="route">${icon("arrow",18)}<input class="place to" value="${esc(l.to.name)}" aria-label="Where this leg goes"></div>
+    <label class="f">How</label>
+    <div class="chips how" role="radiogroup" aria-label="How this leg travels">
+      ${MODES.map(([m,lab])=>`<button type="button" class="chip${l.mode===m?" sel":""}" role="radio" aria-checked="${l.mode===m}" data-m="${m}">${icon(m)}${lab}</button>`).join("")}
+    </div>
+    <button class="moretog" type="button" aria-expanded="false">Add detail</button>
+    <div class="detail">
+      <label class="f">When <span class="opt">· optional</span></label>
+      <input class="fld date" type="date" value="${l.date||""}" aria-label="When this leg travels">
+      <label class="f">Who's on this leg</label>
+      <div class="chips who"></div>
+      <label class="f">Note</label>
+      <textarea class="fld note" placeholder="Anything the crew should know">${esc(l.note)}</textarea>
+      ${drawable?`<button type="button" class="lnk draw ${hasPath?"done":""}">${icon("pencil",14)}${hasPath?"Edit the "+(l.mode==="water"?"boat":"rail")+" route ✓":"Draw the "+(l.mode==="water"?"boat":"rail")+" route"}</button>`:""}
+    </div>
+    <div class="cardfoot">
+      ${l.stay?"":`<button type="button" class="lnk addstay">${icon("bed",14)}Add a stay</button>`}
+      <button type="button" class="lnk del">Remove leg</button>
+    </div>`;
+  const flash=()=>{const s=el.querySelector(".saved");s.classList.add("on");};
+  el.querySelector(".zoombtn").onclick=()=>zoomCard(el);
+  if(i===0) el.querySelector(".from").addEventListener("change",e=>{rt.origin.name=e.target.value;flash();saveScratch();drawMap();});
+  el.querySelector(".to").addEventListener("change",e=>{l.to.name=e.target.value;flash();saveScratch();drawMap();});
+  el.querySelectorAll(".how .chip").forEach(b=>b.onclick=()=>{l.mode=b.dataset.m;render();saveScratch();});
+  el.querySelector(".date").addEventListener("change",e=>{l.date=e.target.value;flash();saveScratch();render();});
+  el.querySelector(".note").addEventListener("change",e=>{l.note=e.target.value;flash();saveScratch();});
+  renderWho(el.querySelector(".who"),l);
+  const mt=el.querySelector(".moretog");
+  const sync=()=>{const o=el.classList.contains("open");mt.setAttribute("aria-expanded",o?"true":"false");mt.textContent=o?"Hide detail":"Add detail";};
+  if(l.date||l.who.length||l.note||hasPath) el.classList.add("open");
+  sync(); mt.onclick=()=>{el.classList.toggle("open");sync();};
+  const dw=el.querySelector(".draw"); if(dw) dw.onclick=()=>{active=ri;startDraw(i);};
+  const as=el.querySelector(".addstay"); if(as) as.onclick=()=>{l.stay={lodging:"",note:""};render();saveScratch();};
+  el.querySelector(".del").onclick=()=>{rt.legs.splice(i,1);
+    if(!rt.legs.length&&routes.length>1&&ri>0){routes.splice(ri,1);active=Math.min(active,routes.length-1);}
+    render();saveScratch();};
+  return el;
+}
+
+/* full-screen card for detailed editing — opaque, so nothing shows through */
+function zoomCard(el){
+  const on=el.classList.toggle("zoom");
+  document.body.classList.toggle("carded",on);
+  const b=el.querySelector(".zoombtn");
+  if(b){b.textContent=on?"✕":"⤢"; b.setAttribute("aria-label",on?"Close this leg":"Expand this leg");}
+  if(on) el.classList.add("open"); else { syncLayout(); frameTrip(true); }
+  el.scrollTop=0;
+}
+function stayCard(l,i,rt){
+  const el=document.createElement("div");el.className="card stay";
+  const next=rt.legs[i+1];
+  const nights=(l.date&&next&&next.date)?Math.max(0,Math.round((new Date(next.date)-new Date(l.date))/86400000)):null;
+  el.innerHTML=`
+    <div class="ctype">${icon("bed",13)} Stay — ${esc(l.to.name)}</div>
+    <div class="from-note" style="margin-top:6px">${nights!=null?nights+(nights===1?" night":" nights")+" — from the next leg's date":"Set a date here and on the next leg to count the nights."}</div>
+    <label class="f">Lodging</label>
+    <input class="fld lodging" value="${esc(l.stay.lodging)}" placeholder="Hotel, cabin, friend's couch" aria-label="Lodging">
+    <label class="f">Notes</label>
+    <textarea class="fld snote" placeholder="Anything the crew should know" aria-label="Stay notes">${esc(l.stay.note)}</textarea>
+    <div class="cardfoot"><button type="button" class="lnk del">Remove stay</button></div>`;
+  el.querySelector(".lodging").addEventListener("change",e=>{l.stay.lodging=e.target.value;saveScratch();});
+  el.querySelector(".snote").addEventListener("change",e=>{l.stay.note=e.target.value;saveScratch();});
+  el.querySelector(".del").onclick=()=>{l.stay=null;render();saveScratch();};
+  return el;
+}
+
+document.getElementById("tripName").addEventListener("input",saveScratch);
+
+/* ── restore a draft. v3 carries routes; v2 (single chain) and v1 (stop-shaped, pre
+   D-037) both load into route 0 — migrate rather than discard someone's work. ── */
+(function boot(){
+  /* Arriving from our own CTA, the hero would ask for a decision already made — a wasted
+     tap on the only path that matters. Skip it; keep the hero for cold /new visits.
+     Budget: 4 taps to a trip worth sharing (Peter). This buys one back. */
+  try{ if(new URLSearchParams(location.search).get("go")==="1"){
+    document.body.classList.remove("pre");
+    setTimeout(()=>{map.invalidateSize();syncLayout();},60);
+    history.replaceState(null,"",location.pathname);
+  } }catch(e){}
+  /* ── a trip handed over in the URL: #d=<base64url JSON> ─────────────────────────────
+     The point of this is who can use it. An AI assistant helping someone plan a trip cannot
+     sign up for an account or enter a card — that is a hard rule for most of them — so every
+     travel tool behind a signup is simply unreachable to one. This is not: the agent composes
+     a link, the person opens it, and their trip is already on the map, free.
+
+     It is a FRAGMENT, deliberately. A fragment is never sent to the server, so nothing here
+     is stored, logged, or rate-limitable, and the promise that a draft never touches our
+     server before purchase survives intact.
+
+     Everything below treats the payload as hostile, because it arrives from a stranger's
+     link: shape checked, counts capped, coordinates range-checked, strings clamped, modes
+     matched against a fixed set. A bad payload is dropped for the local draft rather than
+     half-loaded. */
+  const MODES_OK = ["drive","fly","train","ferry","water","bike","walk"];
+  function fromHash(){
+    const m = location.hash.match(/[#&]d=([A-Za-z0-9_\-]+)/);
+    if(!m) return null;
+    try{
+      const b64 = m[1].replace(/-/g,"+").replace(/_/g,"/");
+      const json = decodeURIComponent(escape(atob(b64 + "=".repeat((4 - b64.length % 4) % 4))));
+      if(json.length > 60000) return null;
+      const raw = JSON.parse(json);
+      const pt = o => (o && typeof o.lat === "number" && typeof o.lng === "number"
+        && o.lat >= -90 && o.lat <= 90 && o.lng >= -180 && o.lng <= 180)
+        ? {name:String(o.name||"Stop").slice(0,120), lat:+o.lat, lng:+o.lng} : null;
+      const origin = pt(raw.o);
+      if(!origin) return null;
+      /* The fields an agent can carry. This used to hardcode who:[] and stay:null and drop
+         subtype/craft/flight, which made the handover LOSSY in exactly the places an assistant
+         has the most to say: who is on which leg, where they sleep, the flight number it just
+         looked up. Everything below is still treated as hostile — a stranger composed this link
+         — so each field is shape-checked, clamped, and matched against a fixed set. */
+      const SUBTYPES = ["own","rental","rideshare","taxi","bus","rv","commercial","private","heli",
+        "intercity","commuter","subway","tram","passenger","carferry","sail","motor","canoe","kayak",
+        "walk","hike","run","ebike"];
+      const CRAFT = ["Bike","Canoe","Kayak"];
+      const str = (v,n) => String(v == null ? "" : v).slice(0,n);
+      const legs = (Array.isArray(raw.l) ? raw.l : []).slice(0,40).map(l=>{
+        const to = pt(l && l.to); if(!to) return null;
+        const who = Array.isArray(l.who)
+          ? l.who.slice(0,8).map(w=>str(w,40).trim()).filter(Boolean) : [];
+        const stay = (l.stay && typeof l.stay === "object")
+          ? { lodging: str(l.stay.lodging,120), note: str(l.stay.note,400) } : null;
+        return { to,
+          mode: MODES_OK.includes(l.mode) ? l.mode : "drive",
+          date: /^\d{4}-\d{2}-\d{2}$/.test(l.date||"") ? l.date : "",
+          subtype: SUBTYPES.includes(l.subtype) ? l.subtype : null,
+          craft: CRAFT.includes(l.craft) ? l.craft : null,
+          flight: /^[A-Za-z0-9 ]{2,10}$/.test(l.flight||"") ? str(l.flight,10).toUpperCase() : null,
+          who, path: null, stay,
+          note: str(l.note,400) };
+      }).filter(Boolean);
+      return {v:3, name:String(raw.n||"").slice(0,60), people:[], routes:[{origin, legs}]};
+    }catch(e){ return null; }
+  }
+
+  /* Changing only the fragment does not reload the page, so someone already sitting on /new
+     who is handed a link would see nothing happen. Re-run the import on hashchange. */
+  addEventListener("hashchange", () => { if(/[#&]d=/.test(location.hash)) location.reload(); });
+
+  /* Read this BEFORE the replaceState further down strips the fragment: the banner is set
+     inside a setTimeout(…,0), which fires after that line has already cleared location.hash. */
+  const HANDOVER_FROM_STARTS = /[#&]t=start\b/.test(location.hash);
+  let d = fromHash();
+  if(d){
+    /* Handed over by someone else — most likely an assistant that built it for them. They did
+       not make this and have no idea what the page is, so say both things at once: it is
+       yours to change, and right now only you can see it. */
+    setTimeout(()=>{
+      const m = document.getElementById("kbMsg");
+      document.body.classList.add("handover");
+      /* A #d= trip can arrive from an assistant OR from our own /starts gallery, and telling
+         someone their assistant built the template they just tapped is simply false. `t=start`
+         marks ours; everything else is a genuine handover. */
+      var fromStarts = HANDOVER_FROM_STARTS;
+      if(m) m.innerHTML = '<span class="kb-dot"></span>' + (fromStarts
+        ? '<b>A starting point.</b> Change every part of it &mdash; the places are placeholders. ' +
+          'Only on this device until you keep it.'
+        : '<b>Your assistant built this.</b> Change anything &mdash; it&rsquo;s yours. ' +
+          'Only on this device until you keep it.');
+    }, 0);
+    // Someone handed this over; it is theirs now. Save it as the local draft and drop the
+    // payload from the address bar so a refresh does not re-import over their edits.
+    try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify(d)); }catch(e){}
+    history.replaceState(null,"",location.pathname);
+  }else{
+    try{d=JSON.parse(localStorage.getItem(SCRATCH_KEY)||"null");}catch(e){}
+  }
+  if(!d) return;
+  restoring=true;
+  document.getElementById("tripName").textContent=d.name||"";
+  if(Array.isArray(d.people)) PEOPLE=d.people;
+  /* D-075: spread the incoming leg FIRST, then set the fields this builder owns. `/quick` and the
+     agent `#d=` decoder carry subtype, craft and flight; this editor has no UI for them and used
+     to rebuild each leg from a fixed field list, so it silently dropped them before anything
+     rendered — including a flight number an assistant had just looked up, on the AX path D-069
+     made a priority. Preserving what you do not understand is the rule; a builder should only
+     ever overwrite what it can actually edit. */
+  const mk=l=>({...l,id:++uid,to:l.to,mode:l.mode||"drive",date:l.date||"",who:l.who||[],
+    path:l.path||null,stay:l.stay||null,note:l.note||""});
+  if(d.v===3&&Array.isArray(d.routes)&&d.routes.length){
+    routes=d.routes.slice(0,TRACKS.length).map(r=>({origin:r.origin||null,legs:(r.legs||[]).map(mk)}));
+  }else if(d.v===2){
+    routes=[{origin:d.origin||null,legs:(d.legs||[]).map(mk)}];
+  }else if(Array.isArray(d.stops)&&d.stops.length){
+    const pts=d.stops.filter(x=>typeof x.lat==="number");
+    if(pts.length){
+      routes=[{origin:{name:pts[0].name||pts[0].loc||"Start",lat:pts[0].lat,lng:pts[0].lng},
+        legs:pts.slice(1).map(x=>mk({to:{name:x.name||x.loc||"Stop",lat:x.lat,lng:x.lng},
+          mode:"drive",date:x.date||"",who:x.who||[],path:x.path||null,
+          stay:(x.lodging||x.note)?{lodging:x.lodging||"",note:x.note||""}:null}))}];
+    }
+  }
+  if(!routes.length) routes=[{origin:null,legs:[]}];
+  active=0; restoring=false;
+  if(routes.some(r=>r.origin||r.legs.length)){
+    enterBuild();
+    const b=routeBounds(); if(b) setTimeout(()=>{try{map.fitBounds(b.pad(.4));}catch(e){}},420);
+  }
+  render();
+})();
+render();
+</script>
+</body>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</html>

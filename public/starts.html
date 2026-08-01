@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starting points — this trip, btw</title>
+<meta name="description" content="Blank starting shapes for a trip: road trip, two vehicles meeting, rail, bike tour, a move. Open one and change everything — free, no sign-up to build.">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<style>
+  .starts{list-style:none;display:grid;gap:12px;margin:0;padding:0}
+  .start-go{display:block;padding:15px 17px;text-decoration:none;border-radius:12px;
+    background:var(--card);border:2px solid var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .start-go b{display:block;font-family:var(--font-family-display);font-weight:700;
+    font-size:19px;letter-spacing:.02em;color:var(--ink)}
+  .start-go span{display:block;margin:3px 0 7px;font-size:14.5px;color:var(--soft);line-height:1.5}
+  .start-go em{font-style:normal;font-family:var(--font-family-display);font-weight:700;
+    font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--link)}
+  .start-go:hover{transform:translateY(-1px)}
+
+.more-shapes{margin-top:18px}
+.more-shapes>summary{cursor:pointer;font-family:var(--font-family-display,var(--disp));font-weight:700;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--link);padding:10px 0;
+  min-height:44px;display:flex;align-items:center}
+.more-shapes>summary::marker{color:var(--soft)}
+.more-shapes[open]>summary{color:var(--soft)}
+</style>
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+</head>
+<body>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a class="sign" href="/"><b>this trip, btw</b></a>
+  <h1>Starting points</h1>
+  <p class="lede">Shapes, not itineraries. Open one and change every part of it.</p>
+</header>
+
+<main class="pagebody sheet">
+  <section>
+    <p>None of these is a recommendation &mdash; they are the <strong>shapes</strong> trips come
+    in, with placeholder places you replace. Opening one costs nothing and asks for nothing: no
+    account, no card, no email. It is yours to edit the moment it loads, and only yours until
+    you decide to keep it.</p>
+    <ul class="starts">
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiVHdvIHZlaGljbGVzLCBtZWV0aW5nIGluIHRoZSBtaWRkbGUiLCJvIjp7Im5hbWUiOiJDaGljYWdvLCBJTCIsImxhdCI6NDEuODc4MSwibG5nIjotODcuNjI5OH0sImwiOlt7InRvIjp7Im5hbWUiOiJPbWFoYSwgTkUiLCJsYXQiOjQxLjI1NjUsImxuZyI6LTk1LjkzNDV9LCJtb2RlIjoiZHJpdmUifSx7InRvIjp7Im5hbWUiOiJEZW52ZXIsIENPIiwibGF0IjozOS43MzkyLCJsbmciOi0xMDQuOTkwM30sIm1vZGUiOiJkcml2ZSJ9LHsidG8iOnsibmFtZSI6IlNhbHQgTGFrZSBDaXR5LCBVVCIsImxhdCI6NDAuNzYwOCwibG5nIjotMTExLjg5MX0sIm1vZGUiOiJmbHkifV19">
+          <b>Two vehicles, meeting in the middle</b>
+          <span>Some drive, someone flies in partway. Both paths on one map — the trip this was built for.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiQ2xhc3NpYyByb2FkIHRyaXAiLCJvIjp7Im5hbWUiOiJEZW52ZXIsIENPIiwibGF0IjozOS43MzkyLCJsbmciOi0xMDQuOTkwM30sImwiOlt7InRvIjp7Im5hbWUiOiJHcmFuZCBKdW5jdGlvbiwgQ08iLCJsYXQiOjM5LjA2MzksImxuZyI6LTEwOC41NTA2fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiTW9hYiwgVVQiLCJsYXQiOjM4LjU3MzMsImxuZyI6LTEwOS41NDk4fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiRGVudmVyLCBDTyIsImxhdCI6MzkuNzM5MiwibG5nIjotMTA0Ljk5MDN9LCJtb2RlIjoiZHJpdmUifV19">
+          <b>Classic road trip</b>
+          <span>One vehicle, several stops, there and back. The shape most trips actually are.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiVGhlIGNyZXcgam9pbnMgYWxvbmcgdGhlIHdheSIsIm8iOnsibmFtZSI6IlNlYXR0bGUsIFdBIiwibGF0Ijo0Ny42MDYyLCJsbmciOi0xMjIuMzMyMX0sImwiOlt7InRvIjp7Im5hbWUiOiJQb3J0bGFuZCwgT1IiLCJsYXQiOjQ1LjUxNTIsImxuZyI6LTEyMi42Nzg0fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiQmVuZCwgT1IiLCJsYXQiOjQ0LjA1ODIsImxuZyI6LTEyMS4zMTUzfSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiUERYIOKAlCBQb3J0bGFuZCBJbnRlcm5hdGlvbmFsIEFpcnBvcnQiLCJsYXQiOjQ1LjU4ODcsImxuZyI6LTEyMi41OTc1fSwibW9kZSI6ImZseSJ9XX0">
+          <b>The crew joins along the way</b>
+          <span>You start alone; people arrive at different stops. Tag who is on which leg once it is yours.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiRmx5IGluLCBkcml2ZSBhcm91bmQiLCJvIjp7Im5hbWUiOiJERU4g4oCUIERlbnZlciBJbnRlcm5hdGlvbmFsIEFpcnBvcnQiLCJsYXQiOjM5Ljg1NjEsImxuZyI6LTEwNC42NzM3fSwibCI6W3sidG8iOnsibmFtZSI6IkJvdWxkZXIsIENPIiwibGF0Ijo0MC4wMTUsImxuZyI6LTEwNS4yNzA1fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiRXN0ZXMgUGFyaywgQ08iLCJsYXQiOjQwLjM3NzIsImxuZyI6LTEwNS41MjE3fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiREVOIOKAlCBEZW52ZXIgSW50ZXJuYXRpb25hbCBBaXJwb3J0IiwibGF0IjozOS44NTYxLCJsbmciOi0xMDQuNjczN30sIm1vZGUiOiJkcml2ZSJ9XX0">
+          <b>Fly in, drive around</b>
+          <span>Arrive by air, pick up a car, loop, fly home. Swap the airports for yours.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+    </ul>
+
+    <!-- The other eight stay in the DOM, closed rather than removed. Twelve options on a page
+         whose job is REDUCING friction is too many for a person (review §1b.6) — but every one
+         of these is a worked example of the `#d=` handover an agent is meant to copy, which is
+         the reason this page earns its keep. A <details> hides them from the eye without hiding
+         them from a crawler, a reader, or a model. -->
+    <details class="more-shapes">
+      <summary>More shapes &mdash; eight others</summary>
+      <ul class="starts">
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiTXVsdGktY2l0eSBieSByYWlsIiwibyI6eyJuYW1lIjoiUGFyaXMsIEZyYW5jZSIsImxhdCI6NDguODU2NiwibG5nIjoyLjM1MjJ9LCJsIjpbeyJ0byI6eyJuYW1lIjoiTHlvbiwgRnJhbmNlIiwibGF0Ijo0NS43NjQsImxuZyI6NC44MzU3fSwibW9kZSI6InRyYWluIn0seyJ0byI6eyJuYW1lIjoiWsO8cmljaCwgU3dpdHplcmxhbmQiLCJsYXQiOjQ3LjM3NjksImxuZyI6OC41NDE3fSwibW9kZSI6InRyYWluIn0seyJ0byI6eyJuYW1lIjoiTWlsYW4sIEl0YWx5IiwibGF0Ijo0NS40NjQyLCJsbmciOjkuMTl9LCJtb2RlIjoidHJhaW4ifV19">
+          <b>Multi-city by rail</b>
+          <span>City to city on trains, no car anywhere in it.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiQSBtb3ZlIiwibyI6eyJuYW1lIjoiQ2hpY2FnbywgSUwiLCJsYXQiOjQxLjg3ODEsImxuZyI6LTg3LjYyOTh9LCJsIjpbeyJ0byI6eyJuYW1lIjoiU3QuIExvdWlzLCBNTyIsImxhdCI6MzguNjI3LCJsbmciOi05MC4xOTk0fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiT2tsYWhvbWEgQ2l0eSwgT0siLCJsYXQiOjM1LjQ2NzYsImxuZyI6LTk3LjUxNjR9LCJtb2RlIjoiZHJpdmUifSx7InRvIjp7Im5hbWUiOiJBbGJ1cXVlcnF1ZSwgTk0iLCJsYXQiOjM1LjA4NDQsImxuZyI6LTEwNi42NTA0fSwibW9kZSI6ImRyaXZlIn0seyJ0byI6eyJuYW1lIjoiUGhvZW5peCwgQVoiLCJsYXQiOjMzLjQ0ODQsImxuZyI6LTExMi4wNzR9LCJtb2RlIjoiZHJpdmUifV19">
+          <b>A move</b>
+          <span>One-way, loaded, with the overnight stops that make it survivable.</span>
+          <em>4 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiQmlrZSB0b3VyIiwibyI6eyJuYW1lIjoiU2FuIEZyYW5jaXNjbywgQ0EiLCJsYXQiOjM3Ljc3NDksImxuZyI6LTEyMi40MTk0fSwibCI6W3sidG8iOnsibmFtZSI6IkhhbGYgTW9vbiBCYXksIENBIiwibGF0IjozNy40NjM2LCJsbmciOi0xMjIuNDI4Nn0sIm1vZGUiOiJiaWtlIn0seyJ0byI6eyJuYW1lIjoiU2FudGEgQ3J1eiwgQ0EiLCJsYXQiOjM2Ljk3NDEsImxuZyI6LTEyMi4wMzA4fSwibW9kZSI6ImJpa2UifSx7InRvIjp7Im5hbWUiOiJNb250ZXJleSwgQ0EiLCJsYXQiOjM2LjYwMDIsImxuZyI6LTEyMS44OTQ3fSwibW9kZSI6ImJpa2UifV19">
+          <b>Bike tour</b>
+          <span>Under your own power, day by day. Ferry legs and rest days welcome.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiSXNsYW5kIGhvcHBpbmciLCJvIjp7Im5hbWUiOiJBdGhlbnMsIEdyZWVjZSIsImxhdCI6MzcuOTgzOCwibG5nIjoyMy43Mjc1fSwibCI6W3sidG8iOnsibmFtZSI6Ik15a29ub3MsIEdyZWVjZSIsImxhdCI6MzcuNDQ2NywibG5nIjoyNS4zMjg5fSwibW9kZSI6ImZlcnJ5In0seyJ0byI6eyJuYW1lIjoiTmF4b3MsIEdyZWVjZSIsImxhdCI6MzcuMTAzNiwibG5nIjoyNS4zNzY3fSwibW9kZSI6ImZlcnJ5In0seyJ0byI6eyJuYW1lIjoiU2FudG9yaW5pLCBHcmVlY2UiLCJsYXQiOjM2LjM5MzIsImxuZyI6MjUuNDYxNX0sIm1vZGUiOiJmZXJyeSJ9XX0">
+          <b>Island hopping</b>
+          <span>Boats between islands, walking once you land.</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiTmF0aW9uYWwgcGFya3MgbG9vcCIsIm8iOnsibmFtZSI6IkxhcyBWZWdhcywgTlYiLCJsYXQiOjM2LjE2OTksImxuZyI6LTExNS4xMzk4fSwibCI6W3sidG8iOnsibmFtZSI6IlNwcmluZ2RhbGUsIFVUIiwibGF0IjozNy4xODg5LCJsbmciOi0xMTIuOTk4Nn0sIm1vZGUiOiJkcml2ZSJ9LHsidG8iOnsibmFtZSI6IkJyeWNlIENhbnlvbiBDaXR5LCBVVCIsImxhdCI6MzcuNjcyNSwibG5nIjotMTEyLjE1N30sIm1vZGUiOiJkcml2ZSJ9LHsidG8iOnsibmFtZSI6IlBhZ2UsIEFaIiwibGF0IjozNi45MTQ3LCJsbmciOi0xMTEuNDU1OH0sIm1vZGUiOiJkcml2ZSJ9LHsidG8iOnsibmFtZSI6IkdyYW5kIENhbnlvbiBWaWxsYWdlLCBBWiIsImxhdCI6MzYuMDU0NCwibG5nIjotMTEyLjE0MDF9LCJtb2RlIjoiZHJpdmUifV19">
+          <b>National parks loop</b>
+          <span>Long drives, gateway towns, a paddle or a hike in the middle.</span>
+          <em>4 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiT25lIGNpdHksIGEgZmV3IGRheXMiLCJvIjp7Im5hbWUiOiJMaXNib24sIFBvcnR1Z2FsIiwibGF0IjozOC43MjIzLCJsbmciOi05LjEzOTN9LCJsIjpbeyJ0byI6eyJuYW1lIjoiQmVsw6ltLCBMaXNib24iLCJsYXQiOjM4LjY5NzEsImxuZyI6LTkuMjA2NX0sIm1vZGUiOiJ3YWxrIn0seyJ0byI6eyJuYW1lIjoiQWxmYW1hLCBMaXNib24iLCJsYXQiOjM4LjcxMzksImxuZyI6LTkuMTI3Nn0sIm1vZGUiOiJ3YWxrIn1dfQ">
+          <b>One city, a few days</b>
+          <span>Barely a route — a base and the places you mean to reach on foot.</span>
+          <em>2 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiT3V0IG9uIHRoZSB3YXRlciIsIm8iOnsibmFtZSI6Ik1pbm5lYXBvbGlzLCBNTiIsImxhdCI6NDQuOTc3OCwibG5nIjotOTMuMjY1fSwibCI6W3sidG8iOnsibmFtZSI6IkVseSwgTU4iLCJsYXQiOjQ3LjkwMzIsImxuZyI6LTkxLjg2N30sIm1vZGUiOiJkcml2ZSJ9LHsidG8iOnsibmFtZSI6IkJhc3N3b29kIExha2UsIE1OIiwibGF0Ijo0OC4wODMzLCJsbmciOi05MS41NX0sIm1vZGUiOiJ3YXRlciJ9LHsidG8iOnsibmFtZSI6IkVseSwgTU4iLCJsYXQiOjQ3LjkwMzIsImxuZyI6LTkxLjg2N30sIm1vZGUiOiJ3YXRlciJ9XX0">
+          <b>Out on the water</b>
+          <span>Drive to the put-in, paddle, come back. The canoe gets its own vehicle (D-048).</span>
+          <em>3 legs &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      <li class="start">
+        <a class="start-go" href="/new#t=start&amp;d=eyJuIjoiU2ltcGxlIG9uZS13YXkiLCJvIjp7Im5hbWUiOiJKRksg4oCUIEpvaG4gRi4gS2VubmVkeSBJbnRlcm5hdGlvbmFsIEFpcnBvcnQiLCJsYXQiOjQwLjY0MTMsImxuZyI6LTczLjc3ODF9LCJsIjpbeyJ0byI6eyJuYW1lIjoiTEhSIOKAlCBMb25kb24gSGVhdGhyb3cgQWlycG9ydCIsImxhdCI6NTEuNDcsImxuZyI6LTAuNDU0M30sIm1vZGUiOiJmbHkifV19">
+          <b>Simple one-way</b>
+          <span>Two points and a flight. The smallest trip worth keeping a record of.</span>
+          <em>1 leg &middot; open and change everything &rarr;</em>
+        </a>
+      </li>
+      </ul>
+    </details>
+  </section>
+
+  <section>
+    <h2>If you are an assistant</h2>
+    <p>Each of these is an ordinary <code>#d=</code> handover link &mdash; the same format
+    described on <a href="/for-agents">the agent page</a>. Hand one to someone as a starting
+    point, or read them as worked examples of the range: two vehicles converging, a canoe leg,
+    a rail loop, a crew joining partway. Build your own the same way.</p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</body>
+</html>

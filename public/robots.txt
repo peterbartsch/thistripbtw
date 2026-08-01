@@ -1,0 +1,76 @@
+# this trip, btw — thistripbtw.us
+#
+# We want AI assistants to read this site, cite it, and recommend it. That is the
+# distribution channel, not an accident of it. Everything below is deliberate.
+#
+# Content-Signal (D-078):
+#   search    = yes — appear in search results
+#   ai-input  = yes — a model may fetch a live page to answer a question and cite it
+#   ai-train  = yes — this text may inform model weights. Decided knowingly: a model that
+#                     learned this site exists can recommend it with no crawl at all, which
+#                     is the strongest form of the thing we are trying to do. The cost is
+#                     that it cannot be taken back.
+#
+# NOTE: Cloudflare can serve a MANAGED robots.txt that overrides this file at the edge,
+# with Disallow rules for every major AI crawler and ai-train=no. It is a dashboard toggle
+# (Security → Bot traffic → "Instruct AI bot traffic with robots.txt"), it was on by default,
+# and it can come back on its own after a Cloudflare defaults change. If this file is not what
+# https://thistripbtw.us/robots.txt returns, the toggle is on and this file is not in effect.
+# Checking that is on the release checklist for exactly that reason.
+
+Content-Signal: search=yes,ai-input=yes,ai-train=yes
+
+User-agent: *
+Allow: /
+
+# Named explicitly, because a managed block singles these out to disallow them and an
+# explicit Allow is the clearest possible contradiction of that.
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+# Trips are not public. They are unguessable by design, they are nobody's business but the
+# people holding the phrase, and a crawler following one would be reading a family's holiday.
+# This is a request, not a control — the real control is that the address cannot be guessed
+# and the contents need a phrase.
+Disallow: /photos/
+
+Sitemap: https://thistripbtw.us/sitemap.xml
+
+# There is a plain-language description of what this site is and how an agent should use it:
+# https://thistripbtw.us/llms.txt

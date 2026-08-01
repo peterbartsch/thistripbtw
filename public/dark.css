@@ -1,0 +1,34 @@
+/* dark.css — the night-drive surfaces, in one place (D-087).
+ *
+ * The map builders (/quick, /quicktree) are full-viewport map pages: the map covers everything,
+ * so `sky.css`'s time-of-day gradient would never be seen behind it. They need the same FLAT
+ * dark surface the trip client uses, which is why this is a separate sheet from sky.css rather
+ * than another state inside it.
+ *
+ * The values match app.html's inline `[data-theme="dark"]` block, which keeps its own richer set
+ * (--tabbg, --pine-text, --danger, --truck, --rental) because those are trip-client concepts.
+ * The names differ between the two trees — app.html says `--ink-soft`, the builders say `--soft`
+ * — so both are set here and neither has to be renamed.
+ *
+ * Brand colours are deliberately NOT overridden: --pine, --accent and their -deep pairs are
+ * saturated and read correctly on a dark surface. Overriding them would drift the brand into a
+ * second palette that nobody decided on.
+ */
+/* Light is spelled out rather than left to default, so an OS in dark mode cannot
+   force-darken a map page that is deliberately light. */
+:root { color-scheme: light; }
+
+/* Tells the browser the page is dark so native chrome follows — scrollbars, pickers,
+   autofill. The map builders had no such declaration at all before. */
+[data-theme="dark"] { color-scheme: dark; }
+
+[data-theme="dark"] {
+  --sheet:  #171B21;
+  --ground: #12161B;   /* the page behind the sheet — darker, so cards still lift off it */
+  --card:   #1F252D;
+  --ink:    #E9EAE6;
+  --soft:   #9BA1A8;   /* 4.9:1 on --card */
+  --ink-soft: #9BA1A8;
+  --line:   #2C333C;
+  --link:   #5FA8DC;   /* the route blue, which is already the dark-mode variant */
+}

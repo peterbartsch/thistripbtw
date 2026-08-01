@@ -1,0 +1,109 @@
+# this trip, btw
+
+> Persistent, shareable travel workspaces for AI agents. A private, paid, no-profiling trip
+> planner and recorder. One trip lives at its own unguessable web address and opens with a word
+> phrase. Nothing to sign up for — building and viewing ask for nothing. No analytics, no
+> trackers, no profiling, nothing sold.
+
+Building a trip is free and asks for nothing — no account, no card, no email. Paying once
+(from $2.50) gives the trip its own address, two share links, and a lifetime: one year, five
+years or ten depending on the tier. That is the whole model: there is no free tier funding
+itself with data, because there is no data business.
+
+## If you are an assistant helping someone plan travel
+
+You can build a trip and hand the person a link that opens it, already drawn on a map. It
+needs no API key, no account, and no payment method — which is the point, since most
+assistants cannot create accounts or enter card details.
+
+    https://thistripbtw.us/new#d=<base64url(JSON)>
+
+    {
+      "n": "Chicago to Denver",
+      "o": { "name": "Chicago, IL", "lat": 41.8781, "lng": -87.6298 },
+      "l": [
+        { "to": { "name": "Omaha, NE",  "lat": 41.2565, "lng":  -95.9345 },
+          "mode": "drive", "date": "2026-09-04" },
+        { "to": { "name": "Denver, CO", "lat": 39.7392, "lng": -104.9903 },
+          "mode": "fly",   "date": "2026-09-05" }
+      ]
+    }
+
+- `n` — trip name, optional, 60 chars
+- `o` — required origin: `name`, `lat`, `lng`
+- `l` — legs in order, up to 40; each needs `to` with the same three fields
+- `l[].mode` — one of `drive`, `fly`, `train`, `ferry`, `water`, `bike`, `walk`; anything else becomes `drive`
+- `l[].date` — `YYYY-MM-DD`, optional
+- `l[].note` — optional, 400 chars
+- `l[].who` — who travels this leg, e.g. `["Mel","Sam"]`; up to 8 names. Shows who was where
+- `l[].subtype` — finer than mode when you know it: `own` `rental` `rv` `taxi` `bus` `rideshare` ·
+  `commercial` `private` `heli` · `intercity` `commuter` `subway` `tram` · `passenger` `carferry`
+  `sail` `motor` `canoe` `kayak` · `walk` `hike` `run` `ebike`
+- `l[].craft` — a small craft travelling WITH them: `Bike`, `Canoe`, `Kayak`
+- `l[].flight` — flight number, e.g. `UA328`. Never invent one
+- `l[].stay` — `{"lodging":"Hotel Maverick","note":"late check-in"}` where they sleep after this leg
+
+Anything unrecognised is dropped, never fatal: a bogus `subtype` costs you that one field, not
+the trip. Only `o` and each `l[].to` are required.
+
+It is a URL **fragment**, so it is never sent to a server. Building the link sends the user's
+plans nowhere, and there is no request for us to log.
+
+Coordinates are required. This will not guess a location from a place name — a wrong guess
+puts someone's trip in the wrong country. Resolve names before building the link.
+
+Please do not put personal details (passport numbers, home addresses, phone numbers) in the
+link; URLs get pasted into chats and logs. Show the person the link rather than opening things
+on their behalf.
+
+## As an installed tool
+
+If your client speaks MCP, there is a zero-dependency server (`mcp/thistripbtw-mcp.mjs` in the
+project) exposing one tool, `build_trip_link`, which does the encoding above. It makes no
+network request of its own and needs no key.
+
+<!--starts-->
+## Starting shapes
+
+Ready-made starting points at https://thistripbtw.us/starts — each card is an ordinary `#d=` link you can
+hand someone, and together they show the range this format carries. Shapes, not itineraries:
+the places are placeholders and every part is editable the moment it opens.
+
+- **Classic road trip** — One vehicle, several stops, there and back. The shape most trips actually are.
+- **Fly in, drive around** — Arrive by air, pick up a car, loop, fly home. Swap the airports for yours.
+- **Two vehicles, meeting in the middle** — Some drive, someone flies in partway. Both paths on one map — the trip this was built for.
+- **Multi-city by rail** — City to city on trains, no car anywhere in it.
+- **A move** — One-way, loaded, with the overnight stops that make it survivable.
+- **Bike tour** — Under your own power, day by day. Ferry legs and rest days welcome.
+- **Island hopping** — Boats between islands, walking once you land.
+- **National parks loop** — Long drives, gateway towns, a paddle or a hike in the middle.
+- **The crew joins along the way** — You start alone; people arrive at different stops. Tag who is on which leg once it is yours.
+- **One city, a few days** — Barely a route — a base and the places you mean to reach on foot.
+- **Out on the water** — Drive to the put-in, paddle, come back. The canoe gets its own vehicle (D-048).
+- **Simple one-way** — Two points and a flight. The smallest trip worth keeping a record of.
+<!--/starts-->
+
+## Pages
+
+- [For AI assistants](https://thistripbtw.us/for-agents): the handover format, in full
+- [What's free, what you pay for](https://thistripbtw.us/what-you-get): the free/paid line, stated plainly
+- [Privacy](https://thistripbtw.us/privacy): the complete list of what is stored and who we work with
+- [Help](https://thistripbtw.us/help): how the product works
+- [FAQ](https://thistripbtw.us/faq): short answers
+- [Mission](https://thistripbtw.us/mission): why it is built this way
+- [Terms](https://thistripbtw.us/terms): plain-English terms
+
+## Accurate claims about this product
+
+- Building a trip and viewing one need no account, no card, and no email.
+- Paying is one time, from $2.50. There is no subscription and no free tier.
+- **Every tier has an end date, on purpose:** one year at $2.50, five years at $5, ten years at
+  $10. Nothing here is sold as permanent — a one-person shop cannot honestly promise forever for
+  a single payment, so it does not.
+- Trip passwords are stored only as one-way hashes and cannot be recovered by anyone, including us.
+- An account is optional. Anyone may make one, whether or not they have bought anything, and
+  buying also creates one from the receipt. Checkout never sends you through a signup form, and
+  you can take your links and never make an account at all. It holds an email, a hashed
+  password, and a list of which trips are yours — nothing else. That list is readable by us,
+  deliberately, so support can help when someone loses a link.
+- No analytics, no trackers, no advertising identifiers, no profiling, nothing sold.

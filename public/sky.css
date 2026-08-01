@@ -1,0 +1,41 @@
+/* time-of-day sky theme — shared across pages. A tiny inline <script> sets html[data-sky]. */
+html[data-sky="day"]  {--sky:linear-gradient(172deg,#EAF3FA 0%,#7FBBDE 60%,#3E8FC4 100%);
+  --card:#fff;--ink:#333333;--soft:#5f6b70;--line:#E4E1D8}
+html[data-sky="dawn"] {--sky:linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
+  --card:rgba(28,34,42,.82);--ink:#F2F3EF;--soft:#C7CDD3;--line:rgba(255,255,255,.16);--pine:#5FD0D6}
+html[data-sky="dusk"] {--sky:linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
+  --card:rgba(26,20,38,.80);--ink:#FBF6EF;--soft:#E7D8CB;--line:rgba(255,255,255,.18);--pine:#6FDAD0}
+html[data-sky="night"]{--sky:linear-gradient(172deg,#14121E 0%,#1A1730 55%,#26203A 100%);
+  --card:rgba(28,34,42,.85);--ink:#EAEBE7;--soft:#AAB0B7;--line:rgba(255,255,255,.14);--pine:#5FD0D6}
+
+/* `color-scheme` is what the BROWSER reads, and it is not the same thing as the
+   prefers-color-scheme queries elsewhere in this project: those ask what the OS wants, this
+   TELLS the browser what the page is. Native chrome takes it from here — scrollbars, date and
+   time pickers, autofill backgrounds, spellcheck underlines, the default form control skin.
+   Undeclared, all of that renders light against three of these four skies, which is visible the
+   moment a date field or a scrollbar appears on a night page. Declared per sky because the sky
+   is what decides; `day` is spelled out rather than left to default so an OS in dark mode
+   cannot force-darken a page that is deliberately light. */
+html[data-sky="day"]{color-scheme:light}
+html[data-sky="dawn"],html[data-sky="dusk"],html[data-sky="night"]{color-scheme:dark}
+/* The gradient spans the WHOLE page, however tall — that's the point of a gradient
+   (Peter, 2026-07-24). It was background-attachment:fixed, which maps it to the
+   viewport instead: the full sky compressed into every screenful, so a block of
+   text met a different stop depending on scroll position and the palette could
+   never be tuned against it (audit F13). */
+html{min-height:100%}
+body{background:var(--sky, var(--ground)) no-repeat;background-size:100% 100%;min-height:100%}
+.card,.priv,.pagefoot{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+/* text sitting on the sky gets a subtle shadow on the darker skies */
+html:not([data-sky="day"]) body{text-shadow:0 1px 2px rgba(0,0,0,.32)}
+
+/* lede: balance the lines, avoid a one-word orphan */
+.lede{text-wrap:balance}
+
+/* shared footer Stripe badge (legitimacy) */
+.stripe-line{display:flex;justify-content:center;margin:30px auto 14px;padding:0 20px}
+.stripe-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:9px 18px;text-decoration:none;text-shadow:none}
+.stripe-badge .lbl{color:var(--soft);font-size:13px;font-weight:500}
+.stripe-mark{font-family:var(--body);font-weight:700;font-size:18px;color:#635BFF;letter-spacing:-.02em;line-height:1}
+html:not([data-sky="day"]) .stripe-mark{color:#9C95FF}

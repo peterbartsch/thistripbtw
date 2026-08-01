@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — this trip, btw</title>
+<meta name="description" content="What we store, who we work with, and what we never have. Your plans and memories, kept private — never sold.">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<style>
+  ul{margin:0 0 12px 20px}
+  li{margin-bottom:6px}
+  .card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:20px 22px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0}
+  td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  td:first-child{font-weight:600;white-space:nowrap;width:34%}
+</style>
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+</head>
+<body>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <h1>Privacy</h1>
+  <p class="lede">Your plans, your memories — kept private, never sold.</p>
+</header>
+
+<main class="pagebody sheet">
+  <div class="card">
+    <p><strong>The short version:</strong> you pay a few dollars once, so you're the customer — not the product. We don't run ads, we don't use analytics or trackers, and we never build a profile of you. Building a trip asks nothing of you — no account, no card, no email. Buying one lets you make an account, and that account holds <strong>your email address, a one-way hash of your password, and a list of which trips are yours</strong>. That's the entire record.</p>
+  </div>
+
+  <h2>What we store</h2>
+  <p>Only what your crew puts on the trip:</p>
+  <ul>
+    <li>The <strong>stops, posts, notes, and pins</strong> you add — places, dates, captions, and the words you type.</li>
+    <li><strong>Photos and videos</strong>, if you're on the tier that includes them.</li>
+    <li>Two <strong>hashed passwords</strong> per trip (edit + view). We store only a one-way hash, so we can't read a phrase back or tell you what yours was. <strong>That is no longer the same as saying we can't open your trip</strong> &mdash; if you have an account, signing in opens the trips on it, so the server can reach their contents. See &ldquo;What signing in can do&rdquo; below.</li>
+  </ul>
+  <p>If you have <strong>bought</strong> a trip, we also store, <em>on the trip itself</em>:</p>
+  <ul>
+    <li>Which <strong>tier</strong> was bought, and when the trip expires (on the $2.50 tier).</li>
+    <li>The <strong>Stripe checkout id</strong> — an opaque reference like <code>cs_live_…</code>, used to make sure one payment creates one trip.</li>
+  </ul>
+  <p>And if you chose to make an <strong>account</strong> after buying, we store exactly three things about you:</p>
+  <ul>
+    <li>Your <strong>email address</strong> — the one you gave Stripe at checkout.</li>
+    <li>A <strong>one-way hash of your password</strong>. We can't read your password, only check it.</li>
+    <li>A <strong>list of which trips are yours</strong> — the ones you bought, and any you added with a personal link.</li>
+  </ul>
+  <p><strong>Said plainly, because it matters:</strong> that list is stored in a form we can read, and <strong>so are your trips.</strong> Signing in opens the trips on your account, which means the server can open them too &mdash; and so could anyone who got the whole database. We used to say the opposite here, and it was true then: nothing but the phrase could open a trip. We changed it because the alternative was worse in practice. The account could tell you <em>which</em> trips were yours and then not let you into any of them, and people lose links. <strong>This is the trade, and you should know it is the one we made:</strong> a customer who can get back in, at the cost of a database that could be made to give trips up.</p>
+
+<h2 id="signing-in">What signing in can do</h2>
+<p>An account opens the trips you bought and the ones you were invited to &mdash; nothing else. It does <strong>not</strong> make you a person on the trip: sealed drops left for someone else stay shut, because who you are on a trip comes from a personal link, never from being signed in. And only the person who bought a trip can delete it, change its passwords, or remove people from it. Someone you invited can add to the trip; they cannot take it away from you.</p>
+  <p>When you buy a trip, <strong>we make you an account from the email address Stripe already collected to send your receipt</strong> &mdash; checkout never sends you through a signup form, and we never ask you for anything extra. (Since D-076 anyone may also make an account for themselves, without buying; it holds the same email and list and nothing more.) It exists so you can find your trips again later. Setting a password is optional; if you don't, we'll email you a link to set one when you need it. And an account still holds no name, no profile, no behaviour, and nothing a data broker would want.</p>
+  <p><strong>How long:</strong> a trip and its contents stay until you delete them, or until a $2.50 trip reaches its one-year end and deletes itself. An account stays until you ask us to remove it — email <a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a> and it's gone, along with the list.</p>
+  <p>We do <strong>not</strong> store your name, contacts, location history, browsing behaviour, or any advertising or tracking identifiers. We do not build a profile of you, and there is nothing here a data broker would pay for.</p>
+
+  <h2>Who we work with</h2>
+  <p>A few services help run the trip. Here's the whole list and what each one sees:</p>
+  <table>
+    <tr><td>Stripe</td><td>Handles payment when you buy a trip, and collects the email for its receipt. Stripe knows the buyer; we genuinely don't — we only learn that <em>a</em> payment happened and for which tier. If you arrived from a page that names a channel &mdash; say, our page for AI assistants &mdash; the checkout carries one word saying so (<code>via_agents</code>), so we can tell whether that channel works. It is a word on a payment: not a cookie, not an identifier, not kept on our side, and nothing about you.</td></tr>
+    <tr><td>DreamHost / Cloudflare</td><td>Host and serve the site (in the United States). Like any web host, they process the normal request data (including IP addresses) needed to deliver pages.</td></tr>
+    <tr><td>Carto &amp; OpenStreetMap</td><td>Provide the map tiles. They see the map areas your browser loads (and your IP, as any tile server does).</td></tr>
+    <tr><td>OSRM (OpenStreetMap)</td><td>Draws driving routes along real roads. <strong>Your browser no longer contacts them:</strong> we ask on your behalf and cache the answer, so they see our server rather than you, once per distinct road path. Roads are public and road shapes do not change, so most routes are answered from that cache without asking anyone.</td></tr>
+    <tr><td>Nominatim (OpenStreetMap)</td><td><strong>Your browser no longer contacts them either.</strong> Turns places into points and back &mdash; what you type in the search box, and the coordinates of a spot you tap so we can name it. <strong>Our server makes this call on your behalf</strong> (it used to come straight from your browser), which means Nominatim sees our server, not you. We cache the answers so the same place isn&rsquo;t looked up twice.</td></tr>
+    <tr><td>Anthropic</td><td>Runs the optional <strong>&ldquo;Describe&rdquo;</strong> assistant. Only if you use it: what you type, plus the stops and dates already on the trip, are sent so it can answer and add legs. It is not used to train their models, and nothing is sent unless you open Ask and type.</td></tr>
+    <tr><td>AeroDataBox</td><td>Looks up a flight's scheduled times, only when you give Ask a flight number. It receives the flight number and date &mdash; nothing about you or the trip.</td></tr>
+  </table>
+  <p><strong>Ask is opt-in.</strong> Never opening it means nothing on your trip is ever sent to a model. We do not keep the conversation &mdash; only a count of requests, to stay inside our own budget.</p>
+  <p>All of these are used only to run the trip — never to profile you, and we never sell or share your trip's contents with anyone.</p>
+
+  <h2>Deleting everything</h2>
+  <p>Every trip has a <strong>delete button</strong> (Info → Trip settings) that removes the trip and every photo and video, for good. Every trip also <strong>self-deletes when its term is up</strong> — one year, five or ten, depending on the tier — on purpose. Data we don't keep can't leak.</p>
+
+  <h2>Questions</h2>
+  <p>Email <a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a>. The client is being open-sourced so anyone can read exactly what it does.</p>
+</main>
+
+<div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a><br><a href="https://stripe.com">Stripe</a></footer>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</body>
+</html>

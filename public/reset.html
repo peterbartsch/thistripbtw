@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Set a new password — this trip, btw</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/pages.css?v=25">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  label{display:block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin:0 0 5px}
+  input{width:100%;min-height:48px;padding:12px 14px;border:2px solid var(--line);border-radius:11px;
+    background:var(--ground);color:var(--ink);font-family:var(--font-family-body);font-size:16px}
+  input:focus{outline:0;border-color:var(--brand)}
+  .fld{margin-bottom:14px}
+  .msg{margin:12px 0 0;font-size:14px;line-height:1.5}
+  .msg.bad{color:#B23A24}
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <h1>Set a new password</h1>
+  <p class="lede" id="lede">For your account &mdash; not for a trip.</p>
+</header>
+
+<main class="pagebody sheet">
+  <div class="card">
+    <p><strong>This resets your account password only.</strong> Trip passwords are a different
+    thing: they are stored as one-way hashes, so nobody can recover or reset them &mdash; not
+    you, not us. If you have lost a trip's phrase, ask someone else on the trip.</p>
+  </div>
+
+  <section id="form">
+    <div class="fld">
+      <label for="pw">New password</label>
+      <input id="pw" type="password" autocomplete="new-password" placeholder="10 characters or more">
+    </div>
+    <p><button class="btn" id="go">Set it</button></p>
+    <p class="msg" id="msg"></p>
+  </section>
+
+  <section id="done" hidden>
+    <p>Done. Every device that was signed in has been signed out, including whoever prompted
+    this if it wasn&rsquo;t you.</p>
+    <p><a class="btn" href="/account">Sign in</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const token = (location.search.match(/[?&]t=([A-Za-z0-9]+)/) || [])[1] || "";
+  if(!token){
+    $("form").hidden = true;
+    $("lede").textContent = "That link is missing its token — ask for a new one from the sign-in page.";
+    return;
+  }
+  $("go").onclick = async () => {
+    const b=$("go"), m=$("msg");
+    m.textContent=""; m.className="msg"; b.disabled=true; const l=b.textContent; b.textContent="…";
+    try{
+      const r = await fetch("/api/account/reset", {method:"POST", credentials:"same-origin",
+        headers:{"content-type":"application/json"},
+        body: JSON.stringify({token, password: $("pw").value})});
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.error || "couldn't set that");
+      $("form").hidden = true; $("done").hidden = false;
+      history.replaceState(null,"",location.pathname);   // don't leave the token in history
+    }catch(e){ m.textContent=e.message; m.className="msg bad"; b.disabled=false; b.textContent=l; }
+  };
+  $("pw").addEventListener("keydown", e => { if(e.key==="Enter") $("go").click(); });
+})();
+</script>
+<script src="/pages.js?v=1"></script>
+<script src="/theme.js?v=1"></script>
+</html>
