@@ -88,11 +88,19 @@ if (count($segs) >= 2
   }
 }
 
-/* /.well-known/mcp.json — discovery. `.htaccess` blocks every dotted path EXCEPT
-   `.well-known/`, so this is reachable, but it lives under public/ and the single-segment
-   asset rule above is single-segment only, so without this it falls through to the 404. */
-if (count($segs) === 2 && $segs[0] === '.well-known' && $segs[1] === 'mcp.json'
-    && is_file(PUBLIC_DIR . '/.well-known/mcp.json')) {
+/* `.htaccess` blocks every dotted path EXCEPT `.well-known/`, so these are reachable, but they
+   live under public/ and the single-segment asset rule above is single-segment only — without
+   this they fall through to the 404.
+
+   `mcp-registry-auth` carries the PUBLIC half of the domain-namespace key pair (D-090). It is
+   meant to be world-readable: it is what proves to the MCP registry that thistripbtw.us is ours,
+   which is what lets the listing bind a remote endpoint to this domain. The private half never
+   goes near this repo. */
+if (count($segs) === 2 && $segs[0] === '.well-known'
+    && in_array($segs[1], ['mcp.json', 'mcp-registry-auth'], true)
+    && is_file(PUBLIC_DIR . '/.well-known/' . $segs[1])) {
+  // no extension on mcp-registry-auth, so name the type rather than letting it guess
+  if ($segs[1] === 'mcp-registry-auth') { header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-store'); readfile(PUBLIC_DIR . '/.well-known/mcp-registry-auth'); exit; }
   serve_asset(PUBLIC_DIR . '/.well-known/mcp.json'); exit;
 }
 

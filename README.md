@@ -54,6 +54,12 @@ Streamable HTTP. Prefer to read the code first? It is one file with zero depende
 three hundred lines, and it runs locally without touching the network:
 
 ```bash
+claude mcp add thistripbtw -- npx -y thistripbtw-mcp
+```
+
+Or fetch the file and run it yourself:
+
+```bash
 curl -O https://thistripbtw.us/mcp/thistripbtw-mcp.mjs
 claude mcp add thistripbtw -- node ./thistripbtw-mcp.mjs
 ```
