@@ -19,6 +19,7 @@
  */
 
 declare(strict_types=1);
+require_once __DIR__ . '/varstore.php';
 
 const FLIGHT_MONTHLY_CAP = 600;          // AeroDataBox's hard ceiling for the whole product
 /* AeroDataBox is resold by several marketplaces and the credential is NOT portable between
@@ -73,14 +74,13 @@ function flight_calls_used(): int
 
 function flight_calls_add(): void
 {
-    $dir = dirname(flight_count_path());
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $f = flight_count_path();
-    $j = is_file($f) ? json_decode((string)@file_get_contents($f), true) : [];
-    if (!is_array($j)) $j = [];
-    $k = date('Y-m');
-    $j[$k] = (int)($j[$k] ?? 0) + 1;
-    @file_put_contents($f, json_encode($j), LOCK_EX);
+    // D-091: AeroDataBox's free tier is a hard 600/month. An undercount here does not cost
+    // money, it makes the feature start failing with no warning.
+    var_update(flight_count_path(), function (array $j) {
+        $k = date('Y-m');
+        $j[$k] = (int)($j[$k] ?? 0) + 1;
+        return [$j, null];
+    });
 }
 
 /**

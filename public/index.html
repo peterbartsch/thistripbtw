@@ -3,31 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>this trip, btw — one link for the whole trip</title>
-<meta name="description" content="Plan, share, and keep a trip on one private map link. No profiling, no ads, no trackers. Free to build, from $2.50 to keep.">
+<title>this trip, btw — everything about your trip, one link</title>
+<meta name="description" content="Everything about your trip in one shareable link — a private map anyone can open, with no account to build one and no account to open it.">
 <link rel="canonical" href="https://thistripbtw.us/">
+<!-- Google Search Console ownership. The TAG rather than the HTML-file method, deliberately:
+     index.php serves root assets only for a fixed extension list (jpg|png|svg|css|js|json|xml|txt|…)
+     which does not include .html, so a googleXXXX.html at the root 404s and the failure reads as
+     a missing file rather than a routing rule. The file also lands in public/*.html, which
+     structured-test.php globs and asserts carries src="/sign.svg" — a one-line token file would
+     fail make check, and make deploy gates on it. Verification must STAY: Google rechecks, and
+     removing this silently unverifies the property. -->
+<meta name="google-site-verification" content="ntmA_HZf8CmmcilsWvr0dZVGsqkqav2Lbzb7oqXumkk">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://thistripbtw.us/">
 <meta property="og:title" content="this trip, btw — one private map link for the whole trip">
 <meta property="og:description" content="Plan, share, and keep a trip on one private map link. No profiling, no ads, no trackers. Free to build, from $2.50 to keep.">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/tokens.css?v=2">
-<link rel="stylesheet" href="/sky.css?v=5">
+<link rel="stylesheet" href="/tokens.css?v=6">
+<link rel="stylesheet" href="/sky.css?v=11">
+<link rel="stylesheet" href="/pages.css?v=36">
 <style>
-  :root{
-    /* highway guide-sign palette (D-022): teal + yellow-orange */
-    --pine:#035A83; --pine-deep:#024260;   /* D-026 (D-022's #006B70 is superseded) */ --ground:#F5F6F4; --accent:var(--color-brand-orange,#F7B304); --card:#fff;
-    --ink:#333333; --soft:#6B675F; --line:#E4E1D8;
-    --amber:#F2A900; --blue:#3E7CB1;
-    --disp:"Barlow Condensed","Arial Narrow",sans-serif;
-    --body:"Barlow",system-ui,sans-serif;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
+  /* F2 (2026-08-02): this page now links pages.css like the other twelve, and what used to
+     sit here — a :root palette, the reset, the body rule, the whole hamburger-and-toggle
+     block — is gone rather than duplicated. The comment further down used to say "this page
+     is the only one that does not link pages.css ... anything added to that file has to be
+     repeated here or it ships unstyled", and the theme toggle had already shipped that way
+     once. What is left below is what is genuinely only true of the landing page.
+
+     Load order is tokens → sky → pages → this, so these four rules override pages.css on
+     purpose: a wider measure than the info pages, the tighter leading this page was set to,
+     and links that inherit rather than turning gold, because the landing page's links are
+     inside styled components that set their own colour. */
   .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  body{font-family:var(--body);color:var(--ink);line-height:1.5}
-  a{color:inherit}
+  body{line-height:1.5}
+  a{color:inherit;font-weight:inherit}
   .wrap{max-width:760px;margin:0 auto;padding:0 20px}
   button{font-family:inherit;cursor:pointer;border:0}
 
@@ -62,8 +77,7 @@
   .pillars li::before{content:"✓";position:absolute;left:0;top:8px;color:var(--accent);
     font-family:var(--disp);font-weight:700;font-size:18px}
   .closer{margin:24px auto 0;font-family:var(--disp);font-weight:600;font-size:18px;
-    letter-spacing:.02em;color:var(--pine);max-width:460px}
-  @media (prefers-color-scheme: dark){ .closer{color:#3FB6BC} }
+    letter-spacing:.02em;color:var(--link);max-width:460px}
   /* demo shown in a phone mockup */
   .phone-link{display:block;text-decoration:none}
   .phone{display:block;width:min(300px,72vw);margin:46px auto 0;position:relative;
@@ -107,16 +121,12 @@
   .receipts span{font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.12em;
     text-transform:uppercase;border:2px solid var(--line);border-radius:999px;padding:6px 13px;background:var(--card)}
   .creed{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:.02em;
-    color:var(--pine);max-width:520px;margin:44px auto 0}
-  @media (prefers-color-scheme: dark){ .creed{color:#3FB6BC} }
+    color:var(--link);max-width:520px;margin:44px auto 0}
 
-  /* Ask — §1b.1. The chat agent is the only thing here nobody else has, and until now the
-     homepage never named it: it appeared on /what-you-get and nowhere else, two clicks deep,
-     while the front page sold a private map link. */
-  #ask{padding:clamp(40px,8vw,64px) 0 4px;text-align:center}
-  #ask h2{font-family:var(--display,'Barlow Condensed',sans-serif);text-transform:uppercase;
-    letter-spacing:.04em;font-size:clamp(30px,6vw,46px);margin:0 0 6px}
-  #ask .sub{max-width:34em;margin:0 auto 22px;font-size:clamp(16px,2.4vw,19px);line-height:1.5}
+  /* The worked example. It was added as an "Ask" section with its own <h2> (§1b.1) because the
+     chat agent is the only thing here nobody else has and the homepage never named it. Demoted
+     into How it works 2026-08-02: naming the mechanism is not the same as naming the outcome,
+     and nobody buys "AI". The styles stayed; only the heading and the second CTA went. */
   .saidbox{max-width:30em;margin:0 auto;text-align:left;border:2px solid var(--ink,#141414);
     border-radius:16px;padding:16px 18px;background:var(--card,#fff)}
   .saidbox .said{font-size:clamp(17px,2.6vw,21px);line-height:1.4;margin:0}
@@ -126,7 +136,8 @@
   .alsotry{max-width:30em;margin:14px auto 0;font-size:14.5px;line-height:1.9;color:var(--soft,#5a5a5a)}
   .alsotry code{background:var(--card,#fff);border:1px solid var(--line,#d8d8d8);border-radius:8px;
     padding:2px 7px;font-family:inherit;font-size:14px;white-space:nowrap}
-  #ask .cta{margin-top:24px}
+  .how .saidbox{margin-top:26px}
+  .how .alsotry{text-align:center}
 
   /* pricing */
   #pricing{padding:clamp(46px,9vw,68px) 0 8px}
@@ -134,7 +145,7 @@
      more unusual half, and burying it made the cards read like the whole offer. */
   /* F11 (audit 2026-07-29): every page talked TO agents; none talked to the human an agent
      sent, who is the arriving audience the whole channel exists to produce. */
-  .sentby{max-width:640px;margin:-6px 0 22px;line-height:1.6;font-size:14px;color:var(--ink)}
+  .sentby{max-width:640px;margin:18px 0 22px;line-height:1.6;font-size:14px;color:var(--ink)}
   .sentby a{color:var(--pine);font-weight:600}
   .freeline{max-width:640px;margin:0 0 26px;line-height:1.7;color:var(--soft)}
   .freeline strong{color:var(--ink)}
@@ -227,25 +238,12 @@
   footer{color:var(--soft);font-size:13px;text-align:center;padding:44px 20px 96px;line-height:2.2}
   footer a{white-space:nowrap}
 
-  /* persistent hamburger menu (upper-right), and the theme toggle beside it.
-     This page is the only one that does not link pages.css — it carries its own copy of these
-     rules — so anything added to that file for the other six has to be repeated here or it
-     ships unstyled. The toggle did: a 13x21 native button in the top-left corner. */
-  #menuBtn{position:fixed;top:14px;right:14px;z-index:50;background:var(--card);color:var(--ink);
-    border:2px solid var(--ink);border-radius:50%;width:44px;height:44px;font-size:19px;cursor:pointer;
-    box-shadow:0 3px 12px rgba(0,0,0,.16)}
-  #themeBtn{position:fixed;top:14px;right:66px;z-index:50;background:var(--card);color:var(--ink);
-    border:2px solid var(--ink);border-radius:50%;width:44px;height:44px;font-size:19px;line-height:1;
-    cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.16)}
-  #menu{position:fixed;top:64px;right:14px;z-index:50;background:var(--card);border:2px solid var(--ink);
-    border-radius:12px;padding:6px;display:none;box-shadow:0 12px 30px rgba(0,0,0,.2)}
-  #menu.show{display:block}
-  #menu a{display:block;min-height:44px;padding:11px 20px;font-family:var(--disp);font-weight:700;font-size:14px;
-    letter-spacing:.06em;text-transform:uppercase;color:var(--ink);text-decoration:none;border-radius:8px;white-space:nowrap}
-  #menu a:hover{background:var(--ground)}
+  /* The hamburger, the theme toggle and the menu now come from pages.css — the same markup,
+     the same rules, one copy. The two had already drifted 2px apart on #menu's `top`, and
+     this page never got the `[aria-current]` rule the others have. */
 
   /* payments-by-stripe badge — trust signal, its own line, centered */
-  .pay{display:flex;justify-content:center;margin:clamp(48px,9vw,72px) auto 36px;padding:0 20px}
+  .pay{display:flex;justify-content:center;margin:22px auto 64px;padding:0 20px}
   .stripe-badge{display:inline-flex;align-items:center;gap:9px;background:var(--card);border:2px solid var(--line);
     border-radius:999px;padding:12px 24px;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.08)}
   .stripe-badge .lbl{color:var(--soft);font-size:15px;font-weight:500}
@@ -266,8 +264,11 @@
   .copybtn{background:none;color:var(--pine);font-weight:600;font-size:13px;padding:2px 0}
   #claimErr{color:#B3402A;font-size:14px}
 
+  /* This block used to re-declare --ground/--card/--ink/--soft/--line here. Four of the five
+     never applied: sky.css sets them on html[data-sky="…"], which outranks a :root inside a
+     media query, and the inline head script always sets that attribute. --ground was the one
+     that did apply, because nothing else defined it — it lives in sky.css now, per sky. */
   @media (prefers-color-scheme: dark){
-    :root{--ground:#14181D; --card:#1F252D; --ink:#E9EAE6; --soft:#9BA1A8; --line:#2C333C}
     #claim input{background:var(--ground);color:var(--ink);border-color:var(--line)}
     .linkbox{background:#171B21}
   }
@@ -281,7 +282,7 @@
   "url": "https://thistripbtw.us/",
   "applicationCategory": "TravelApplication",
   "operatingSystem": "Any (web)",
-  "description": "A private, shareable trip planner and recorder. One paid trip is one link, opened by two word phrases. No trackers and no profiling, and building one asks for nothing at all.",
+  "description": "Everything about your trip in one shareable link \u2014 a private map anyone can open, with no account to build one and no account to open it.",
   "offers": [
     {
       "@type": "Offer",
@@ -310,31 +311,27 @@
 </head>
 <body>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
-<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">☰</button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 
 <header class="hero"><div class="wrap">
-  <svg class="brand-logo" viewBox="0 0 700 300" role="img" aria-label="this trip, btw" xmlns="http://www.w3.org/2000/svg">
-    <rect x="20" y="20" width="660" height="260" rx="20" fill="#ECECEC" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,.2))"/>
-    <path d="M30 50C30 38.9543 38.9543 30 50 30H650C661.046 30 670 38.9543 670 50V190H30V50Z" fill="#035A83"/>
-    <path d="M30 181.194H670V250C670 261.046 661.046 270 650 270H50C38.9543 270 30 261.046 30 250V181.194Z" fill="#F7B304"/>
-    <path d="M133.186 138V90.686H118.59V80.6H159.426V90.686H144.83V138H133.186ZM155.89 138V83.224L167.534 78.222V98.722C170.158 96.098 173.438 94.048 178.604 94.048C187.706 94.048 192.708 99.87 192.708 111.432V138H181.064V112.99C181.064 106.266 178.768 103.888 174.504 103.888C170.486 103.888 167.534 106.184 167.534 112.662V138H155.89ZM207.13 89.374C202.702 89.374 199.914 86.504 199.914 82.896C199.914 79.288 202.702 76.5 207.13 76.5C211.476 76.5 214.264 79.288 214.264 82.896C214.264 86.504 211.476 89.374 207.13 89.374ZM214.1 138.902C205.736 138.902 201.144 134.474 201.144 125.618V94.95H212.87V123.568C212.87 127.668 215.002 128.898 218.2 128.898C221.398 128.898 223.94 128.078 225.99 127.258L224.268 136.77C221.726 137.918 218.036 138.902 214.1 138.902ZM245.25 138.902C237.952 138.902 231.72 137.098 226.472 134.064L229.998 125.29C234.672 128.078 240.74 129.882 245.578 129.882C249.76 129.882 251.646 128.488 251.646 126.192C251.646 123.896 250.662 122.994 244.594 121.436C233.606 118.648 227.456 115.368 227.456 107.25C227.456 99.05 233.36 94.048 244.02 94.048C251.236 94.048 256.402 95.688 261.24 98.394L257.878 107.086C253.04 104.38 248.612 103.068 243.528 103.068C239.838 103.068 238.28 104.298 238.28 106.348C238.28 108.48 239.182 109.546 245.25 111.104C256.238 114.056 262.388 116.68 262.388 125.126C262.388 134.638 255.828 138.902 245.25 138.902ZM309.026 138V90.686H294.43V80.6H335.266V90.686H320.67V138H309.026ZM335.256 138V94.95H346.9V99.952C349.688 96.426 353.952 94.048 358.708 94.048C362.726 94.048 365.678 95.032 367.564 96.344L363.874 107.906C361.66 106.02 359.446 104.708 355.674 104.708C350.262 104.708 346.9 108.808 346.9 115.204V138H335.256ZM382.97 89.374C378.542 89.374 375.754 86.504 375.754 82.896C375.754 79.288 378.542 76.5 382.97 76.5C387.316 76.5 390.104 79.288 390.104 82.896C390.104 86.504 387.316 89.374 382.97 89.374ZM389.94 138.902C381.576 138.902 376.984 134.474 376.984 125.618V94.95H388.71V123.568C388.71 127.668 390.842 128.898 394.04 128.898C397.238 128.898 399.78 128.078 401.83 127.258L400.108 136.77C397.566 137.918 393.876 138.902 389.94 138.902ZM402.394 153.826V94.95H414.038V98.968C417.072 96.262 420.352 94.048 425.436 94.048C433.718 94.048 440.36 100.69 440.36 116.188C440.36 131.522 433.8 138.902 424.78 138.902C420.024 138.902 416.662 136.852 414.038 134.31V148.742L402.394 153.826ZM421.746 129.062C426.256 129.062 428.552 125.7 428.552 116.516C428.552 107.086 426.092 103.888 421.582 103.888C418.63 103.888 416.088 105.282 414.038 107.414V125.372C416.006 127.586 418.466 129.062 421.746 129.062ZM472.484 138V80.6H492.984C503.89 80.6 509.466 85.684 509.466 95.524C509.466 101.838 506.432 105.118 502.332 107.25C507.17 109.136 510.86 112.99 510.86 120.616C510.86 131.932 504.71 138 492.656 138H472.484ZM483.8 103.396H492C496.346 103.396 498.232 100.772 498.232 96.508C498.232 92.162 496.264 89.948 492.082 89.948H483.8V103.396ZM483.8 128.652H492.41C497.33 128.652 499.544 126.028 499.544 120.616C499.544 115.122 496.92 112.498 492.246 112.498H483.8V128.652ZM528.726 138.902C520.936 138.902 516.754 134.392 516.754 125.454V104.626H508.062V94.95H516.754V83.224L528.234 78.222V94.95H541.026V104.626H528.234V123.486C528.234 127.586 529.956 128.898 533.072 128.898C536.434 128.898 538.484 127.832 540.862 126.52L538.976 136.524C536.188 137.918 533.482 138.902 528.726 138.902ZM545.936 138L537.982 94.95H548.15L550.036 107.332C550.692 112.088 551.348 120.698 551.758 126.274C552.332 120.862 553.152 112.662 554.136 107.414L556.678 94.95H565.534L568.076 107.414C568.978 112.662 570.044 122.092 570.454 126.274C570.864 121.6 571.52 112.17 572.176 107.332L573.98 94.95H584.066L576.112 138H565.862L563.156 124.388C562.09 117.992 561.434 110.694 560.942 105.856C560.532 110.694 559.876 118.074 558.81 124.47L556.104 138H545.936Z" fill="white"/>
-    <path d="M335.838 205.455H347.065V235.477C347.065 238.947 346.24 241.97 344.588 244.545C342.937 247.106 340.634 249.091 337.679 250.5C334.724 251.894 331.293 252.591 327.384 252.591C323.429 252.591 319.974 251.894 317.02 250.5C314.065 249.091 311.77 247.106 310.134 244.545C308.497 241.97 307.679 238.947 307.679 235.477V205.455H318.929V234.5C318.929 236.106 319.277 237.538 319.974 238.795C320.687 240.053 321.679 241.038 322.952 241.75C324.224 242.462 325.702 242.818 327.384 242.818C329.065 242.818 330.535 242.462 331.793 241.75C333.065 241.038 334.058 240.053 334.77 238.795C335.482 237.538 335.838 236.106 335.838 234.5V205.455ZM382.276 219.409C382.124 217.742 381.45 216.447 380.253 215.523C379.071 214.583 377.382 214.114 375.185 214.114C373.73 214.114 372.518 214.303 371.548 214.682C370.579 215.061 369.851 215.583 369.366 216.25C368.882 216.902 368.632 217.652 368.616 218.5C368.586 219.197 368.723 219.811 369.026 220.341C369.344 220.871 369.798 221.341 370.389 221.75C370.995 222.144 371.723 222.492 372.571 222.795C373.42 223.098 374.374 223.364 375.435 223.591L379.435 224.5C381.738 225 383.768 225.667 385.526 226.5C387.298 227.333 388.783 228.326 389.98 229.477C391.192 230.629 392.109 231.955 392.73 233.455C393.351 234.955 393.67 236.636 393.685 238.5C393.67 241.439 392.927 243.962 391.457 246.068C389.988 248.174 387.874 249.788 385.116 250.909C382.374 252.03 379.063 252.591 375.185 252.591C371.291 252.591 367.897 252.008 365.003 250.841C362.109 249.674 359.859 247.902 358.253 245.523C356.647 243.144 355.821 240.136 355.776 236.5H366.548C366.639 238 367.041 239.25 367.753 240.25C368.465 241.25 369.442 242.008 370.685 242.523C371.942 243.038 373.397 243.295 375.048 243.295C376.563 243.295 377.851 243.091 378.912 242.682C379.988 242.273 380.813 241.705 381.389 240.977C381.965 240.25 382.26 239.417 382.276 238.477C382.26 237.598 381.988 236.848 381.457 236.227C380.927 235.591 380.109 235.045 379.003 234.591C377.912 234.121 376.518 233.689 374.821 233.295L369.957 232.159C365.927 231.235 362.753 229.742 360.435 227.682C358.116 225.606 356.965 222.803 356.98 219.273C356.965 216.394 357.738 213.871 359.298 211.705C360.859 209.538 363.018 207.848 365.776 206.636C368.533 205.424 371.677 204.818 375.207 204.818C378.813 204.818 381.942 205.432 384.594 206.659C387.26 207.871 389.329 209.576 390.798 211.773C392.268 213.97 393.018 216.515 393.048 219.409H382.276Z" fill="#141414"/>
-    <path d="M592.043 207.5L534.308 207.5L563.175 257.5L592.043 207.5ZM540.081 237.5L542.581 241.83L555.572 234.33L553.072 230L550.572 225.67L537.581 233.17L540.081 237.5Z" fill="#141414"/>
-    <rect x="523.957" y="237.572" width="40" height="16" transform="rotate(-30 523.957 237.572)" fill="#141414"/>
-    <path d="M107.957 207.5L136.825 257.5L165.692 207.5L107.957 207.5ZM159.919 237.5L162.419 233.17L149.428 225.67L146.928 230L144.428 234.33L157.419 241.83L159.919 237.5Z" fill="#141414"/>
-    <rect x="168.043" y="251.428" width="40" height="16" transform="rotate(-150 168.043 251.428)" fill="#141414"/>
-  </svg>
+  <img class="brand-logo" src="/sign.svg?v=1" width="700" height="300"
+       alt="this trip, btw" fetchpriority="high">
 
-  <h1 class="tag">The whole trip, privately woven together — and quietly better at every step, for you and your crew.</h1>
-  <p class="lead">So simple anyone can start it</p>
-  <a class="cta" href="/quick">Add your first leg <span>free to build · keep it from $2.50</span></a>
+  <!-- #14, 2026-08-02. The old line ("privately woven together … quietly better at every
+       step") described a feeling. This names the thing, and it is the SAME sentence as the
+       title, the meta description, the JSON-LD, llms.txt, /for-agents and the MCP README —
+       six surfaces an assistant quotes verbatim, which until today each said something
+       different. structured-test.php fails if they drift apart again. -->
+  <h1 class="tag">Everything about your trip. One link.</h1>
+  <p class="lead">A private map your whole crew can open and add to.<span>No account to build one, no account to open it.</span></p>
+  <a class="cta" href="/new">Add your first leg <span>free to build · keep it from $2.50</span></a>
   <a class="phone-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener" aria-label="Open the live demo trip">
     <span class="phone"><span class="phone-screen"><img class="ph-port" src="demo-phone.jpg?v=3" alt="A live trip on the map — four friends converging on Lake Tahoe by car and by plane"><img class="ph-land" src="demo-land.jpg?v=3" alt="A live trip on the map — four friends converging on Lake Tahoe by car and by plane"></span></span>
-    <span class="phone-cap">▶ Live demo — tap to open</span>
+    <span class="phone-cap"><svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4.8 19 12 8 19.2z"/></svg> Live demo — tap to open</span>
   </a>
 
   <p class="sentby">Sent here by an AI assistant? It can build the whole trip and hand you the
@@ -343,7 +340,7 @@
     <li>no app to install</li>
     <li>no sign-up to build</li>
     <li>no profiling — ever</li>
-    <li>Works on any browser</li>
+    <li>works on any browser</li>
   </ul>
   <p class="closer">We sell you a service, never your data to third parties.</p>
 </div></header>
@@ -374,32 +371,60 @@
     </div>
   </div>
 
-  <section id="ask">
-  <h2>Ask</h2>
-  <p class="sub">Type the trip the way you would say it out loud. It builds the legs, puts them
-  on the map in order, and leaves you to fix anything it got wrong.</p>
 
-  <div class="saidbox">
-    <p class="said"><b>drive from Denver to Moab on the 4th, then fly home from Salt Lake</b></p>
-    <p class="then">Two legs on the map, in date order, with the drive routed along real roads.
-    It looks up the flight rather than guessing it &mdash; and if it cannot find one, it says so
-    and asks you instead of inventing a departure time.</p>
-  </div>
+  <section class="how">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="n" aria-hidden="true">1</div>
+        <h3>Set the route</h3>
+        <p>Start, destination, how you’re getting there. Tap it out on the map, or type it the
+        way you’d say it out loud. A minute, tops — then your trip has its own address nobody
+        can guess.</p>
+        <span class="addr">thistripbtw.us/xvsbe4r</span>
+      </div>
+      <div class="step">
+        <div class="n" aria-hidden="true">2</div>
+        <h3>Share the link</h3>
+        <p>Send it to the crew. The kids and grandma add stops, notes and photos — no app to install, nothing to join.</p>
+      </div>
+      <div class="step">
+        <div class="n" aria-hidden="true">3</div>
+        <h3>Take the trip</h3>
+        <p>Drop pins where you’re standing. When it’s over, the map <i>is</i> the story.</p>
+      </div>
+    </div>
 
-  <p class="alsotry">Also understood:<br>
-    <code>UA328 and AA1902, Aug 14</code><br>
-    <code>two cars, Phoenix to SF, meet in Vegas</code><br>
-    <code>Sept 2&ndash;7 in Lisbon</code></p>
+    <!-- The Ask example used to be its own <h2> section above pricing (D-?, §1b.1). Demoted
+         2026-08-02 on Peter's call, per the positioning review: nobody buys "AI", they buy that
+         everything is in one place, and a headline for the mechanism sold the mechanism. It is
+         the most concrete thing on the page, so it stays — as an illustration of step 1 rather
+         than a pitch of its own. Below the grid, not inside a card: `.steps` is a three-column
+         grid and equal-height rows would have stretched steps 2 and 3 to match it. -->
+    <div class="saidbox" id="ask">
+      <p class="said"><b>drive from Denver to Moab on the 4th, then fly home from Salt Lake</b></p>
+      <p class="then">Two legs on the map, in date order, with the drive routed along real roads.
+      It looks up the flight rather than guessing it &mdash; and if it cannot find one, it says so
+      and asks you instead of inventing a departure time.</p>
+    </div>
+    <p class="alsotry">Also understood:<br>
+      <code>UA328 and AA1902, Aug 14</code><br>
+      <code>two cars, Phoenix to SF, meet in Vegas</code><br>
+      <code>Sept 2&ndash;7 in Lisbon</code></p>
+  </section>
 
-  <a class="cta" href="/new">Try it <span>free to build &middot; no sign-up to start</span></a>
-</section>
 
+<!-- #14, 2026-08-02: pricing moved BELOW How it works. The review's argument is that a
+     price sheet second answers a question nobody has asked yet — three cards and three
+     numbers before the reader knows what the thing is. Outcome, then how, then what it
+     costs, then why we charge at all. Peter's call; reversible by moving this block back
+     above <section class="how">. -->
 <section id="pricing">
     <p class="freeline"><strong>Build it first &mdash; that part is free</strong>, with no account,
       no card and no email to start. Paying is how you <em>keep</em> it: the trip gets an address of its own
       and links you can share, for a year, five or ten.
       <a href="/what-you-get" rel="noopener">What that means &rarr;</a></p>
-    <p class="freeline" style="margin-top:-6px"><a class="cta" href="/quick">Start building &mdash;
+    <p class="freeline" style="margin-top:-6px"><a class="cta" href="/new">Start building &mdash;
       free <span>you can pay to keep it whenever you like</span></a></p>
     <div class="cards" id="cards">
       <article class="card">
@@ -445,28 +470,6 @@
     <div class="swipe" aria-hidden="true"><i></i><i class="on"></i><i></i></div>
   </section>
 
-  <section class="how">
-    <h2>How it works</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="n" aria-hidden="true">1</div>
-        <h3>Set the route</h3>
-        <p>Start, destination, how you’re getting there. A minute, tops — then your trip has its own address nobody can guess.</p>
-        <span class="addr">thistripbtw.us/xvsbe4r</span>
-      </div>
-      <div class="step">
-        <div class="n" aria-hidden="true">2</div>
-        <h3>Share the link</h3>
-        <p>Send it to the crew. The kids and grandma add stops, notes and photos — no app to install, nothing to join.</p>
-      </div>
-      <div class="step">
-        <div class="n" aria-hidden="true">3</div>
-        <h3>Take the trip</h3>
-        <p>Drop pins where you’re standing. When it’s over, the map <i>is</i> the story.</p>
-      </div>
-    </div>
-  </section>
-
   <section class="priv">
     <h2 style="margin-top:0">Why we charge</h2>
     <p><strong>You pay, so you're the customer — not the product.</strong> No free tier means no reason for us to harvest, profile, or sell anything. We don't run ads and we don't use analytics trackers. Building a trip asks nothing of you at all. Buying one lets you make an account if you want one — an email, a hashed password, and a list of which trips are yours. No name, no profile, no behaviour, nothing a data broker would pay for.</p>
@@ -474,12 +477,12 @@
   </section>
 </main>
 
+<footer class="wrap">this trip, btw · <a href="/about">about</a> · <a href="/help">help</a> · <a href="/faq">faq</a> · <a href="/mission">mission</a> · <a href="/privacy">privacy</a> · <a href="/terms">terms</a> · <a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
 <div class="pay wrap">
   <a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener">
     <span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span>
   </a>
 </div>
-<footer class="wrap">this trip, btw · <a href="/about">about</a> · <a href="/help">help</a> · <a href="/faq">faq</a> · <a href="/mission">mission</a> · <a href="/privacy">privacy</a> · <a href="/terms">terms</a> · <a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
 
 <script>
 /* The carousel opens on "Keep it". Without this it opens on "Plan it" and the middle card —
@@ -675,5 +678,5 @@
 })();
 </script>
 </body>
-<script src="/theme.js?v=1"></script>
+<script src="/theme.js?v=4"></script>
 </html>

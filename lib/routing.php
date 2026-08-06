@@ -33,29 +33,60 @@ const RT_MAX        = 4000;          // bounded, oldest trimmed first
 const RT_MIN_GAP_US = 250000;        // ~4/sec — the demo server asks for restraint, not silence
 const RT_MAX_PTS    = 25;            // a leg is 2 points; a whole route is a handful
 
-function rt_cache_path(): string { return dirname(__DIR__) . '/var/routes.json'; }
+/* ONE FILE PER ROUTE, not one big JSON (D-110).
+ *
+ * The single-file cache was correct for `overview=simplified`, whose entries were ~575 bytes:
+ * 4,000 of them is a 2 MB file, cheap to parse. Full-fidelity geometry is ~16 KB per route, and
+ * the same cache would be a 64 MB file decoded, re-encoded and rewritten under LOCK_EX on EVERY
+ * miss. That works fine for one person testing and falls over the moment two people plan trips
+ * at once, which is the worst possible time to find out.
+ *
+ * Per-file removes the read-modify-write entirely: a store touches one path and blocks nobody.
+ * Writes go to a temp name and rename() into place — rename is atomic on POSIX, so a reader
+ * never sees a half-written file and no lock is needed on either side.
+ */
+function rt_cache_dir():  string { return dirname(__DIR__) . '/var/routes'; }
+function rt_cache_file(string $key): string { return rt_cache_dir() . '/' . sha1($key) . '.json'; }
 function rt_gate_path():  string { return dirname(__DIR__) . '/var/routes-last'; }
 
 function rt_cache_get(string $key)
 {
-    $f = rt_cache_path();
+    $f = rt_cache_file($key);
     if (!is_file($f)) return null;
     $j = json_decode((string)@file_get_contents($f), true);
-    if (!is_array($j) || !isset($j[$key])) return null;
-    $e = $j[$key];
-    return (time() - (int)($e['at'] ?? 0) < RT_TTL) ? ($e['d'] ?? null) : null;
+    if (!is_array($j)) return null;
+    if (time() - (int)($j['at'] ?? 0) >= RT_TTL) return null;
+    return $j['d'] ?? null;                       // string = polyline, '' = a cached "no route"
 }
 
 function rt_cache_put(string $key, $data): void
 {
-    $dir = dirname(rt_cache_path());
+    $dir = rt_cache_dir();
     if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $f = rt_cache_path();
-    $j = is_file($f) ? json_decode((string)@file_get_contents($f), true) : [];
-    if (!is_array($j)) $j = [];
-    $j[$key] = ['at' => time(), 'd' => $data];
-    if (count($j) > RT_MAX) $j = array_slice($j, -(int)(RT_MAX * 0.75), null, true);
-    @file_put_contents($f, json_encode($j), LOCK_EX);
+    $f   = rt_cache_file($key);
+    /* `k` is the plaintext key. sha1 is not reversible and a cache you cannot inspect is a cache
+       you cannot debug — this is the only reason it is stored. */
+    $tmp = $f . '.' . getmypid() . '.tmp';
+    if (@file_put_contents($tmp, json_encode(['at' => time(), 'd' => $data, 'k' => $key])) !== false) {
+        @rename($tmp, $f);
+    } else {
+        @unlink($tmp);
+    }
+    /* Trimming means listing the directory, which is far too expensive to do on every write and
+       pointless besides — the cache only crosses the ceiling occasionally. Sample it instead. */
+    try { if (random_int(1, 200) === 1) rt_cache_trim(); } catch (\Throwable $e) {}
+}
+
+/** Oldest first, down to 75% of the ceiling, so trimming is rare rather than continuous. */
+function rt_cache_trim(): void
+{
+    $files = @glob(rt_cache_dir() . '/*.json') ?: [];
+    if (count($files) <= RT_MAX) return;
+    $age = [];
+    foreach ($files as $p) $age[$p] = @filemtime($p) ?: 0;
+    asort($age);
+    $drop = count($files) - (int)(RT_MAX * 0.75);
+    foreach (array_slice(array_keys($age), 0, $drop) as $p) @unlink($p);
 }
 
 /** Hold to a few upstream requests a second across every visitor at once (see geo_pace). */
@@ -72,13 +103,14 @@ function rt_pace(): void
 }
 
 /**
- * "lat,lng;lat,lng…" → the road path as [[lat,lng], …], or null when there is no route.
+ * "lat,lng;lat,lng…" → the road path as an ENCODED POLYLINE (precision 5), or null when there
+ * is no route. The client decodes it; see decodePoly() in app.html and new.html.
  *
  * Coordinates are rounded to 4 decimals (~11 m) for the CACHE KEY only. Two people tapping the
  * same junction a few metres apart get the same road, which is what turns a busy corridor into
  * one upstream call. The request itself uses what was asked for.
  */
-function rt_route(string $coords): ?array
+function rt_route(string $coords): ?string
 {
     $pairs = array_filter(explode(';', trim($coords)));
     if (count($pairs) < 2 || count($pairs) > RT_MAX_PTS) return null;
@@ -93,7 +125,9 @@ function rt_route(string $coords): ?array
         $clean[] = [$lat, $lng];
     }
 
-    $key = 'v1|' . implode(';', array_map(
+    /* v2, and the bump is load-bearing: v1 entries are decimated ARRAYS and v2 is an encoded
+       STRING. Reusing the prefix would hand the client the wrong type from a warm cache. */
+    $key = 'v2|' . implode(';', array_map(
         fn($c) => sprintf('%.4f,%.4f', $c[0], $c[1]), $clean));
     $hit = rt_cache_get($key);
     if ($hit !== null) return $hit === '' ? null : $hit;   // '' is a cached "no route"
@@ -103,7 +137,14 @@ function rt_route(string $coords): ?array
     // the kind of detail worth writing down rather than rediscovering.
     $path = '/route/v1/driving/' . implode(';', array_map(
         fn($c) => $c[1] . ',' . $c[0], $clean));
-    $url = 'https://' . RT_HOST . $path . '?overview=simplified&geometries=geojson';
+    /* `full`, not `simplified`. OSRM's `simplified` runs Douglas-Peucker at the zoom level of
+       the WHOLE route, so Chicago→Omaha came back as 22 points for 470 miles — routed, but so
+       decimated it drew as a bent straight line and read as though no routing existed at all.
+       `full` is 4,855 points for the same road.
+       And `polyline`, not `geojson`, because the same geometry is 15.9 KB encoded against
+       120.3 KB as coordinate arrays — a 7.5× saving on the wire and in the cache, for about
+       fifteen lines of decoding in the client. Precision 5 is ~1 m, well past what a map draws. */
+    $url = 'https://' . RT_HOST . $path . '?overview=full&geometries=polyline';
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -121,14 +162,12 @@ function rt_route(string $coords): ?array
     if ($raw === false || $code >= 400) return null;
 
     $d = json_decode((string)$raw, true);
-    $c = $d['routes'][0]['geometry']['coordinates'] ?? null;
-    if (!is_array($c) || !$c) { rt_cache_put($key, ''); return null; }   // genuinely no road
+    $g = $d['routes'][0]['geometry'] ?? null;
+    /* An encoded polyline, passed through untouched — the server never decodes it. No lat/lng
+       swap to get wrong here, which is worth noting given the comment above about OSRM's
+       reversed axis order. */
+    if (!is_string($g) || $g === '') { rt_cache_put($key, ''); return null; }   // genuinely no road
 
-    $geo = [];
-    foreach ($c as $pt) {
-        if (!isset($pt[0], $pt[1])) continue;
-        $geo[] = [round((float)$pt[1], 5), round((float)$pt[0], 5)];     // back to lat,lng
-    }
-    rt_cache_put($key, $geo);
-    return $geo;
+    rt_cache_put($key, $g);
+    return $g;
 }

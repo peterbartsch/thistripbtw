@@ -21,7 +21,7 @@
    brand anchor (sign orange) on dark skies rather than to an invented hue. */
 :root {
   --brand:      var(--color-brand-teal,   #035A83);
-  --brand-deep: #024260;
+  --brand-deep: var(--color-brand-teal-deep, #024260);
   --accent:      var(--color-brand-orange, #F7B304);
   --accent-deep: #C38D00;                 /* the pressed edge under a gold button */
   --sign-ink:    var(--color-brand-ink, #141414);
@@ -51,23 +51,42 @@ html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: v
    one-way trip back to the browser's back button. */
 .pagehead {
   max-width: var(--page-max); margin: 0 auto;
-  padding: calc(var(--step) * .8) 22px 0;
+  /* The bottom pad used to be 0, so the header's last line sat flush against the body's first
+     and the two read as one undifferentiated block — measured `gap_head_to_body: 0`. A header
+     that does not end is a header you have to parse rather than skim, which is most of what
+     "clunky" was describing.
+     The TOP pad clears the fixed menu and theme buttons. They are 44px at 12px from the top,
+     so anything less than 56px lets the centred sign run under them — measured
+     `signOverlapsButtons: true` at 500px wide, and it gets worse as the screen narrows and the
+     sign's 62vw grows toward the buttons. */
+  padding: max(calc(var(--step) * .8), 56px) 22px calc(var(--step) * .55);
   text-align: center;
 }
-.pagehead .sign {
-  display: inline-block; background: var(--brand); color: #fff;
-  border: 3px solid var(--board); outline: 2px solid var(--brand-deep);
-  box-shadow: var(--shadow-sign, 0 5px 16px rgba(0,0,0,.4));
-  border-radius: 10px; padding: 6px 16px 7px; text-decoration: none;
-}
-.pagehead .sign b {
-  font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
-  font-size: 20px; letter-spacing: .05em; text-transform: uppercase;
+/* One mark, everywhere (Peter, 2026-08-02). This used to be a teal name plate in Barlow
+   Condensed — a compression of the real sign that had drifted into being a second logo: no
+   gold band, no arrows, no US, half the width. The landing page carried the full guide sign
+   and these twelve carried the plate, so the set read as two brands.
+   Now it is /sign.svg on every one of them, one file the browser caches once. The chrome that
+   made the plate look like a sign is gone with it — the artwork has its own board, its own
+   shadow and its own colours, and wrapping it in another border would frame a picture of a
+   sign inside a sign. Colours stay fixed rather than following --sky: D-026's light board is
+   what keeps the mark legible at every hour, which is the whole argument for having it. */
+.pagehead .sign { display: inline-block; text-decoration: none; line-height: 0; }
+.pagehead .sign img {
+  /* Smaller than the landing hero's 380px — here it is a header, not the masthead. width and
+     height are on the element too, so the row does not collapse and reflow while it loads. */
+  /* 62vw put a 260px-wide sign under the fixed buttons on a narrow phone. 52vw keeps it clear
+     of them at every width the site supports, and the sign was oversized for a header anyway —
+     it was reading as a second masthead on twelve pages that already say what they are in the
+     h1 directly beneath it. */
+  display: block; width: min(220px, 52vw); height: auto;
 }
 .pagehead h1 {
   font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
   font-size: clamp(28px, 6.6vw, 38px); text-transform: uppercase; letter-spacing: .03em;
-  line-height: 1.06; margin: calc(var(--step) * .55) 0 8px;
+  /* Was 23px above and 8px below, measured — so the title sat closer to its own subtitle than
+     to the mark, and the three parts read as two. Even the rhythm: one gap, used twice. */
+  line-height: 1.06; margin: calc(var(--step) * .5) 0 calc(var(--step) * .3);
   /* Long titles ("What's free, what you pay for") broke into a long line and an orphan.
      Balance evens the lines out and max-width stops a single word stranding on line two. */
   text-wrap: balance; max-width: 18ch; margin-inline: auto;
@@ -148,7 +167,10 @@ html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: v
   background: transparent; color: var(--link);
   box-shadow: inset 0 0 0 2px var(--link);
 }
-.btn-quiet:hover { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); filter: none; }
+/* D-062: gold carries a fill or a border, never a word. The hover state had it doing both —
+   gold text inside a gold ring measured 1.70:1 on haze against a 4.5 bar. The ring stays
+   gold, because that is what the rule permits; the word goes to ink at 17:1. */
+.btn-quiet:hover { color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); filter: none; }
 .btn-quiet:active { transform: none; }
 
 /* ── base (F1, 2026-07-29) ─────────────────────────────────────────────────────────────
@@ -186,8 +208,12 @@ a { color: var(--link); font-weight: 600; }
   border: 1px solid var(--line);
   border-radius: 14px;
   max-width: min(640px, calc(100vw - 32px));
-  /* And the space below, which was 80px of gradient with the links pressed into it. */
-  margin: var(--step) auto calc(var(--step) * 2.2);
+  /* And the space below, which was 80px of gradient with the links pressed into it.
+     Plus the home-bar / toolbar inset: measured contrast was fine in all four skies (5.49
+     to 12.87, all clear of AA), so "lost" was never a colour problem — the block was
+     partly UNDER the browser's own chrome. See the dvh note in sky.css; this is the other
+     half, for the notch-and-home-bar hardware rather than the toolbar. */
+  margin: var(--step) auto calc(var(--step) * 2.2 + env(safe-area-inset-bottom, 0px));
   padding: 16px 22px 18px;
   text-align: center; color: var(--soft); font-size: 13px; line-height: 2.2;
 }
@@ -205,9 +231,36 @@ a { color: var(--link); font-weight: 600; }
 }
 .pagefoot a:hover { color: var(--accent); text-decoration: underline; }
 .pagefoot .sep { opacity: .45; padding: 0 2px; }
+/* `.pagefoot .powered` lived here from 2026-08-03 and is GONE (Peter, 2026-08-05: the Stripe
+   line was saying itself twice). Six pages carried the .stripe-badge component AND repeated the
+   same attribution as text in the footer directly beneath it. One treatment now — the badge,
+   after the footer, styled in sky.css so all sixteen pages share it.
+   The rule that outlived the rule: TEXT AND A LINK, never Stripe's hosted logo image, because an
+   <img> from stripe.com would be a third-party request we do not otherwise make from our own
+   source. (Not the same as claiming the served page makes none — Cloudflare injects its own
+   script at the edge; see CLAUDE.md. That is why this is a source rule, not a copy claim.) */
 
 @media (max-width: 640px) {
-  .pagehead { padding-top: calc(var(--step) * .6); }
+  .pagehead { padding-top: max(calc(var(--step) * .6), 56px); }
+}
+
+/* ── the condensing mark ──────────────────────────────────────────────────────────────
+   Appears once the real sign has scrolled off, so a long page is never anonymous and the way
+   home is always one tap away. Built by pages.js; see the note there for why it is a separate
+   element rather than the header's own sign pinned in place.
+   TOP-LEFT: the menu and theme buttons are fixed top-right, and this is exactly the collision
+   .pagehead's top padding was widened to prevent — no sense reintroducing it here. */
+.minimark {
+  position: fixed; top: 8px; left: 12px; z-index: 901; line-height: 0;
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.minimark img { display: block; width: 104px; height: auto; }
+html.scrolled .minimark { opacity: 1; transform: none; pointer-events: auto; }
+/* The mark still appears, it just stops sliding. Motion is the decoration here, not the
+   information — and this is the one file that had no reduced-motion answer at all. */
+@media (prefers-reduced-motion: reduce) {
+  .minimark { transition: none; transform: none; }
 }
 
 /* ── the same menu the landing page has ───────────────────────────────────────────────
@@ -217,22 +270,43 @@ a { color: var(--link); font-weight: 600; }
    These links open in the SAME tab — between info pages a new tab per hop is noise. The
    landing page keeps target="_blank" because leaving a trip behind is the thing to avoid;
    changing that is the queued in-trip panel work, not this pass. */
+/* ABSOLUTE, not fixed (2026-08-05). Fixed meant every page scrolled UNDER these two, and on
+   a phone they sat on top of the words: measured on the live landing page at scroll 3417, the
+   theme button covered the line "Photos, pinned where they happened", and Peter's screenshots
+   caught the same collision over the hero CTA and mid-paragraph on /privacy. They belong to the
+   top of the page here, so they scroll away with it. The TRIP page keeps its fixed chrome and is
+   unaffected — app.html does not load this file. */
 #menuBtn {
-  position: fixed; top: 14px; right: 14px; z-index: 50;
+  position: absolute; top: 14px; right: 14px; z-index: 50;
   background: var(--card); color: var(--ink);
   border: 2px solid var(--ink); border-radius: 50%;
   width: 44px; height: 44px; font-size: 19px; cursor: pointer;
   box-shadow: 0 3px 12px rgba(0,0,0,.16);
 }
 #themeBtn {
-  position: fixed; top: 14px; right: 66px; z-index: 50;
+  position: absolute; top: 14px; right: 66px; z-index: 50;
   background: var(--card); color: var(--ink);
   border: 2px solid var(--ink); border-radius: 50%;
   width: 44px; height: 44px; font-size: 19px; line-height: 1; cursor: pointer;
   box-shadow: 0 3px 12px rgba(0,0,0,.16);
 }
+/* The signed-in mark (D-132). Same plate, border and size as the other two so the three read
+   as one set — third in the row at right:118 (14 / 66 / 118, each 44 wide plus an 8 gap).
+   It exists in the DOM ONLY when signed in, so a signed-out page is unchanged and this rule
+   never matches. */
+#acctBtn {
+  position: absolute; top: 14px; right: 118px; z-index: 50;
+  background: var(--card); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 50%;
+  width: 44px; height: 44px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 12px rgba(0,0,0,.16);
+  text-decoration: none;
+}
+#acctBtn:hover { color: var(--link); }
+
 #menu {
-  position: fixed; top: 66px; right: 14px; z-index: 50;
+  position: absolute; top: 66px; right: 14px; z-index: 50;
   background: var(--card); border: 2px solid var(--ink);
   border-radius: 12px; padding: 6px; display: none;
   box-shadow: 0 12px 30px rgba(0,0,0,.2);

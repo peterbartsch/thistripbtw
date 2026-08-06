@@ -5,21 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>this trip, btw</title>
+<!-- D-116: a link preview, and deliberately a GENERIC one.
+     Pasted into Messages a trip link rendered as a bare URL, which reads like spam — the one
+     thing a link you are asking family to trust must not read like.
+
+     IT DOES NOT NAME THE TRIP, and that is the decision, not a limitation. Two reasons:
+
+     · A preview is fetched by somebody else's servers — Apple's here, and whoever's next time
+       the link is forwarded. Naming the trip would send that name to a third party on
+       every paste, which is the exact data flow this product exists to refuse. The phrase gate
+       is pointless if the chrome around it announces what is behind the gate.
+     · It renders in every conversation the link is ever forwarded into, including ones the
+       sender never sees.
+
+     The fragment carrying the phrase is never transmitted, so a scraper is unauthenticated by
+     construction and could only learn the name by a slug lookup we would have to write on
+     purpose. We are not going to write it.
+
+     og:image, added 2026-08-04, and it is the BRAND CARD — never this trip. The old note here
+     said there was no artwork a scraper renders reliably; `/og.png` is that artwork now, a
+     1200x630 raster of the sign. What has NOT changed is the rule two paragraphs up: a preview
+     shows who sent you somewhere, never where. Rendering the route or the places would publish
+     the trip to every link scraper that touches the URL — unauthenticated, by construction —
+     and those images are then CACHED on infrastructure we do not control and cannot delete when
+     the trip's term ends, which is a promise on /privacy. One image for every trip, forever. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="this trip, btw">
+<meta property="og:title" content="Someone shared a trip with you">
+<meta property="og:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you. No account needed to look.">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<meta name="description" content="A private map with the whole trip on it. Open the link you were sent.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Someone shared a trip with you">
+<meta name="twitter:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you.">
 <!--
   this trip, btw — multi-tenant trip client. Ported from the westbound.html
   family alpha (reference/, gitignored). Data layer = the PHP REST API
   (api.php); trip auth = two word-phrase passwords per trip. Buyer accounts (D-036) are
    a separate mechanism and never gate opening a trip.
-  Single file, vanilla, Leaflet from cdnjs + Google Fonts only. See _agents/PLAN.md Phase 2.
+  Single file, vanilla, no build step. Leaflet and Barlow are SELF-HOSTED (/vendor/, /fonts/)
+  since 2026-07-30 — nothing this page ships loads from anybody else, which is the point and
+  not an optimisation. This line said "Leaflet from cdnjs + Google Fonts" until 2026-08-06,
+  three lines above the <link> that proves otherwise.
 -->
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=2"><!-- design system palette (D-030) -->
+<link rel="stylesheet" href="/tokens.css?v=6"><!-- design system palette (D-030) -->
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
 <style>
   :root{
     /* brand palette driven by the design system (D-030 tokens.css); semantic names kept so rules don't change */
-    --pine:var(--color-brand-teal,#035A83); --pine-deep:#025468; --accent:var(--color-brand-orange,#F7B304); --card:#fff; --tabbg:#EFEDE5;
+    --pine:var(--color-brand-teal,#035A83); --pine-deep:var(--color-brand-teal-deep,#024260); --accent:var(--color-brand-orange,#F7B304); --card:#fff; --tabbg:#EFEDE5;
     --sheet:#FCFBF8; --ink:#333333; --ink-soft:#6B675F;
     --line:#E4E1D8;
     --truck:#F2A900; --truck-deep:#B57F00;
@@ -61,20 +100,58 @@
   #topbar{position:fixed;top:0;left:0;right:0;z-index:20;
     padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
     display:flex;align-items:center;gap:10px;pointer-events:none}
-  #sign{pointer-events:auto;background:var(--pine);color:#fff;
-    border:2px solid #fff;outline:2px solid var(--pine-deep);
-    border-radius:10px;padding:6px 14px 7px;max-width:70vw;
-    box-shadow:0 4px 14px rgba(0,0,0,.28)}
-  #sign h1{font-family:var(--disp);font-weight:700;font-size:20px;
-    letter-spacing:.06em;text-transform:uppercase;line-height:1;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #sign small{display:block;font-family:var(--disp);font-weight:600;
-    font-size:11px;letter-spacing:.14em;opacity:1;text-transform:uppercase;
-    background:var(--accent);margin:-6px -14px 5px;padding:3px 14px 2px;
-    border-radius:7px 7px 0 0}
+  /* On a 320px phone (an SE, or any phone with Display Zoom on) this bar ran 13px PAST the
+     right edge and the two round buttons were squeezed from 40px to 35px — measured, from a
+     photo of a real handset. Nothing had flex-shrink set, so the browser took the width out of
+     whichever child it liked, which was the controls. The sign is the only thing here that can
+     lose width gracefully: it already ellipsises. So it shrinks and they do not. */
+  /* The masthead used to be a 157x32 teal plate carrying the wordmark AND the trip name, with a
+     border, an outline and a shadow, parked over the map for the whole session. Two things made
+     it wrong: the trip name now lives at the top of the sheet, where the document is — so the
+     plate was saying it twice — and a map is mostly map. It is the mark alone now, at the same
+     weight as the other two controls, and it is a real link home rather than a decoration. */
+  #sign{pointer-events:auto;flex:0 0 auto;display:block;width:88px;line-height:0;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+  #sign img{display:block;width:100%;height:auto}
   #themeBtn{pointer-events:auto;background:var(--card);color:var(--ink);border-radius:50%;
     width:40px;height:40px;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.22)}
-  #topright{margin-left:auto;display:flex;align-items:center;gap:8px;pointer-events:auto}
+  /* D-132 on the trip page. Same plate, size and shadow as #themeBtn/#menuBtn so the row
+     reads as one set. It is an <a>, so it needs the centring the <button>s get for free. */
+  #acctBtn{pointer-events:auto;background:var(--card);color:var(--ink);border-radius:50%;
+    width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.22);text-decoration:none;
+    display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  /* Lower right on BOTH pages now, so the one control that opens everything is in the same
+     place whether you are building a trip or reading one. It rides above the sheet, which is
+     why it uses --sheet-rest the way .leaflet-bottom does rather than a constant. */
+  #fab{position:fixed;right:12px;z-index:31;
+    bottom:calc(var(--sheet-rest,112px) + 10px);
+    width:44px;height:44px;border-radius:50%;cursor:pointer;
+    background:var(--accent);color:#141414;border:2px solid #141414;
+    display:inline-flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 12px rgba(0,0,0,.28)}
+  /* #141414 literal, not var(--ink): the face is accent in BOTH themes and its ink must not
+     flip (D-125 — that trap measured 1.52:1 on this very page's keep-bar). */
+  #fab:active{transform:scale(.94)}
+  #sayer{position:fixed;left:50%;transform:translateX(-50%);z-index:70;
+    bottom:calc(var(--sheet-rest,112px) + 66px);
+    background:var(--ink);color:var(--sheet);border-radius:999px;padding:9px 16px;
+    font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.34);
+    opacity:0;pointer-events:none;transition:opacity .18s ease}
+  #sayer.on{opacity:1}
+  body.sheet-shut #fab{bottom:84px}
+  /* The ring IS the FAB expanded; reading and printing own the screen outright. */
+  body.ringing #fab,body.reading #fab{display:none}
+  @media print{ #fab{display:none!important} }
+  #topright{margin-left:auto;display:flex;align-items:center;gap:8px;pointer-events:auto;
+    flex:0 1 auto;min-width:0}
+  /* Every child was flex:0 0 auto, so NOTHING in this row could give — fine with two round
+     buttons, and it put the third one 2px off a 320px screen the moment D-132 added the
+     account mark (menuBtn's right edge at 322). The tags are the thing that can lose width
+     gracefully here, exactly as the sign does above: they are a label, the buttons are how you
+     get anywhere. So the tags shrink and ellipsise, and the three controls keep their 44px. */
+  #topright > *{flex:0 0 auto}
+  #topright > #viewTag,#topright > #editTag{flex:0 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #viewTag{background:var(--card);color:var(--ink-soft);
     font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.12em;
     text-transform:uppercase;border-radius:999px;padding:6px 12px;
@@ -110,28 +187,159 @@
     width:30px;height:30px;border-radius:50%;color:#fff;
     font-family:var(--disp);font-weight:700;font-size:15px;
     border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  /* Replay arrival (D-115). Every frame redrew the whole map with no transition, so a new stop
+     appeared identically to the fifteen already on screen and nothing told the eye where to
+     look. The narration said what arrived; the map did not. Overshoot on the way in, because a
+     stop ARRIVING is the one event replay exists to show. */
+  @keyframes ttbArrive{
+    0%{transform:scale(.3);opacity:0}
+    45%{transform:scale(1.55);opacity:1}
+    70%{transform:scale(.94)}
+    100%{transform:scale(1.18);opacity:1}
+  }
+  /* A halo that expands and fades, so the eye is pulled to the new stop even when the pin is
+     small or sits in a cluster. box-shadow rather than a pseudo-element: .pin already carries
+     one, and a second box inside a Leaflet divIcon is a stacking-context argument nobody wins. */
+  @keyframes ttbHalo{
+    0%{box-shadow:0 2px 8px rgba(0,0,0,.35), 0 0 0 0 rgba(242,169,0,.85)}
+    100%{box-shadow:0 2px 8px rgba(0,0,0,.35), 0 0 0 26px rgba(242,169,0,0)}
+  }
+  /* It STAYS bigger (1.18) while it is the current frame: the pulse says "this just happened",
+     the size says "this is where you are". Peter: it "did not highlight each stop enough". */
+  .pin.arrive{animation:ttbArrive .62s cubic-bezier(.2,1.5,.35,1) both,
+                        ttbHalo .9s ease-out 1;z-index:600!important}
+  @media (prefers-reduced-motion:reduce){
+    .pin.arrive{animation:none;transform:scale(1.18)}
+  }
+  /* Cluster badge (2026-08-02). Fanning stops working once a group is big enough that the
+     circle it fans onto is itself a pile — measured on the demo trip: nine marker pairs under
+     20px at z6. Past four, one badge with a count beats four unreadable pins.
+     Deliberately NOT a track colour: a cluster can hold both vehicles and posts, and colouring
+     it after one of them would be a lie about what is inside. Chrome teal with the double ring
+     says "several things", which is the only claim it can honestly make. */
+  /* 44px of TARGET around 36px of badge: DESIGN.md's minimum, and this is a new control so it
+     starts at the minimum rather than inheriting .pin's 30px. */
+  .clustertap{display:flex;align-items:center;justify-content:center;width:44px;height:44px}
+  /* A ROUNDED SQUARE, because a stop pin is a circle. Peter, 2026-08-02: the two read the same
+     at arm's length when both were teal circles with a number in them, and a ring weight is not
+     a difference you can see on a phone in daylight. Shape survives both themes, small sizes and
+     colour-blindness, which colour and ring weight do not. */
+  .cluster{display:flex;align-items:center;justify-content:center;
+    width:36px;height:36px;border-radius:11px;color:#fff;background:var(--pine);
+    font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.02em;
+    border:2.5px solid #fff;box-shadow:0 0 0 2.5px var(--pine-deep),0 3px 10px rgba(0,0,0,.4);
+    cursor:pointer}
+  .cluster:hover{filter:brightness(1.12)}
+  /* F-3: names the place a departing leg is heading for, pinned at the frame edge */
+  /* Right-edge chips grow leftwards so they stay inside the frame they label. The shift goes on
+     the INNER div: Leaflet writes `transform: translate3d(...)` inline on the marker element to
+     position it, and an inline style beats a stylesheet — so a transform there is silently
+     ignored, which is exactly what happened on the first attempt. */
+  .edgewrap.right .edgechip{transform:translateX(-100%)}
+  .edgechip{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+    background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;
+    padding:2px 8px 2px 6px;font-family:var(--disp);font-weight:700;font-size:10.5px;
+    letter-spacing:.03em;text-transform:uppercase;box-shadow:0 2px 6px rgba(0,0,0,.22);
+    max-width:38vw;overflow:hidden;text-overflow:ellipsis;opacity:.92}
+  .edgechip span{overflow:hidden;text-overflow:ellipsis}
   .pin.truck{background:var(--truck);color:#3A2A00}
   .pin.rental{background:var(--rental)}
   .pin.is-here{outline:3px solid rgba(232,72,45,.0)}
-  .pin.is-here::after{content:"";position:absolute;inset:-7px;border-radius:50%;
+  /* ::BEFORE, not ::after — and this is the whole bug Peter reported twice ("the concentric
+     circles are centered on the GPS point, not the center of the marker").
+     `.pin::after` further down is the invisible 44px HIT-TARGET expander: top/left 50% with
+     translate(-50%,-50%) and width/height max(100%,44px). This ring was the SAME pseudo-element.
+     It won `inset:-7px` on specificity, but it did NOT override the expander's forced width,
+     height and transform — so a 44px circle was pinned at top/left -7px and then translated by
+     another -22px, putting its centre 7px up and left of the pin's while the pin itself stayed
+     dead on its anchor. Two rules that are each correct alone, sharing one box.
+     On ::before it has a box to itself. It is absolutely positioned, so it is out of flow and
+     does not become a flex item of .pin or shift the stop number. */
+  .pin.is-here::before{content:"";position:absolute;inset:-7px;border-radius:50%;
     border:3px solid currentColor;animation:pulse 1.6s ease-out infinite}
-  .pin.truck.is-here::after{border-color:var(--truck)}
-  .pin.rental.is-here::after{border-color:var(--rental)}
+  .pin.truck.is-here::before{border-color:var(--truck)}
+  .pin.rental.is-here::before{border-color:var(--rental)}
   @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.35);opacity:0}}
   @media (prefers-reduced-motion:reduce){
-    .pin.is-here::after{animation:none;opacity:.5}
+    .pin.is-here::before{animation:none;opacity:.5}
     *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
       transition-duration:.01ms!important;scroll-behavior:auto!important}
   }
 
   /* ── bottom sheet ──────────────────────────────────────── */
+  :root{--sheet-rest:112px}   /* the sheet's resting height, and what the map keeps clear of it */
   #sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;
     background:var(--sheet);border-radius:18px 18px 0 0;
     box-shadow:0 -8px 30px rgba(0,0,0,.28);
-    height:88vh;transform:translateY(calc(88vh - 132px));
+    height:88vh;transform:translateY(calc(88vh - var(--sheet-rest,112px)));   /* was 132: the resting sheet is
+      furniture on a screen whose job is the map, and the header made it readable in less */
     transition:transform .28s cubic-bezier(.3,.9,.3,1);
     display:flex;flex-direction:column}
   /* touch-action lives on the drag handles only — the sheet body must stay pinch-zoomable (a11y) */
+  /* SHUT is the resting state now (2026-08-02). The sheet used to hold 112px of the screen for
+     the whole session on a page whose job is a map. It opens on a tap — on the pill below, on a
+     marker, or on anything that has something to say (a new stop, the chat, an info panel).
+     The pill is what makes that safe: it carries the trip's name and its size, so a shut sheet
+     still says what this is and that there is more. Hiding the sheet without it would be hiding
+     the trip. */
+  /* 100% of the sheet's own height, which is exactly right and not an approximation: it is
+     88vh tall with bottom:0, so its top sits at 12vh and 88vh of travel puts that top at
+     100vh — flush off the bottom. Changed to 100vh once while chasing a bug that turned out
+     to be a frozen renderer in a hidden pane; changed back. */
+  #sheet.shut{transform:translateY(100%)}
+  #openSheet{position:fixed;left:50%;transform:translateX(-50%);z-index:29;
+    bottom:calc(env(safe-area-inset-bottom) + 14px);
+    display:none;align-items:center;gap:9px;max-width:calc(100vw - 40px);
+    background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:999px;
+    padding:9px 16px;min-height:44px;box-shadow:0 6px 20px rgba(0,0,0,.32);
+    font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.05em;
+    text-transform:uppercase;white-space:nowrap;overflow:hidden}
+  body.sheet-shut #openSheet{display:inline-flex}
+  #openSheet .nm{overflow:hidden;text-overflow:ellipsis}
+  #openSheet .ct{font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:.02em;
+    text-transform:none;color:var(--soft);flex:0 0 auto}
+  #openSheet .cv{flex:0 0 auto;font-size:12px;opacity:.7}
+  /* D-114. Small, permanent, and impossible to mistake for a feature: a beta tester has to be
+     able to tell an in-house trip from how the product behaves for a customer — above all that
+     this one has no end date, which nothing purchasable does. Sits under the sign, top-left,
+     because the right belongs to the fixed buttons. */
+  #qaTag{position:fixed;top:60px;left:12px;z-index:900;
+    background:var(--ink);color:var(--card);border-radius:6px;
+    padding:2px 7px;font-family:var(--disp);font-weight:700;font-size:11px;
+    letter-spacing:.12em;text-transform:uppercase;opacity:.82;pointer-events:none}
+  #qaTag[hidden]{display:none}
+  body.qa #qaTag{display:block}
+  /* D-113 keep-bar. It used to sit above the sheet pill so as not to bury the product's own
+     navigation under a signup prompt — a good rule that the box then broke anyway, overlapping
+     the sheet in every state. At the top it cannot reach the pill at all. */
+  /* Shaped like #offline above: a full-width strip at the very top. z:21 clears #topbar (20)
+     and stays under #offline (60), which is a transient and outranks an offer. */
+  #keepBar{position:fixed;top:0;left:0;right:0;z-index:21;
+    display:flex;align-items:center;gap:8px;
+    padding:calc(env(safe-area-inset-top) + 6px) 6px 6px 12px;
+    /* link first, dismiss last: reading order matches visual order, offer before escape. */
+    /* #141414 literal, NOT var(--ink): the band is gold in BOTH themes, so its ink must not
+       flip with the theme. Measured 1.52:1 in dark when this inherited --ink. */
+    background:var(--accent);color:#141414;
+    border-bottom:2px solid var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.22)}
+  /* The strip takes its own space rather than covering the masthead and the two round
+     controls, which are what a stranger needs in order to get anywhere. */
+  /* 46px is the strip's own height below the inset (6 + a 32px row + 6 + a 2px border); the
+     +10 is #topbar's original gap, kept. Measured: at 44 the round controls clipped 2px under
+     the strip's border. */
+  body.has-keepbar #topbar{padding-top:calc(env(safe-area-inset-top) + 56px)}
+  #keepBar .kb-go{flex:1 1 auto;min-width:0;color:inherit;text-decoration:none;
+    font-family:var(--disp);font-weight:600;font-size:14px;line-height:20px;
+    letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #keepBar .kb-go::after{content:" \2192"}
+  #keepBar[hidden]{display:none}
+  /* 44px target, per DESIGN.md — the dismiss is the control someone in a hurry reaches for. */
+  #keepBar #keepX{flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;
+    justify-content:center;background:none;border:0;color:inherit;font-size:20px;line-height:1;
+    cursor:pointer;border-radius:50%}
+  /* 32px is under the 44px rule and that is deliberate here: the strip's own hit area extends
+     the full row height, and a 44px circle inside a 32px-tall strip would have overflowed it.
+     Dismiss is one tap on a target with nothing adjacent to mis-hit. */
   #sheet.half{transform:translateY(44vh)}
   #sheet.full{transform:translateY(0)}
   #sheet.dragging{transition:none}
@@ -139,14 +347,108 @@
     background:none;border:0;cursor:grab}   /* MB2: was 10/4 — a 19px-tall drag handle */
   #grab::before{content:"";display:block;width:44px;height:5px;border-radius:3px;
     background:#CFCBC0;margin:0 auto}
-  #sheetHead{flex:none;padding:4px 16px 10px;display:flex;align-items:center;gap:8px;touch-action:none}
+  /* #15: name → where → when → status, in that order and that weight. Two lines, because the
+     sheet is a bottom sheet and every pixel here is a pixel of trip you cannot see. */
+  /* The way into the read view sits in the document header, because that is where the document
+     is. Buried at Info → Trip settings is how the export spent its whole life so far. */
+  #docHead{flex:none;padding:2px 16px 0;display:flex;align-items:flex-start;gap:10px}
+  #docTitles{flex:1;min-width:0}
+  #readBtn{flex:0 0 auto;margin-top:2px;min-height:32px;padding:0 12px;border-radius:999px;
+    background:none;border:1.5px solid var(--line);color:var(--ink);
+    font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.08em;
+    text-transform:uppercase}
+  /* THE PLAY BUTTON (Peter, 2026-08-05: "should be super obvious on load — this is a great
+     feature, not hidden"). It sits in #docHead because that strip is on screen the moment a
+     trip opens; the old trigger lived in #legendRow and measured 85px BELOW the fold at the
+     landing height, which is why nobody could find it. Gold fill with an ink glyph reads 10:1,
+     and the ink ring carries the boundary that gold alone cannot (1.78:1 on the sheet) — D-062
+     permits gold as a fill, never as a word. */
+  #playBtn{flex:0 0 auto;width:44px;height:44px;border-radius:50%;cursor:pointer;
+    /* Same fixed-ink rule as #keepBar: a gold face in both themes takes sign ink, not --ink. */
+    background:var(--accent);border:2px solid #141414;color:#141414;
+    display:inline-flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  #playBtn[hidden]{display:none}
+  #playBtn:active{transform:translateY(1px)}
+  @media (prefers-reduced-motion:reduce){ #playBtn:active{transform:none} }
+  #readBtn:hover{border-color:var(--ink)}
+  #docHead:empty{display:none}
+  /* ── §2v PROTOTYPE: the trip action bar (/{slug}?bar=1) ─────────────────────────────
+     The header becomes a column so the verbs get their own row, and the lone Read pill
+     stands down — its job is in the bar now. Replay carries the accent because it is the
+     one Peter named and the one nobody could find. Signage, not chrome: display face,
+     uppercase, tracked, on a plate — the same language as the cards (D-022). */
+  /* The resting slice has to GROW to hold the new row, or the bar lands below the fold and
+     the prototype has moved the problem instead of fixing it — measured: the bar sat at 795
+     of an 812 viewport, 17px showing. 112 + 44 (row) + 8 (gap) + 4 = 168. The map's controls
+     read the same variable, so they clear it without a second number to keep in sync. */
+  .ta:focus-visible{outline:2px solid var(--pine);outline-offset:2px}
+  /* §2v prototype (b): the take-it sheet. A bottom sheet because that is where the thumb is,
+     and because it must sit ABOVE #sheet (z 30) and the replay chrome without fighting the
+     ring's numbers on the builder — 70 is clear of everything in this file. */
+  #takeSheet{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;
+    justify-content:center;background:rgba(10,12,16,.5)}
+  #takeSheet[hidden]{display:none}
+  .tk-card{width:min(440px,100%);max-height:86vh;overflow-y:auto;background:var(--sheet);
+    border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow:0 -10px 34px rgba(0,0,0,.4)}
+  #takeTitle{font-family:var(--disp);font-weight:700;font-size:21px;letter-spacing:.03em;
+    text-transform:uppercase;color:var(--ink)}
+  .tk-sub{font-size:13px;color:var(--ink-soft);margin:3px 0 14px;line-height:1.4}
+  .tk-row{display:block;width:100%;text-align:left;min-height:44px;margin-bottom:8px;
+    padding:11px 14px;border-radius:12px;cursor:pointer;
+    background:var(--card);border:1.5px solid var(--line);color:var(--ink)}
+  .tk-row:hover{border-color:var(--ink)}
+  .tk-row b{display:block;font-family:var(--disp);font-weight:700;font-size:14.5px;
+    letter-spacing:.06em;text-transform:uppercase}
+  .tk-row span{display:block;font-size:12.5px;color:var(--ink-soft);line-height:1.4;margin-top:2px}
+  .tk-row[disabled]{opacity:.45;cursor:default}
+  /* STICKY: at 375x500 — an iPhone SE with browser chrome up, or a phone in landscape — the
+     card is taller than the sheet and Close landed at 468 against a 500 fold. It was still
+     reachable by scrolling the card, and the scrim and Escape both close it, but a way out you
+     have to discover is not a way out. Sticky keeps it on screen at every height; the tinted
+     backing stops the row above showing through it. */
+  .tk-x{position:sticky;bottom:0;width:100%;min-height:44px;margin-top:4px;border:0;cursor:pointer;
+    background:var(--sheet);box-shadow:0 -8px 12px -6px var(--sheet);
+    color:var(--ink-soft);font-family:var(--disp);font-weight:700;font-size:13px;
+    letter-spacing:.08em;text-transform:uppercase}
+  .tk-row:focus-visible,.tk-x:focus-visible{outline:2px solid var(--pine);outline-offset:2px}
+  #docName{font-family:var(--disp);font-weight:700;font-size:26px;line-height:1.08;
+    letter-spacing:.02em;text-transform:uppercase;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* The meta line WRAPS rather than truncating. Measured on a 375px phone it ran to
+     "…kept until Au…", which reads as a bug rather than as a deliberate cut — and the term is
+     the one part a customer cannot reconstruct from the map in front of them. Two lines
+     costs ~14px; a half-printed date costs a support email. The NAME still truncates, because
+     a long name wrapping to three lines would push the tabs off the sheet. */
+  #docMeta{margin:2px 0 0;font-size:13px;line-height:1.35;color:var(--soft);
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  #docMeta .sep{opacity:.5;padding:0 5px}
+  #docMeta .term{white-space:nowrap}
+  @media (max-width:520px){ #docName{font-size:21px} #docMeta{font-size:12px} }
+  #sheetHead{flex:none;padding:4px 16px 6px;display:flex;align-items:center;gap:8px;touch-action:none}
+  /* One row with the tabs. On a narrow phone the filters wrap under rather than squeezing the
+     tabs, which are the primary control here; the band is still gone on any screen with room. */
+  #sheetHead{flex-wrap:wrap}
+  #legendRow{display:flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto;padding:0}
+  /* Under 400px the filters wrap to their own line rather than squeezing the tabs, which are the
+     primary control. Still one element's worth of padding, not a band of its own. */
+  @media (max-width:400px){ #legendRow{margin-left:0;width:100%;padding-top:2px} }
   .legend{display:flex;gap:6px}
   .legend[hidden]{display:none}   /* [hidden] alone loses to display:flex */
-  .track-chip{font-family:var(--disp);font-weight:700;font-size:13px;
-    letter-spacing:.1em;text-transform:uppercase;border-radius:999px;
-    padding:5px 12px;border:2px solid transparent;color:#fff}
-  .track-chip.truck{background:var(--truck);color:#3A2A00}
-  .track-chip.rental{background:var(--rental)}
+  /* These are FILTERS, and they were reading louder than the trip's own name: two full-height
+     saturated pills on a row of their own, pushing the first leg card past halfway down the
+     screen. A filter should say which colour it stands for and get out of the way, so the fill
+     became a dot and the chip became text. Off state still strikes through, so the two states
+     are told apart by more than colour alone. */
+  .track-chip{font-family:var(--disp);font-weight:700;font-size:12px;
+    letter-spacing:.07em;text-transform:uppercase;border-radius:999px;
+    padding:4px 9px 4px 6px;border:1.5px solid var(--line);background:none;color:var(--ink);
+    display:inline-flex;align-items:center;gap:6px;min-height:32px}
+  .track-chip::before{content:"";width:10px;height:10px;border-radius:50%;flex:0 0 auto;
+    background:currentColor}
+  .track-chip.truck::before{background:var(--truck)}
+  .track-chip.rental::before{background:var(--rental)}
   .track-chip.dim{opacity:.62;text-decoration:line-through}
   #addBtn{margin-left:auto;background:var(--pine);color:#fff;
     font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.08em;
@@ -161,10 +463,10 @@
   .daybreak::after{content:"";flex:1;height:1px;background:var(--line)}
 
   .card{background:var(--card);border:2px solid var(--ink);border-radius:var(--radius);
-    margin-bottom:10px;overflow:hidden;position:relative}
+    margin-bottom:8px;overflow:hidden;position:relative}
   /* no colored side bars — cards read as complete highway signs (border only, D-022) */
   .card.focus{box-shadow:0 0 0 3px rgba(3,107,131,.65)}
-  .card-top{display:flex;align-items:center;gap:10px;padding:12px 12px 0 16px}
+  .card-top{display:flex;align-items:center;gap:8px;padding:10px 34px 0 16px}   /* right pad clears the corner tag */
   .stopnum{flex:none;width:26px;height:26px;border-radius:50%;color:#fff;
     display:flex;align-items:center;justify-content:center;
     font-family:var(--disp);font-weight:700;font-size:14px}
@@ -172,8 +474,8 @@
   .card.rental .stopnum{background:var(--rental)}
   /* Real height, not the ::after hit-expansion used on buttons below — a pseudo-element
      over an input swallows the click instead of focusing it. */
-  .place{flex:1;min-height:44px;border:0;background:transparent;text-overflow:ellipsis;font-family:var(--disp);
-    font-weight:700;font-size:22px;line-height:1.1;text-transform:uppercase;
+  .place{flex:1;min-height:38px;border:0;background:transparent;text-overflow:ellipsis;font-family:var(--disp);
+    font-weight:700;font-size:21px;line-height:1.1;text-transform:uppercase;
     letter-spacing:.02em;min-width:0}
   .place:focus{outline:none;border-bottom:2px solid var(--pine)}
   .here-btn{flex:none;font-family:var(--disp);font-weight:700;font-size:12px;
@@ -189,6 +491,20 @@
   .field input:focus,.field textarea:focus{outline:none;border-bottom:1px dashed var(--pine)}
   /* was #B9B4A8 = 2.07:1. Inherit the accessible global instead (audit F12). */
   .field.wide{grid-column:1/-1}
+  /* A VIEWER SHOULD NOT BE SHOWN AN EMPTY FORM. The fields were already readonly and, since the
+     mode-chip fix, fully inert — but they still rendered as boxed, labelled inputs with
+     placeholder text ("Anything the others should know"), so someone holding a view link saw a
+     blank form and reasonably concluded the trip was empty or that they had been locked out.
+     Inertness was the permission question and it is settled; this is the truthfulness one.
+     Empty ones disappear entirely, label and all — `:placeholder-shown` is exactly "this field
+     has no value", and `:has()` lets the wrapper go with it rather than leaving a floating
+     label. Ones with something in them stop looking like inputs and read as what they are:
+     a label and the trip's own words. */
+  body.readonly .card .field:has(input:placeholder-shown),
+  body.readonly .card .field:has(textarea:placeholder-shown){display:none}
+  body.readonly .card .field input,
+  body.readonly .card .field textarea{border:0;background:none;padding-left:0;padding-right:0;
+    min-height:0;resize:none}
   .field textarea{resize:none;min-height:44px;line-height:1.35;padding-top:11px}
   .card-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:2px 10px 8px;flex-wrap:wrap}
   .card-foot .here-btn{margin-right:auto}
@@ -205,7 +521,13 @@
     border:1.5px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink-soft);
     font-family:var(--body);font-size:13px;font-weight:600;cursor:pointer}
   .card .chip.sel{background:var(--pine);border-color:var(--pine);color:#fff}
-  body.readonly .card .chip{pointer-events:none}
+  /* Verified 2026-08-02 on a live view link: of 210 controls in the sheet, 13 were still
+     interactive — every leg's SELECTED mode chip. `pointer-events:none` already meant a tap did
+     nothing, so no viewer could ever change anything and F-5 held. What it did not fix is that
+     they were still <button>s: pointer cursor for a mouse, and thirteen announced buttons for a
+     screen reader that do nothing when pressed. Inert to the mouse is not the same as absent
+     from the accessibility tree, so they are `disabled` when read-only and the cursor says so. */
+  body.readonly .card .chip{pointer-events:none;cursor:default}
   body.readonly .card .chip:not(.sel){display:none}   /* viewers just see the mode that applies */
   .pin-fly .ic{filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 
@@ -224,11 +546,22 @@
   #list.rail .empty{flex:0 0 100%}
   #list.rail::-webkit-scrollbar{height:8px}
   #list.rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
-  .ctype{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--pine-text);padding:12px 16px 0}
-  .legfrom{padding:2px 16px 0}
-  .card .place.from{color:var(--ink-soft);font-size:18px}
-  .card .from-note{font-size:11.5px;color:var(--ink-soft);padding:0 16px 2px}
+  /* F-11 (Peter, 2026-08-02): lead with the DESTINATION. "Leg 6" was a full-width band above a
+     from-place above a "starts where leg 5 ended" note — three rows before the card said where
+     you were going, and one card filled the visible sheet. The leg number is an index, not a
+     heading: it goes in the corner. The origin follows the destination as a caption, because on
+     a chained route it is always the previous leg's end and the reader already knows it. */
+  .ctype{position:absolute;top:8px;right:12px;z-index:1;
+    font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);opacity:.75;padding:0}
+  .card.origin .ctype{position:static;padding:10px 16px 0;font-size:11px;opacity:1}
+  .legfrom{padding:0 16px 2px;display:flex;align-items:baseline;gap:6px}
+  .fromlbl{font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);opacity:.8;flex:none}
+  .card .place.from{color:var(--ink-soft);font-size:14px;min-height:0;line-height:1.25;
+    text-transform:none;letter-spacing:0;font-weight:600}
+  /* .from-note is gone with F-11 — "starts where leg 5 ended" restated the ordering the card
+     already shows, and it cost a row above the destination. The origin is a caption now. */
   .legarrow{flex:none;color:var(--ink-soft);display:inline-flex;align-items:center}
   .card.origin .ctype{color:var(--ink-soft)}
   /* Draw handles: 28px hit area, small visible dot. Editing a route on a phone means
@@ -258,7 +591,9 @@
     border:0;cursor:pointer;font-family:var(--disp);font-weight:600;font-size:11.5px;
     letter-spacing:.12em;text-transform:uppercase;color:var(--pine-text)}
   .addstay:hover{color:var(--accent)}
-  .card.stay .ctype{color:var(--accent)}
+  /* D-062: gold never carries text. This label measured 1.84:1 on the card. warm-clay keeps
+     the stay card reading WARM against the teal leg cards, at 5.96:1. */
+  .card.stay .ctype{color:var(--color-warm-clay,#B23A24)}
   .card.stay .place{color:var(--ink-soft)}
   .stayic{flex:none;color:var(--accent);display:inline-flex;align-items:center}
   .wmode{display:inline-flex;align-items:center;gap:4px;margin-right:9px;padding:2px 7px 2px 5px;
@@ -285,9 +620,7 @@
 
   /* ══ SMALL VIEWPORTS — the brand yields to the map (Peter, 2026-07-24) ══ */
   @media (max-width:430px){
-    #sign{padding:5px 11px 6px;max-width:62vw;border-radius:8px}
-    #sign small{display:none}                    /* the trip name is the point, not the wordmark */
-    #sign h1{font-size:17px;letter-spacing:.04em}
+    #sign{width:76px}
     #sheetHead{padding:2px 12px 8px;gap:6px}
     #list{padding-left:8px;padding-right:8px}
   }
@@ -303,7 +636,7 @@
     min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .field select{min-height:44px;padding:8px 0}
   .field input[type=date]{min-height:44px}
-  #themeBtn,#menuBtn{width:44px;height:44px}
+  #themeBtn,#menuBtn,#acctBtn{width:44px;height:44px}
   #replaySlider{height:44px}
   /* (b) invisible hit expansion — visual size unchanged */
   #editVeh,.del,.reorder button,.crew-x,.copybtn,.sn-x,.replay-ctl,
@@ -318,16 +651,17 @@
     content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     width:max(100%,44px);height:max(100%,44px)}
   /* Leaflet's own controls ship at 30px */
-  .leaflet-bar a,.leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px}
-  /* clear the trip sign, which overlays the top-left of the map */
-  .leaflet-top.leaflet-left{margin-top:calc(env(safe-area-inset-top) + 74px)}
+  .leaflet-bar a,.leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px;font-family:var(--disp);font-weight:700;font-size:20px}
+  /* Nothing to clear in the top-left any more — the zoom moved to the bottom right and the sign
+     is a 76px mark rather than a 157px plate. Left at a small offset for anything Leaflet puts
+     there later. */
+  .leaflet-top.leaflet-left{margin-top:calc(env(safe-area-inset-top) + 56px)}
 
   /* ── tabs & trip info ──────────────────────────────────── */
   #tabs{display:flex;gap:3px;background:var(--tabbg);border-radius:999px;padding:3px}
   .tab{font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.08em;
     text-transform:uppercase;padding:9px 16px;border-radius:999px;color:var(--ink-soft)}
   .tab.on{background:var(--pine);color:#fff}
-  #legendRow{padding:0 16px 10px;display:flex;align-items:center}
   #editVeh{margin-left:8px;color:var(--ink-soft);font-size:16px;padding:2px 8px}
   .veh-in{font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.05em;
     text-transform:uppercase;border-radius:999px;padding:5px 12px;background:#fff;
@@ -343,7 +677,15 @@
     font-size:15px;line-height:1.5;padding:6px 12px 0 16px;min-height:56px;overflow:hidden}
   .note-body:focus{outline:none}
 
-  .pin-fly{font-size:20px;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.35);pointer-events:none}
+  /* Peter, 2026-08-05: "the marker animation is off center." Measured: this div was 24x21
+     inside the 24x24 (and 26x26) icon box Leaflet anchors, because it had NO width or height —
+     a block box sized by its 20px glyph. So its centre sat ~1.5px above the anchor, and the
+     FLIGHT marker rotates (`transform:rotate(45-rot)`), which spins it about that off-centre
+     point with an angle that changes per leg. Filling the icon box makes the div's centre and
+     the anchor the same point, so the rotation is about the anchor — the same flex-centred
+     square .pin has always used. */
+  .pin-fly{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    font-size:20px;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.35);pointer-events:none}
   .field select{width:100%;border:0;background:transparent;font-size:15px;padding:2px 0;
     font-family:var(--body);color:var(--ink);appearance:none;-webkit-appearance:none}
   .field select:focus{outline:none}
@@ -368,6 +710,8 @@
   .post-date{border:0;border-bottom:1px dashed var(--line);background:transparent;
     font-size:13px;padding:4px 0;color:var(--ink-soft);width:118px}
   .post-date:focus{outline:none;border-bottom-color:var(--pine)}
+  /* the read-only rendering of a post's date — text, not a disabled input (F-5) */
+  .post-when{font-size:13px;color:var(--ink-soft,var(--soft));align-self:center}
   .spot-in:focus{outline:none;border-bottom-color:var(--pine)}
   .spot-wrap{padding:8px 12px 0 16px}
   .spot-wrap iframe{width:100%;height:80px;border:0;border-radius:12px;display:block}
@@ -381,6 +725,16 @@
 
   .pin-post.pq{background:var(--ink)}
   .sealed-box{padding:14px 12px 6px 16px;text-align:center}
+  /* D-124: the geofence control. Its own row rather than squeezed into .post-actions — the
+     question it asks ("how close do they have to be?") is about the drop, not about the post's
+     metadata, and it only appears on a drop that is actually locked to a place. */
+  .fence-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0 0;
+    padding:9px 11px;border:1.5px dashed var(--line);border-radius:10px}
+  .fence-row label{font-family:var(--disp);font-weight:700;font-size:11.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-soft)}
+  .fence-row select{min-height:44px;padding:0 10px;border-radius:9px;border:1.5px solid var(--line);
+    background:var(--card);color:var(--ink);font-family:var(--body);font-size:14px;flex:1;min-width:150px}
+  .fence-why{flex:1 1 100%;font-size:12px;color:var(--ink-soft)}
   .sealed-box .env{font-size:32px;line-height:1}
   .sealed-box p{font-size:14px;color:var(--ink-soft);margin:6px 0 10px}
   .openbtn{background:var(--pine);color:#fff;font-family:var(--disp);font-weight:700;
@@ -512,7 +866,9 @@
   .craft{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12.5px;
     font-family:var(--disp);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
   .craft svg{width:13px;height:13px;flex:none}
-  .craft.own{color:#1B9AAA}
+  /* route/self is a MAP colour: 3:1 is the bar for a line and it clears it. Spent on 12.5px
+     uppercase type it was 3.10:1 against 4.5. -deep is the same hue for text (D-060). */
+  .craft.own{color:var(--color-route-self-deep,#147A86)}
   /* Indented and quieter: on this leg the craft is cargo, so it reads as a child of the
      vehicle rather than a second vehicle competing with it. */
   .craft.aboard{color:var(--ink-soft);margin-left:14px;position:relative;font-weight:600}
@@ -542,7 +898,10 @@
   #replayBtn[hidden]{display:none}
   #replayMode{display:flex;gap:2px;background:var(--line);border-radius:9px;padding:2px;flex:none}
   #replayMode button{font-size:15px;line-height:1;padding:5px 8px;border-radius:7px;opacity:.5}
-  #replayMode button.on{background:var(--card);opacity:1;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  /* D-030: selected is a teal panel everywhere else in this product — Form/Tier Picker and
+     Nav/Tab both do it. This was the lone exception, raising a board segment on steel at
+     1.62:1 and leaning on a drop shadow to say which one was chosen. */
+  #replayMode button.on{background:var(--pine);color:var(--sheet);opacity:1;box-shadow:none}
   #replayKey{display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 14px;
     border-bottom:1px solid var(--line);background:var(--sheet)}
   #replayKey[hidden]{display:none}
@@ -558,6 +917,39 @@
      Content is fetched from the real page and the <main class="pagebody"> lifted out of it —
      not an iframe. An iframe would drag a second stylesheet in and fight the theme toggle,
      and these pages are ours, same-origin, with one stable wrapper to grab. */
+  /* Typographic, not card-y. A document is read top to bottom; the cards are for touching. */
+  #readPanel{position:fixed;inset:0;z-index:60;background:var(--sheet);
+    display:flex;flex-direction:column;transform:translateY(100%);
+    transition:transform .26s ease;visibility:hidden}
+  #readPanel.show{transform:translateY(0);visibility:visible}
+  @media (prefers-reduced-motion:reduce){ #readPanel{transition:none} }
+  #readPrint{width:44px;height:44px;border-radius:50%;background:var(--card);
+    border:2px solid var(--ink);color:var(--ink);font-size:17px;line-height:1;flex:none}
+  #readBody{flex:1;overflow:auto;padding:22px 20px 56px;max-width:44rem;margin:0 auto;width:100%;
+    -webkit-overflow-scrolling:touch}
+  #readBody h1{font-family:var(--disp);font-weight:700;font-size:30px;line-height:1.06;
+    letter-spacing:.02em;text-transform:uppercase;margin:0 0 4px}
+  #readBody .rsub{color:var(--soft);font-size:14px;margin:0 0 22px}
+  #readBody h2{font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--soft);margin:30px 0 10px;
+    padding-bottom:5px;border-bottom:1px solid var(--line)}
+  /* A leg is a row, not a box: the number rail on the left makes the order readable at a glance
+     without drawing fifteen borders down the page. */
+  .rleg{display:grid;grid-template-columns:26px 1fr;gap:12px;margin:0 0 16px}
+  .rnum{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--soft);
+    padding-top:3px;text-align:right}
+  .rwhere{font-family:var(--disp);font-weight:700;font-size:19px;line-height:1.15;
+    letter-spacing:.01em;margin:0}
+  .rmeta{color:var(--soft);font-size:13px;margin:2px 0 0}
+  .rnote{font-size:14.5px;line-height:1.55;margin:6px 0 0}
+  .rstay{font-size:14px;margin:5px 0 0}
+  .rstay b{font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--soft);margin-right:6px}
+  .rempty{color:var(--soft);font-size:14px}
+  .readdl{margin-top:4px;min-height:44px;padding:0 18px;border-radius:999px;
+    background:var(--pine);color:#fff;border:0;
+    font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.06em;
+    text-transform:uppercase;cursor:pointer}
   #infoPanel{position:fixed;inset:0;z-index:60;background:var(--sheet);
     display:flex;flex-direction:column;transform:translateY(100%);
     transition:transform .26s ease;visibility:hidden}
@@ -639,7 +1031,30 @@
   ::placeholder{color:#6B675F;opacity:1} /* 3.68:1 -> 5.6:1 on white */
   [data-theme="dark"] ::placeholder{color:#9BA1A8}
 
-  .leaflet-control-attribution{font-size:11px}
+  /* Both bottom controls sit ABOVE the resting sheet. Measured 2026-08-02: the attribution was at
+     y=829 with the sheet starting at 732 — i.e. behind it, which is not a style question, it is
+     the OpenStreetMap and Carto attribution requirement going unmet. The zoom landed there too
+     once it moved out of the top-left. One offset, tied to the sheet's own rest height. */
+  .leaflet-bottom{bottom:var(--sheet-rest,112px)}
+  /* Zoom moved to the top-left on 2026-08-05, so it has to clear #topbar — which carries the
+     safe-area inset plus its own padding, and grows on a notched phone. Same arithmetic the
+     bar itself uses rather than a guessed constant. */
+  .leaflet-top.leaflet-left{top:calc(env(safe-area-inset-top) + 62px)}
+  body.sheet-shut .leaflet-bottom{bottom:74px}   /* clear the pill, not a sheet that is not there */
+  /* Both bottom controls take the page's own surface instead of Leaflet's white. On the night
+     map a white 48x92 box and a white attribution strip were the two brightest things on screen
+     — louder than the trip. Same treatment as the theme and menu buttons, so the chrome reads as
+     one set and recedes. The attribution stays legible, which is the requirement; it does not
+     need to shout. */
+  .leaflet-control-attribution{font-size:10px;background:var(--card) !important;
+    color:var(--soft);border-radius:8px 0 0 0;padding:2px 7px;opacity:.9}
+  .leaflet-control-attribution a{color:var(--soft) !important}
+  .leaflet-bar,.leaflet-touch .leaflet-bar{border:0;border-radius:12px;overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,.22)}
+  .leaflet-bar a,.leaflet-touch .leaflet-bar a{background:var(--card);color:var(--ink);
+    border-bottom:1px solid var(--line)}
+  .leaflet-bar a:last-child{border-bottom:0}
+  .leaflet-bar a:hover{background:var(--ground)}
 
 /* ── print (D-085) ─────────────────────────────────────────────────────────────────────────
    A trip you can hand to someone in the passenger seat. The map is a live canvas and prints as
@@ -648,8 +1063,47 @@
    that handing-on is the whole distribution value. The footer carries the address, which is
    the ad. */
 @media print {
-  #map, #mapwrap, .leaflet-container, #chrome, #menuBtn, #menu, #themeBtn, #toast,
+  #mapwrap, #chrome, #menuBtn, #menu, #themeBtn, #toast,
   .fab, .set-row, .crew-x, .copybtn, .card.settings, #tabs, .filters { display: none !important; }
+  /* The map stays out of a plain card print… */
+  #map { display: none !important; }
+  /* …but a PAID trip printed as a document leads with it, in colour (D-122). This is the whole
+     difference between the free draft printout and the thing $2.50 buys, so it is not decoration.
+     #map precedes #readPanel in the DOM, so in static flow it lands on page one above the
+     itinerary with no node moved — and Leaflet must never have its container moved. */
+  /* RELATIVE, not static. #map IS the .leaflet-container — Leaflet puts the class on the
+     element you hand it — so it is also the containing block for every absolutely-positioned
+     pane and control inside. Made static, the attribution escaped to a distant ancestor and
+     printed 336px down the page, on top of the itinerary. Relative still flows normally (which
+     is what puts the map above the document) while keeping the controls where they belong. */
+  body.reading #map { display: block !important; position: relative !important;
+    width: 100% !important; height: 92mm !important; z-index: auto !important;
+    break-inside: avoid; page-break-inside: avoid; margin: 0 0 8mm;
+    border: 1px solid #999; border-radius: 4px; overflow: hidden !important; }
+  /* Browsers drop backgrounds and tile imagery unless told not to — without this the map
+     prints as an empty box, which is the failure mode that makes this look broken. */
+  body.reading #map, body.reading .leaflet-container, body.reading .leaflet-pane,
+  body.reading .leaflet-tile { -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important; }
+  /* Controls are interface and go; ATTRIBUTION STAYS. OpenStreetMap and Carto require it
+     wherever their tiles are shown, and a printed page is shown. Removing it to tidy the
+     output would be a licensing breach, not a design choice. */
+  body.reading .leaflet-control-zoom, body.reading .leaflet-control-container .leaflet-top
+    { display: none !important; }
+  body.reading .leaflet-control-attribution { display: block !important; font-size: 6.5pt !important;
+    background: rgba(255,255,255,.85) !important; color: #333 !important; }
+  /* With the read view open, print THAT and nothing else. Printing the cards behind it was what
+     "Print / PDF" did for its whole life — a screenshot of an interface rather than a document. */
+  #readBack, #readPrint, #readBtn, #openSheet, .noprint { display: none !important; }
+  /* The panel's title bar is chrome: a dark band reading "The trip" directly above the trip's
+     actual <h1>. It says nothing the document does not, and a solid dark strip is ink. */
+  body.reading #readPanel #infoHead { display: none !important; }
+  body.reading #sheet, body.reading #topbar { display: none !important; }
+  body.reading #readPanel { position: static !important; transform: none !important;
+    visibility: visible !important; background: #fff !important; }
+  body.reading #readBody { overflow: visible !important; max-width: none !important;
+    padding: 0 !important; }
+  body.reading .rleg { break-inside: avoid; page-break-inside: avoid; }
   html, body { background: #fff !important; color: #000 !important; }
   body { font-size: 11.5pt; }
   .card { border: 1px solid #bbb !important; border-radius: 6px !important; box-shadow: none !important;
@@ -666,7 +1120,9 @@
 }
 
 .gate-alt{margin:18px auto 0;max-width:30em;font-size:14px;line-height:1.5;color:rgba(255,255,255,.82);text-align:center}
-.gate-alt a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+/* F-18: "Sign in instead" broke across lines mid-phrase, which reads as two links rather than
+   one instruction. It is fifteen characters — never worth wrapping. */
+.gate-alt a{color:#fff;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -678,10 +1134,10 @@
   <button onclick="cancelAppDraw()">Cancel</button>
   <button class="db-done" onclick="finishAppDraw()">Done</button>
 </div>
-<div id="offline" role="status" aria-live="polite">⚠ Offline — your changes may not be saving. Reconnecting…</div>
+<div id="offline" role="status" aria-live="polite"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 21.6 20H2.4z"/><path d="M12 9.6v4.2M12 17.1v.01"/></svg> Offline — your changes may not be saving. Reconnecting…</div>
 
 <header id="topbar">
-  <div id="sign"><small>this trip, btw</small><h1 id="tripName">…</h1></div>
+  <a id="sign" href="/" title="this trip, btw — home" aria-label="this trip, btw — home"><img src="/sign.svg?v=1" width="700" height="300" alt=""></a>
   <div id="topright">
     <span id="viewTag" title="view-only link">View only</span>
     <span id="editTag" title="You have the edit link. Anything you change here is live straight away for everyone holding a link to this trip."><span class="dot"></span>Editing<span class="lbl"> · live</span></span>
@@ -689,9 +1145,24 @@
     <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"></button>
   </div>
   <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 </header>
+
+<!-- READ (D-106). The export has always contained a complete, readable itinerary — every leg,
+     dates, lodging, notes, self-contained. It only existed inside a downloaded zip, so the artifact
+     that best delivers "a PDF for travel" was the one thing you had to leave the product to see.
+     This is that page, live, rendered from data the client already holds — which is also how it
+     inherits access control for free: sealed drops were filtered server-side by seal_pin() before
+     they ever reached the browser. -->
+<div id="readPanel" role="dialog" aria-modal="true" aria-labelledby="readTitle">
+  <div id="infoHead">
+    <button id="readBack" aria-label="Back to the map">&larr;</button>
+    <h2 id="readTitle">The trip</h2>
+    <button id="readPrint" title="Print or save as PDF" aria-label="Print or save as PDF">&#8615;</button>
+  </div>
+  <div id="readBody"></div>
+</div>
 
 <div id="infoPanel" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
   <div id="infoHead">
@@ -715,7 +1186,7 @@
     <p>Drop it where you are</p>
     <div class="row" id="postKindRow">
       <button class="x" data-kind="post">Post</button>
-      <button class="x" data-kind="sealed">Sealed</button>
+      <button class="x" data-kind="sealed">Easter egg</button>
       <button class="x" data-kind="quest">Quest</button>
     </div>
     <p id="postHint" style="margin-top:8px;opacity:.75;font-size:13px;text-transform:none;letter-spacing:0">One tap — you can drag the pin after</p>
@@ -742,6 +1213,23 @@
      trip itself. Nothing selects `section#sheet`, so only the tag changes. -->
 <main id="sheet" aria-label="Trip details">
   <button id="grab" type="button" aria-label="Resize the trip panel"></button>
+  <!-- The document header (#15, 2026-08-02). The sheet used to open on #tabs, so the first
+       thing in the trip was a set of controls and the trip's own name lived in a chip floating
+       over the map. The name is the object; the tabs are how you move around inside it. -->
+  <header id="docHead">
+    <div id="docTitles">
+      <h1 id="docName"></h1>
+      <p id="docMeta"></p>
+    </div>
+    <button id="playBtn" type="button" hidden title="Play the trip"
+      aria-label="Play the trip from the start"></button>
+    <button id="readBtn" type="button" title="Read the whole trip"
+      aria-label="Read the whole trip as a page">Read</button>
+    <!-- The #tripActs action bar stood here behind ?bar=1 until 2026-08-05. The FAB carries the
+         same four verbs from the lower right on both pages now (D-134), so a second row of them
+         in the document header was the same control twice. tripAct() SURVIVES — it is the
+         dispatcher the ring calls. -->
+  </header>
   <div id="sheetHead">
     <div id="tabs">
       <button role="tab" aria-selected="true"  aria-controls="list" class="tab on" data-tab="route">Route</button>
@@ -750,14 +1238,19 @@
       <button role="tab" aria-selected="false" aria-controls="list" class="tab edit-only" data-tab="ask">Describe</button>
     </div>
     <button id="addBtn" class="edit-only">+ Stop</button>
-  </div>
+    <!-- The vehicle filters used to own a band of their own between the tabs and the first card,
+         so four things stacked before any trip content. They live IN the tabs row now — same
+         rank, a control rather than a heading. Inside #sheetHead rather than positioned to look
+         that way: a negative margin would depend on the tabs row being exactly 40px tall, and
+         it is not on every phone. (Peter, 2026-08-02.) -->
   <div id="legendRow">
     <div class="legend">
       <button class="track-chip truck" data-track="truck" data-tracklabel="truck">Vehicle 1</button>
       <button class="track-chip rental" data-track="rental" data-tracklabel="rental">Vehicle 2</button>
     </div>
-    <button id="replayBtn" hidden title="Replay the trip over time">▶ Replay</button>
+    <button id="replayBtn" hidden title="Replay the trip over time"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4.8 19 12 8 19.2z"/></svg> Replay</button>
     <button id="editVeh" class="edit-only" title="Rename vehicles" aria-label="Rename vehicles"></button>
+  </div>
   </div>
   <div id="replayStory" hidden aria-live="polite"></div>
   <div id="replayBar" hidden>
@@ -765,7 +1258,7 @@
       <button data-by="vehicle" class="on" title="Show each vehicle" aria-label="Replay by vehicle"></button>
       <button data-by="person" title="Show each person" aria-label="Replay by person"></button>
     </div>
-    <button id="replayPlay" class="replay-ctl" title="Play / pause" aria-label="Play or pause replay">▶</button>
+    <button id="replayPlay" class="replay-ctl" title="Play / pause" aria-label="Play or pause replay"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4.8 19 12 8 19.2z"/></svg></button>
     <input id="replaySlider" type="range" min="0" max="1" value="1" aria-label="Scrub through the trip by date">
     <span id="replayLabel"></span>
     <button id="replayClose" title="Close replay" aria-label="Close replay"></button>
@@ -773,6 +1266,50 @@
   <div id="replayKey" hidden></div>
   <div id="list"></div>
 </main>
+
+  <!-- §2v prototype (b): every way out of here, in ONE place. Today they are spread across
+       four surfaces that do not know about each other — the Info tab's export card (.ics,
+       .csv), the settings card below it (.zip, print, edit-only), the Read panel's own
+       download, and trip.kml/trip.gpx which exist only INSIDE the zip and are named nowhere
+       a customer can see. This names them. No new endpoint and no second implementation:
+       every button below calls the handler that already exists. -->
+  <div id="takeSheet" hidden role="dialog" aria-modal="true" aria-labelledby="takeTitle">
+    <div class="tk-card">
+      <h2 id="takeTitle">Take it with you</h2>
+      <p class="tk-sub">Your trip, in a form something else can read. Made on your device.</p>
+      <button type="button" class="tk-row" data-take="print">
+        <b>Print or PDF</b><span>the trip as a document — the map, the days, the notes</span></button>
+      <button type="button" class="tk-row" data-take="ics">
+        <b>Calendar</b><span>.ics — the dated stops, for any calendar app</span></button>
+      <button type="button" class="tk-row" data-take="csv">
+        <b>Spreadsheet</b><span>.csv — every stop in a row, for an expense report</span></button>
+      <button type="button" class="tk-row" data-take="zip">
+        <b>Everything</b><span>.zip — a readable page, your photos, and the map itself as
+        trip.kml and trip.gpx for Google Earth, Garmin or OsmAnd</span></button>
+      <button type="button" class="tk-x" data-take="close">Close</button>
+    </div>
+  </div>
+
+<span id="qaTag" hidden>QA</span>
+<button id="openSheet" type="button" aria-controls="sheet" aria-expanded="false"><span class="nm"></span><span class="ct"></span><span class="cv"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 15 12 8.5 18.5 15"/></svg></span></button>
+<!-- D-113: shown to a VIEW-phrase holder only, once, dismissible. The offer is keeping the
+     trip, not signing up — losing the link is the actual failure mode, and it is the one that
+     has already happened to three trips here. -->
+<aside id="keepBar" hidden>
+  <!-- Peter, 2026-08-05: "way way too big" — "it could just be a 20px banner across the top."
+       It was a 248px card, 31% of a 375x812 screen, parked over the map. Two things were wrong
+       and only one of them was size: bottom-anchored at +70px, it also overlapped the sheet by
+       42px in ALL THREE sheet states, so #grab sat on top of its own link and the link could not
+       be tapped. Shrinking a bottom-anchored box moves its top edge, never its bottom, so no
+       amount of shrinking would have found that. It is a top strip now, out of the sheet's way
+       entirely.
+       The privacy paragraph is NOT deleted — naming what an account costs is the point of D-113.
+       It moved to /account, where the decision is actually made, and the clause about the server
+       being able to open a trip moved with it. A strip makes the offer; the page carries the
+       cost. -->
+  <a class="kb-go" href="/account">Keep this trip in a free account</a>
+  <button id="keepX" type="button" aria-label="Dismiss">&times;</button>
+</aside>
 
 <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
   <div class="bigsign"><small>private trip</small><h1 id="gateTitle">this trip, btw</h1></div>
@@ -796,8 +1333,17 @@
   <button id="nameBtn" class="gate-btn">That’s me</button>
 </div>
 
+<!-- #fab, the trip page's half of "FAB lower rt always". BODY-LEVEL, like /new's: its
+     predecessor there lived inside .maprap, whose z-index:0 traps its children under the rail,
+     and three of seven buttons could not be tapped for months because of it. -->
+<button id="fab" type="button" onclick="openTripFab()" title="What you can do with this trip"
+  aria-label="What you can do with this trip" aria-haspopup="true"><svg viewBox="0 0 24 24"
+  width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.6" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.4" cy="12" r="1.9"/></svg></button>
+
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
-<script src="/places.js?v=2"></script>
+<script src="/ring.js?v=3"></script>
+<script src="/sheet.js?v=1"></script>
+<script src="/places.js?v=4"></script>
 <script>
 /* ═════════ identity: slug (from host OR path) + word-phrase key ═════════ */
 /* D-021 put trips at /{slug}. Subdomains — {slug}.thistripbtw.us — are being added back on top
@@ -808,7 +1354,7 @@
    if the Worker is down, so a routing outage degrades to an ugly URL instead of an outage. */
 const HOST_PARTS = location.hostname.split(".");
 /* A trip subdomain is one extra label in front of the apex ({slug}.thistripbtw.us → 3 parts) or
-   in front of a bare dev host ({slug}.localhost → 2, _agents/PLAN.md §2.12). The test is the
+   in front of a bare dev host ({slug}.localhost → 2). The test is the
    slug's own shape: 7 chars of SLUG_ALPHABET, which has no o/i/l/0/1 — hence [a-hj-km-np-z2-9]
    rather than [a-z2-9]. That exclusion is doing real work: a plain a-z class matches "account",
    a RESERVED word of exactly 7 letters, so account.thistripbtw.us would have been read as a
@@ -829,6 +1375,11 @@ const TRIP_BASE = HOST_SLUG ? location.origin : location.origin + "/" + slug;
 // key: #k= fragment wins (then scrub from URL bar), else localStorage, else gate
 const hashKey = new URLSearchParams(location.hash.slice(1)).get("k");
 let KEY = hashKey || localStorage.getItem("ttb_key_" + slug) || "";
+/* §2v: read any prototype flag BEFORE the scrub below, which replaces the whole URL with
+   the bare path — query string included. A flag read later sees `location.search === ""`
+   and silently does nothing, which is exactly how ?bar=1 appeared to be broken on the
+   deployed page while the code was in fact present and correct. */
+const FLAGS = new URLSearchParams(location.search);
 if (hashKey) history.replaceState(null, "", location.pathname);
 let CURRENT_NAME = localStorage.getItem("ttb_name") || "";
 
@@ -858,6 +1409,22 @@ const legColor = (mode, trackCol) => MODE_COLORS[mode] || trackCol;
 let TRACK_LABELS = { truck:"Vehicle 1", rental:"Vehicle 2" };
 
 const SEAL_RADIUS_MI = 30;      // sealed drops (D-010)
+/* D-124: a custom geofence prints in the unit a person would use. The server's own
+   "still N feet too far" message switches at a mile, so this matches it rather than
+   inventing a second convention. */
+/* D-124: the geofence choices offered in the UI. Deliberately a short list of round numbers
+   rather than a free number field — the useful question is "how sure do I want this to fire",
+   and a text box invites 0.3 of a mile, which phone GPS in a moving car cannot honour. The
+   top of the list is what Peter asked for: a fence big enough that arriving triggers it. */
+const FENCES = [["", "the default"], ["0.25", "a quarter mile — at the spot"],
+  ["1", "1 mile — the block"], ["5", "5 miles — the town"], ["15", "15 miles"],
+  ["30", "30 miles — the county"], ["75", "75 miles — sure to fire"],
+  ["150", "150 miles — the whole leg"]];
+const fenceSel = (p, v) => (p.radiusMi == null ? v === "" : String(p.radiusMi) === v
+  || Number(p.radiusMi) === Number(v || NaN));
+const fmtRadius = mi => mi == null ? "" :
+  (mi < 1 ? Math.round(mi * 5280 / 10) * 10 + " feet"
+          : (Math.round(mi * 10) / 10) + (mi === 1 ? " mile" : " miles"));
 const NEAR_RADIUS_MI = 0.25;    // "was there?" posts (D-057) — a place, not a region
 function arcPoints(a,b,steps=40,curve=0.18){
   const [lat1,lng1]=a,[lat2,lng2]=b;
@@ -893,6 +1460,11 @@ async function shrinkImage(file,max=1600){
 
 /* ═════════ REST store (drop-in for the old Firebase store) ═════════ */
 let ACCESS="view", MEDIA=false, CAN_PHOTO=false, CAN_VIDEO=false, TIER="plan", EXPIRES=null;
+let QA=false;   // D-114: in-house QA trip
+/* Which ids are currently standing behind a cluster badge. Module-level because the LIST
+   needs it: tapping a card zooms to 8, which is a zoom where clustering is on, so without
+   this you ask for a stop and get a badge. Rebuilt on every drawMap. */
+const CLUSTERED=new Set();
 let ME=null, MEMBERS=[], MEMBER_ROSTER=[];  // D-023: your handle (if a personal link) + roster (handles; +ids for revoke)
 let CONFIG={name:"", labels:{...TRACK_LABELS}};
 let READONLY=true;
@@ -921,25 +1493,48 @@ const fromStopPin = p => ({id:p.id, track:p.track, date:p.date||"", place:p.titl
 const fromPostPin = p => ({id:p.id, ts:p.ts, type:p.kind, author:p.author, lat:p.lat, lng:p.lng,
   caption:p.title, photo:p.photo, spotify:p.spotify,
   openedBy:(()=>{try{return JSON.parse(p.opened_by||"[]");}catch(e){return [];}})(),
-  nearOnly:!!p.near_only, claimedTeam:p.claimed_team, claimedBy:p.claimed_by});
+  nearOnly:!!p.near_only, radiusMi:(p.radius_mi ?? null), claimedTeam:p.claimed_team, claimedBy:p.claimed_by});
 const fromNote = n => ({id:n.id, title:n.title, body:n.body, order:n.ord});
 const STOP_KEYS={place:"title"};  // remaining UI stop keys map 1:1
 function stopPatch(patch){ const o={}; for(const k in patch) o[STOP_KEYS[k]||k]=patch[k]; return o; }
-const POST_KEYS={caption:"title", openedBy:"opened_by", nearOnly:"near_only", claimedTeam:"claimed_team", claimedBy:"claimed_by"};
+const POST_KEYS={caption:"title", openedBy:"opened_by", nearOnly:"near_only", radiusMi:"radius_mi", claimedTeam:"claimed_team", claimedBy:"claimed_by"};
 function postPatch(patch){ const o={}; for(const k in patch){ if(k==="claimTs") continue; o[POST_KEYS[k]||k]=patch[k]; } return o; }
 
 function livePins(){ return [...pinsById.values()].filter(p=>!p.deleted); }
 function liveNotes(){ return [...notesById.values()].filter(n=>!n.deleted); }
 
-async function sync(){
-  /* No &who= any more (D-047). The server used to take the viewer's name from this query
-     string, which meant typing someone else's name read their drops. Identity now comes
-     from the token itself, so there is nothing useful to send. */
-  const s=await api("trip/state?since="+SINCE);
-  SINCE=s.serverTime;
-  /* D-088: photo and video are separate allowances now. `s.media` is still sent for a
-     client loaded before the split; fall back to it so a stale tab keeps working. */
+/* ── the offline copy ────────────────────────────────────────────────────────────────────
+   This product is used on remote highways and in national parks — Yellowstone, Monument
+   Valley, Death Valley — and until now the trip came off the network every single time. No
+   bars meant no itinerary, no lodging, no notes, and no easter eggs, at exactly the stop you
+   were standing at. GPS needs no signal, so a geofence would fire correctly into a page that
+   could not load.
+
+   Deliberately localStorage and NOT a service worker. A service worker would also cache the
+   map tiles, which is the better product — and it is one of the few ways to brick a web app
+   permanently for returning visitors, which is not a thing to ship days before a real trip.
+   This half is reversible by clearing one key.
+
+   Privacy: we cache only what the SERVER chose to send. `seal_pin()` has already blanked any
+   drop this person has not opened, so an unopened surprise cannot be read out of the cache —
+   the words were never on the device. Someone whose access is later revoked keeps whatever
+   they had already been shown, which is true of any page they had already loaded. */
+const TRIP_CACHE_V = 2;
+const tripCacheKey = () => "ttb_trip_" + slug;
+function cacheTrip(){
+  try{
+    localStorage.setItem(tripCacheKey(), JSON.stringify({
+      v:TRIP_CACHE_V, at:Date.now(), access:ACCESS, media:MEDIA, tier:TIER, expires:EXPIRES,
+      qa:QA, photo:CAN_PHOTO, video:CAN_VIDEO, me:ME, members:MEMBERS, roster:MEMBER_ROSTER,
+      config:CONFIG, pins:[...pinsById.values()], notes:[...notesById.values()]
+    }));
+  }catch(e){}   /* quota or private mode — caching must never break a page that works */
+}
+function clearTripCache(){ try{ localStorage.removeItem(tripCacheKey()); }catch(e){} }
+/* Replays a payload — live or cached — through exactly one path, so the two cannot drift. */
+function applyState(s){
   ACCESS=s.access; MEDIA=s.media; TIER=s.tier; EXPIRES=s.expires;
+  QA = !!s.qa; document.body.classList.toggle("qa", QA);
   CAN_PHOTO = s.photo !== undefined ? s.photo : s.media;
   CAN_VIDEO = s.video !== undefined ? s.video : s.media;
   ME=s.me||null; MEMBERS=Array.isArray(s.members)?s.members:[]; MEMBER_ROSTER=Array.isArray(s.roster)?s.roster:[];
@@ -951,9 +1546,75 @@ async function sync(){
   hideGate();
   emitAll();
 }
+/** Render the last saved copy. Returns false if there isn't one worth showing. */
+function restoreTrip(){
+  let c=null;
+  try{ c=JSON.parse(localStorage.getItem(tripCacheKey())||"null"); }catch(e){}
+  if(!c || c.v!==TRIP_CACHE_V || !Array.isArray(c.pins) || !c.config) return false;
+  applyState(c);
+  return true;
+}
+
+async function sync(){
+  /* No &who= any more (D-047). The server used to take the viewer's name from this query
+     string, which meant typing someone else's name read their drops. Identity now comes
+     from the token itself, so there is nothing useful to send. */
+  const s=await api("trip/state?since="+SINCE);
+  SINCE=s.serverTime;
+  /* D-088: photo and video are separate allowances now. `s.media` is still sent for a
+     client loaded before the split; fall back to it so a stale tab keeps working. */
+  applyState(s);
+  /* Cache AFTER a good sync only, and cache the ACCUMULATED state rather than this delta —
+     `since=` means s.pins holds only what changed, so caching the response itself would save
+     a trip that shrinks to nothing on the second poll. */
+  cacheTrip();
+}
+/* D-113: the keep-this-trip bar, for VIEW-phrase holders only.
+ *
+ * `ACCESS==="view"` is the whole audience test and it is exact: access_level() returns "edit"
+ * for an edit phrase, for a member phrase AND for an account session, so a single check
+ * excludes the buyer, the crew and anyone already signed in. Nobody who has an account is ever
+ * asked to make one.
+ *
+ * WHETHER THEY HAVE SEEN IT BEFORE IS ANSWERED ON THEIR OWN DEVICE, NEVER BY US. Asking the
+ * server "has this person met a trip before" is cross-trip linkage — the precise thing the
+ * product promises not to build, and the bar's own copy claims we don't. localStorage is their
+ * browser remembering their own dismissal; it leaves no record here and links nothing to
+ * anyone. Per-slug, so dismissing one trip's bar does not silently answer for the next.
+ *
+ * It also waits for the trip to have actually loaded. A bar that appears over a gate, or over
+ * an empty map, is asking someone to keep a thing they have not seen yet. */
+let keepBarDone=false;
+function maybeKeepBar(){
+  if(keepBarDone) return;
+  const el=document.getElementById("keepBar"); if(!el) return;
+  if(ACCESS!=="view") return;
+  let seen=false;
+  try{ seen = localStorage.getItem("ttb_keep_"+slug)==="1"; }catch(e){}
+  if(seen) return;
+  keepBarDone=true;
+  el.hidden=false;
+  /* The strip occupies the top of the screen, so #topbar has to move down out from under it.
+     The class carries that, and dismissing puts it back. */
+  document.body.classList.add("has-keepbar");
+  document.getElementById("keepX").addEventListener("click",()=>{
+    el.hidden=true;
+    document.body.classList.remove("has-keepbar");
+    try{ localStorage.setItem("ttb_keep_"+slug,"1"); }catch(e){}
+  });
+}
+let sheetDefaulted=false;
 function emitAll(){
   READONLY = ACCESS!=="edit";
   document.body.classList.toggle("readonly", READONLY);
+  /* The resting sheet, decided once access is actually known (Peter, 2026-08-02): a VIEWER is
+     looking, so the map is the whole screen and the pill offers the list; an EDITOR is working,
+     so the list is already at peek and adding a stop is one tap rather than two.
+     ONCE, and only once — emitAll runs on every sync, so re-applying it would slam the sheet
+     back open every ten seconds after someone deliberately closed it. */
+  if(!sheetDefaulted){ sheetDefaulted=true;
+    if(!READONLY){ setSheet("peek"); if(window.syncGrab) syncGrab(); } }
+  maybeKeepBar();
   cbs.config && cbs.config({name:CONFIG.name, labels:CONFIG.labels});
   cbs.stops  && cbs.stops(livePins().filter(p=>p.kind==="stop").map(fromStopPin));
   cbs.posts  && cbs.posts(livePins().filter(p=>p.kind!=="stop").map(fromPostPin));
@@ -992,6 +1653,7 @@ const store = {
   async addPost(p){ await api("trip/pins",{method:"POST",body:JSON.stringify({
       kind:p.type, ts:p.ts, author:p.author, lat:p.lat, lng:p.lng, title:p.caption,
       photo:p.photo||"", spotify:p.spotify||"", near_only:p.nearOnly?1:0,
+      radius_mi:(p.radiusMi ?? null),
       claimed_team:p.claimedTeam||"", claimed_by:p.claimedBy||""})}); await sync(); },
   async updatePost(id,patch){ await api("trip/pins/"+id,{method:"PATCH",body:JSON.stringify(postPatch(patch))}); await sync(); },
   async removePost(id){ await api("trip/pins/"+id,{method:"DELETE"}); await sync(); },
@@ -1028,6 +1690,290 @@ function infoStrip(html){
   const h1   = doc.querySelector(".pagehead h1");
   return { title: h1 ? h1.textContent.trim() : "", html: main ? main.innerHTML : "" };
 }
+
+/* ── the read view (D-106) ───────────────────────────────────────────────────────────
+   Rendered from what the client already has, in the same travel order the map and the rail use
+   (`sorted()` — CLAUDE.md is explicit that nothing else decides order). Nothing is fetched: a
+   viewer sees exactly what they were already allowed to see, because seal_pin() filtered it
+   server-side before it arrived. */
+/* Read as arrival, not as a label. MODE_LABEL's nouns ("Drive", "Fly") work beside an arrow in
+   the rail; on a page they read as a description of the place. */
+const READ_MODE = {drive:"by car", fly:"by air", train:"by rail", ferry:"by ferry",
+                   water:"by boat", bike:"by bike", walk:"on foot"};
+/* One export action, called from the settings button and from the read view's nudge. It was
+   inline on the button, which is why the read view could not offer the one thing a person
+   reading their trip in a canyon actually needs. */
+async function downloadTrip(btn){
+  const was = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "Packing…"; }
+  try{
+    /* API_BASE has no /api on it — api() appends it. Getting that wrong here made the button
+       404 while every other call worked, because nothing else builds a URL by hand. */
+    const r = await fetch(`${API_BASE}/api/trip/export`, {headers:{Authorization:`Bearer ${KEY}`}});
+    if(!r.ok) throw new Error((await r.json().catch(()=>({}))).error || "could not build it");
+    const blob = await r.blob();
+    const cd = r.headers.get("content-disposition") || "";
+    const m = /filename="([^"]+)"/.exec(cd);
+    const u = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = u; a.download = m ? m[1] : "trip.zip"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u), 4000);
+    toast("Downloaded — keep the photos folder next to the html file");
+  }catch(e){ toast(e.message || "could not build it"); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = was; } }
+}
+
+/* ── printing a paid trip WITH its map (D-122) ───────────────────────────────────────────
+   The print stylesheet re-sizes #map to a page-shaped block, and Leaflet has no idea: it
+   renders tiles for the container size it last measured, so without this the printed map is a
+   band of correct tiles and a lot of empty grey. invalidateSize() tells it, fitBounds() frames
+   the trip rather than wherever the reader had panned to, and the promise waits for the new
+   tiles to actually arrive — printing before they land is exactly how this ships looking broken.
+
+   Two callers, deliberately: our own Print buttons AWAIT this, which is the reliable path;
+   `beforeprint` (Cmd-P, the browser's own menu) gets the same preparation on a best-effort
+   basis, because that event cannot be held open while tiles download. */
+let printRestore = null;
+function preparePrintMap(){
+  return new Promise(resolve => {
+    if(typeof map === "undefined" || !map || !document.body.classList.contains("reading"))
+      return resolve();
+    const c = map.getCenter(), z = map.getZoom();
+    /* PAPER IS NOT A SCREEN, AND IT IS NEVER IN NIGHT MODE. Someone reading in dark theme was
+       getting the dark_all basemap on the page — a solid black sheet that soaks a cartridge and
+       reads worse than the free draft's plain list, which is the opposite of what the paid
+       version is for. Print always uses the light basemap, whatever the reader's theme, and the
+       screen goes back to its own tiles afterwards. Caught by looking at the render; the CSS and
+       the tile count were both perfectly happy. */
+    const wasDark = typeof darkMode !== "undefined" && darkMode && tileLayer;
+    if(wasDark) tileLayer.setUrl(TILE_LIGHT);
+    printRestore = () => { try{
+      if(wasDark && tileLayer) tileLayer.setUrl(TILE_DARK);
+      map.invalidateSize(); map.setView(c, z, {animate:false});
+    }catch(e){} };
+    let done = false;
+    const finish = () => { if(done) return; done = true; resolve(); };
+    try{
+      map.invalidateSize();
+      const pts = clusterFit(allStops.filter(s=>!hidden[s.track]).map(s=>[s.lat,s.lng]));
+      if(pts.length) map.fitBounds(pts, {padding:[18,18], animate:false});
+      /* `load` fires when every visible tile for the current view has arrived. The timeout is
+         the honest half: on a slow connection we print what we have rather than hang. */
+      if(tileLayer) tileLayer.once("load", finish);
+      setTimeout(finish, 1800);
+    }catch(e){ finish(); }
+  });
+}
+window.addEventListener("beforeprint", () => { preparePrintMap(); });
+window.addEventListener("afterprint", () => { if(printRestore){ printRestore(); printRestore = null; } });
+
+function drawRead(){
+  const body = document.getElementById("readBody"); if(!body) return;
+  const ord = sorted();
+  const name = (CONFIG.name||"").trim() || "This trip";
+  const span = docSpan(ord.map(s=>s.date));
+  const route = ord.length ? docRoute(ord) : "";
+  const bits = [route, span].filter(Boolean).join('<span class="sep"> · </span>');
+
+  let h = `<h1>${esc(name)}</h1>` + (bits ? `<p class="rsub">${bits}</p>` : "");
+
+  if(!ord.length){
+    h += `<p class="rempty">No stops yet.</p>`;
+  } else {
+    /* Grouped by vehicle only when there IS a second one — a one-vehicle trip should not be
+       made to look like it has a category it does not have. */
+    const tracks = [...new Set(ord.map(s=>s.track))].filter(t=>ord.some(x=>x.track===t));
+    const many = tracks.length > 1;
+    for(const t of tracks){
+      const legs = ord.filter(s=>s.track===t);
+      if(many) h += `<h2>${esc(TRACK_LABELS[t]||t)}</h2>`;
+      else     h += `<h2>The route</h2>`;
+      legs.forEach((s,i)=>{
+        /* A stop's `mode` is how you got TO it, not what the stop is. The first stop of a track
+           has no leg into it, so printing "Drive" beside it says something false — the live demo
+           labelled "Chicago O'Hare — 9:40a flight to Reno" as a Drive, because that is where Alex
+           STARTS. In the card UI an arrow carries that direction; a document has no arrow, so the
+           preposition does the work and the origin simply gets none. */
+        const arrive = i === 0 ? "" : (READ_MODE[s.mode] || "");
+        const meta = [s.date ? fmtDate(s.date) : "", arrive,
+                      s.craft ? esc(s.craft) : ""].filter(Boolean).join(" · ");
+        h += `<div class="rleg"><div class="rnum">${i+1}</div><div>`
+          +  `<p class="rwhere">${esc((s.place||"").trim()||"Unnamed stop")}</p>`
+          +  (meta ? `<p class="rmeta">${meta}</p>` : "")
+          +  (s.lodging ? `<p class="rstay"><b>stay</b>${esc(s.lodging)}</p>` : "")
+          +  (s.notes ? `<p class="rnote">${esc(s.notes)}</p>` : "")
+          +  `</div></div>`;
+      });
+    }
+  }
+
+  /* Posts and notes belong in a document of the trip; a sealed drop that is still sealed does
+     not, and cannot be here anyway — the server withheld its text. */
+  const posts = (allPosts||[]).filter(p=>(p.caption||"").trim() || (p.photo||"").trim());
+  if(posts.length){
+    h += `<h2>Posts</h2>`;
+    for(const p of posts)
+      h += `<div class="rleg"><div class="rnum">·</div><div>`
+        +  `<p class="rnote">${esc((p.caption||"").trim() || "A photo")}</p>`
+        +  (p.author ? `<p class="rmeta">${esc(p.author)}</p>` : "") + `</div></div>`;
+  }
+  const ns = (allNotes||[]).filter(n=>(n.title||n.body||"").trim());
+  if(ns.length){
+    h += `<h2>Notes</h2>`;
+    for(const n of ns)
+      h += `<div class="rleg"><div class="rnum">·</div><div>`
+        +  (n.title ? `<p class="rwhere">${esc(n.title)}</p>` : "")
+        +  (n.body ? `<p class="rnote">${esc(n.body)}</p>` : "") + `</div></div>`;
+  }
+  /* The one place this belongs: somebody reading their trip is the person who will want it in a
+     canyon. The map goes blank without signal and this page goes with it — the zip is the only
+     thing here that does not. Said where it is useful rather than in a settings drawer.
+     .noprint because a download button is nonsense on paper: whoever holds the printout has
+     already taken it with them. */
+  h += `<div class="noprint"><h2>Take it with you</h2>`
+    +  `<p class="rnote">Going somewhere without signal? <b>Download a copy first.</b> This page `
+    +  `needs the internet; that file does not — it opens on any device with nothing installed, `
+    +  `and it keeps working after the trip's term ends.</p>`
+    +  `<p class="rnote"><button type="button" class="readdl">Download a copy</button></p></div>`;
+  body.innerHTML = h;
+  const dl = body.querySelector(".readdl");
+  if(dl) dl.onclick = () => downloadTrip(dl);
+}
+function openRead(){
+  drawRead();
+  document.body.classList.add("reading");
+  document.getElementById("readPanel").classList.add("show");
+}
+function closeRead(){
+  document.getElementById("readPanel").classList.remove("show");
+  document.body.classList.remove("reading");
+}
+document.getElementById("readBtn").onclick   = openRead;
+
+/* ── §2v PROTOTYPE wiring: the trip action bar (?bar=1) ────────────────────────────────
+   Every verb REUSES the handler that already exists — this proposes a place to put things,
+   it does not reimplement any of them. Share falls back to the clipboard where the native
+   sheet is absent; Take-it opens Info, which is where export lives today (consolidating
+   those four surfaces into one sheet is proposal (b), and Peter's call, not this flag's). */
+/* app.html has no toast, and a previous `toast && toast(...)` on this page threw a
+   ReferenceError that killed the entire inline script (CLAUDE.md). This is the least thing
+   that discharges the need — one element, made on demand, hidden on a timer. It is not a
+   notification system and must not grow into one. */
+function say(msg){
+  let t = document.getElementById("sayer");
+  if(!t){ t = document.createElement("div"); t.id = "sayer";
+          t.setAttribute("role","status"); t.setAttribute("aria-live","polite");
+          document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(say._t);
+  say._t = setTimeout(() => t.classList.remove("on"), 1800);
+}
+function tripAct(act){
+  if(act==="replay"){ tapPlay(); return; }   // same one-tap rule as the header button
+  if(act==="read"){ openRead(); return; }
+  if(act==="share"){
+    const url = `${TRIP_BASE}/#k=${KEY}`;
+    if(navigator.share) navigator.share({title: CURRENT_NAME || "our trip", url}).catch(()=>{});
+    else {
+      /* app.html has NO toast() — `toast && toast(...)` would have thrown a ReferenceError
+         and killed the whole inline script, taking the page with it (CLAUDE.md). Say it on
+         the button instead, which is where the person is looking anyway. */
+      navigator.clipboard.writeText(url).catch(()=>{});
+      /* A copy that happens in silence is a link you are not sure you have, and would not
+         paste. This used to write onto the #tripActs Share button; that bar is gone. */
+      say("Link copied");
+    }
+    return;
+  }
+  if(act==="take") openTake();
+}
+
+/* §2v prototype (b): one sheet for every way out. Each row calls the SAME function the
+   scattered buttons already call — nothing here is a second implementation, so nothing here
+   can drift from what the Info tab and the settings card do. */
+function openTake(){
+  const s = document.getElementById("takeSheet");
+  if(!s) return;
+  takeReturn = document.activeElement;
+  const dated = sorted().filter(x => x.date).length;
+  const ics = s.querySelector('[data-take="ics"]');
+  /* The calendar is the one format that can come out empty, and the existing card already
+     refuses in that case — say why on the row instead of alerting after the tap. */
+  ics.disabled = !dated;
+  ics.querySelector("span").textContent = dated
+    ? `.ics — ${dated} dated stop${dated===1?"":"s"}, for any calendar app`
+    : ".ics — needs a date on at least one stop first";
+  s.hidden = false;
+  const first = s.querySelector(".tk-row:not([disabled])");
+  if(first) first.focus();
+}
+function closeTake(){
+  const s = document.getElementById("takeSheet");
+  if(!s || s.hidden) return;
+  s.hidden = true;
+  if(takeReturn && takeReturn.focus) takeReturn.focus();
+}
+let takeReturn = null;
+function takeAct(what, btn){
+  if(what === "close"){ closeTake(); return; }
+  if(what === "ics"){ download(tripToIcs(), "text/calendar;charset=utf-8", "ics"); closeTake(); return; }
+  if(what === "csv"){ download(tripToCsv(), "text/csv;charset=utf-8", "csv"); closeTake(); return; }
+  if(what === "print"){
+    /* Print the DOCUMENT, with its map. Opening the read view first is what makes the printed
+       page a trip rather than a screenshot of an interface (the rule the print CSS already
+       encodes), and awaiting the map prep is what stops it printing before the tiles land. */
+    closeTake();
+    const wasReading = document.body.classList.contains("reading");
+    if(!wasReading) openRead();
+    preparePrintMap().then(() => window.print());
+    return;
+  }
+  if(what === "zip"){ downloadTrip(btn); return; }   // keeps its own "Packing…" state on the row
+}
+/* The take sheet is wired UNCONDITIONALLY. It sat inside the ?bar=1 block, which was right
+   while #tripActs was the only thing that could open it — but #fab reaches openTake() on the
+   DEFAULT path now, and a sheet whose every button does nothing is worse than no sheet.
+   The flag still gates the action BAR. It no longer gates the sheet. */
+try{
+  const ts = document.getElementById("takeSheet");
+  if(ts){
+    ts.querySelectorAll("[data-take]").forEach(b => b.onclick = () => takeAct(b.dataset.take, b));
+    /* Tapping the scrim closes it; tapping the card must not. */
+    ts.onclick = e => { if(e.target === ts) closeTake(); };
+    document.addEventListener("keydown", e => { if(e.key === "Escape") closeTake(); });
+  }
+}catch(e){}
+/* ── #fab: the trip page's four verbs, in the ring ───────────────────────────────────────
+   Same surface /new uses, so the two pages behave alike. Four wedges is comfortably inside
+   what ring.js sizes for (it steps its inner radius down past five, and D-120's "visual mess"
+   was eight), so nothing nests here.
+   Replay is offered only when there IS something to replay — the same >=2-frames rule
+   syncReplayBtn and the action bar both use. A wedge that cannot work is worse than a wedge
+   that is absent, and unlike the bar the ring has no disabled state to explain itself with. */
+function openTripFab(){
+  const r = (typeof createRing === "function") ? theTripRing() : null;
+  if(!r){ tripAct("read"); return; }        /* no ring: do the most useful thing, not nothing */
+  const items = [];
+  if(replayFrames().keys.length >= 2) items.push({key:"replay", label:"Replay"});
+  items.push({key:"read", label:"Read"}, {key:"take", label:"Print"}, {key:"share", label:"Share"});
+  r.open(map.getCenter(), "This trip", "what next", items, it => { r.close(); tripAct(it.key); });
+}
+let _tripRing = null;
+function theTripRing(){
+  /* Cached, and the cache is READ BACK rather than assumed — new.html carries a comment about
+     the same function returning a stale handle because `ring` was already assigned. */
+  if(_tripRing) return _tripRing;
+  try{ _tripRing = createRing({map, z:100, topH:76, barH:20}); }catch(e){ _tripRing = null; }
+  return _tripRing;
+}
+document.getElementById("readBack").onclick  = closeRead;
+/* Same wait as the Take-it sheet's Print row — this button is already inside the read view,
+   so it only needs the map framed and its tiles down before the dialog opens. */
+document.getElementById("readPrint").onclick = () => preparePrintMap().then(() => window.print());
+/* Escape closes it, like the info panel and the gate. */
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && document.getElementById("readPanel").classList.contains("show")) closeRead();
+});
 
 async function openInfo(page){
   const panel=document.getElementById("infoPanel"), body=document.getElementById("infoBody");
@@ -1123,7 +2069,10 @@ function showName(){
 }
 /* The trip is gone, so the gate becomes a notice: no input, nothing to try. */
 function showExpired(msg){
+  /* The trip is gone or its term ended — drop the offline copy too, or it would keep
+     rendering a trip that no longer exists, on a page telling the reader it does not. */
   try{ localStorage.removeItem("ttb_key_"+slug); }catch(e){}
+  clearTripCache();
   const p=gateEl.querySelector("p"), inp=document.getElementById("gateInput"),
         btn=document.getElementById("gateBtn");
   if(p) p.textContent=msg;
@@ -1135,6 +2084,22 @@ function showExpired(msg){
 function showGate(){ gateEl.classList.add("show"); trapFocus(gateEl);
   requestAnimationFrame(()=>{ const i=document.getElementById("gateInput"); if(i) i.focus(); }); }
 function hideGate(){ gateEl.classList.remove("show"); }
+
+/* F-13: `#k=` is read once, at boot. Change only the hash and the browser fires `hashchange`
+   and navigates nothing — so the page kept the gate up, kept the old error on screen, and
+   ignored the phrase sitting in the address bar.
+
+   That is not a corner case, it is the ordinary recovery path: someone types the phrase, gets
+   it wrong, then gives up and taps the link they were actually sent. The link is right and the
+   page says "Not it". */
+addEventListener("hashchange", () => {
+  const k = new URLSearchParams(location.hash.slice(1)).get("k");
+  if (!k) return;
+  KEY = k;
+  history.replaceState(null, "", location.pathname);   // scrub it, same as at boot
+  const err = document.getElementById("gateErr"); if (err) err.textContent = "";
+  sync().then(onAuthed).catch(() => {});               // a wrong key just reopens the gate via api()
+});
 async function submitGate(){
   const btn=document.getElementById("gateBtn");
   const v=document.getElementById("gateInput").value.trim().toLowerCase().replace(/\s+/g,"-"); // spaces OR hyphens both work
@@ -1160,7 +2125,15 @@ function onAuthed(){
   try{ if(KEY) localStorage.setItem("ttb_key_"+slug, KEY); }catch(e){}
   // no first-run wizard (D-009): an empty trip drops straight onto the map, and the
   // ROUTE empty-state ("add your first stop") carries it. Only the name is still asked.
-  if(ACCESS==="edit" && !CURRENT_NAME) showName();
+  /* Ask about the TRIP, not about this browser. `CURRENT_NAME` is seeded from
+     localStorage("ttb_name") — one global key with no slug in it — so on any device that had
+     never named a trip it was "", and a trip the server had already named threw up the
+     "name your trip" gate ON TOP of itself. Every crew member opening an edit link on their
+     own phone hit it, and so did the buyer on a second device: found 2026-08-04 while
+     measuring something else, with the gate covering a trip whose name ("Kishwaukee canoe")
+     was on screen behind it in both the header and the pill. CONFIG.name is the server's
+     answer and is populated by sync() before either onAuthed path runs. */
+  if(ACCESS==="edit" && !(CONFIG.name||"").trim() && !CURRENT_NAME) showName();
 }
 function submitName(){
   const v=document.getElementById("nameInput").value.trim();
@@ -1214,7 +2187,16 @@ async function geocode(q){
 
 /* ── map ───────────────────────────────────────────────── */
 const map = L.map("map",{zoomControl:false}).setView([40.5,-105],4);
-L.control.zoom({position:"topleft"}).addTo(map);   // pinch-only was the sole way to zoom (audit F21)
+/* TOP LEFT, and the bottom-right corner belongs to #fab now (Peter, 2026-08-05: "zoom controls
+   to upper left, FAB lower rt always").
+   This corner was vacated on 2026-08-02 on the grounds that it is where the eye lands and where
+   the mark sits. What changed is that the mark no longer needs the whole corner and the FAB
+   needs the other one on BOTH pages — one control that opens everything, in the same place
+   whether you are building a trip or reading one. Zoom is a fallback for pinch on touch; it
+   goes where it is out of the way of the thing you actually reach for.
+   The masthead is the other occupant here: verified below the bar rather than under it. */
+L.control.zoom({position:"topleft"}).addTo(map);   // F21 put these in — pinch-only was the
+   // sole way to zoom.
 const TILE_LIGHT="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 const TILE_DARK ="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 let tileLayer=null;
@@ -1226,6 +2208,14 @@ let darkMode = savedTheme==="dark" ||
   (savedTheme!=="light" && matchMedia("(prefers-color-scheme: dark)").matches);
 function applyTheme(){
   document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+  /* Tell the browser what colour its OWN chrome should be. Safari's bars cannot be hidden from a
+     web page — that needs standalone mode, which is Add to Home Screen and a D-017 call — but they
+     do not have to be a white band bolted onto a night map. Set from JS, not a media-query <meta>,
+     because this toggle is manual: someone on night drive at noon has a dark app while
+     prefers-color-scheme still says light. */
+  { let tc = document.querySelector('meta[name="theme-color"]');
+    if(!tc){ tc = document.createElement("meta"); tc.name = "theme-color"; document.head.appendChild(tc); }
+    tc.content = darkMode ? "#14181D" : "#F5F6F4"; }
   document.getElementById("themeBtn").innerHTML = icon(darkMode ? "sun" : "moon", 18);
   if(tileLayer) map.removeLayer(tileLayer);
   tileLayer=L.tileLayer(darkMode?TILE_DARK:TILE_LIGHT,
@@ -1245,10 +2235,14 @@ let layerGroup = L.layerGroup().addTo(map);
 
 /* ── state + rendering ─────────────────────────────────── */
 let allStops=[], allNotes=[], allPosts=[], tab="route", hidden={truck:false,rental:false}, fitted=false;
-let replayT=null, replayTimer=null, replayBy="vehicle";   // replay grouping: "vehicle" | "person"
+let replayT=null, replayTimer=null, replayBy="vehicle";
+let REPLAY_FRESH=new Set();   // D-115: ids that arrive at the current frame   // replay grouping: "vehicle" | "person"
 let replayFollow=true, replayPanning=false;   // the map follows the reveal until you move it yourself
 // stable-ish per-person colors: roster order first, else a name hash. Reads on light + dark tiles.
-const PERSON_PALETTE=["#ED9F17","#3E7CB1","#7B4FA3","#2E9E6B","#D2544B","#4B8B9E","#C9721C","#A24E86"];
+/* person1 was the RETIRED D-022 accent while person2 was already exactly vehicle 2's route
+   blue — so switching the replay from by-vehicle to by-person moved entity 1's colour and
+   not entity 2's. Matched to route/amber, which is what vehicle 1 draws with. */
+const PERSON_PALETTE=["#F2A900","#3E7CB1","#7B4FA3","#2E9E6B","#D2544B","#4B8B9E","#C9721C","#A24E86"];
 // everyone who has a stop (+ roster), in a stable order → guarantees distinct colors, no hash collisions
 function personRoster(){
   const seen=[]; const push=n=>{ n=n||"—"; if(n!=="—" && !seen.includes(n)) seen.push(n); };
@@ -1288,11 +2282,96 @@ const sorted = () => { const e=effDate(); return [...allStops].sort((a,b)=>{
   return d!==0 ? d : ((a.seq||0)-(b.seq||0));
 }); };
 
+/* ── the document header (#15) ────────────────────────────────────────────────────────
+   Name, then where, then when, then how long it is kept. Everything but the name is DERIVED
+   from pins we already have — nothing new is stored, and nothing new is fetched.
+
+   The date maths is the part that has bitten this codebase three times (R2, D-089, D-092), so:
+   a stop's `date` is a plain "YYYY-MM-DD" string with no time and no zone. `new Date("2026-09-04")`
+   parses as UTC midnight, and formatting THAT in any negative-offset zone prints the 3rd. So the
+   string is split by hand into Date.UTC and every format call names timeZone:"UTC". EXPIRES is
+   different and is deliberately NOT treated this way: it is a real epoch instant, so local
+   formatting is the correct answer for it, the same as the settings panel does. */
+function docDate(ymd){ const [y,m,d]=String(ymd).split("-").map(Number);
+  return (y&&m&&d) ? new Date(Date.UTC(y,m-1,d)) : null; }
+/* Intl.formatRange, not hand-rolled branching. The first version of this built the string
+   itself — "same month? then day, dash, full date" — and produced "4–Sep 7, 2026" in en-US,
+   because the day-only part and the full part order differently. The test passed anyway: it
+   asserted the month appeared once, which was true of a broken string. formatRange is built
+   for exactly this and gets the elision right in every locale ("Sep 4 – 7, 2026",
+   "4.–7. Sept. 2026"), including collapsing an identical pair to one date. */
+function docSpan(dates){
+  const ds=dates.filter(Boolean).slice().sort();
+  if(!ds.length) return "";
+  const a=docDate(ds[0]), b=docDate(ds[ds.length-1]);
+  if(!a||!b) return "";
+  const o={timeZone:"UTC",day:"numeric",month:"short",year:"numeric"};
+  try{ const f=new Intl.DateTimeFormat(undefined,o);
+       if(f.formatRange) return f.formatRange(a,b); }catch(e){}
+  const F=dt=>dt.toLocaleDateString(undefined,o);          // pre-2021 browsers
+  return ds[0]===ds[ds.length-1] ? F(a) : F(a)+" – "+F(b);
+}
+/* Returns HTML, not text, because each END of the route has to be atomic: left to wrap freely
+   it broke as "Salt Lake City," / "UT", which reads as two places. The break belongs at the
+   arrow. Escaping happens here since the caller can no longer do it. */
+/* A stop's `place` is whatever the author typed, and the convention across this product is
+   "PLACE — note": the live demo's first stop is "San Francisco — load up, coffee, go" and its
+   last is "Reno airport — Jordan's later flight, 6p". Printed whole, the header ran to three
+   lines of somebody's shorthand and pushed the tabs off a phone. Take the part before the
+   dash, then clamp — the header names WHERE, the card says the rest. */
+function docPlace(t){
+  t=String(t||"").split(/\s+[—–-]\s+/)[0].trim();
+  if(t.length<=26) return t;
+  const cut=t.slice(0,26);
+  const sp=cut.lastIndexOf(" ");
+  return (sp>12 ? cut.slice(0,sp) : cut).replace(/[,\s]+$/,"") + "…";
+}
+/* Returns HTML, not text, because each END of the route has to be atomic: left to wrap freely
+   it broke as "Salt Lake City," / "UT", which reads as two places. The break belongs at the
+   arrow. Escaping happens here since the caller can no longer do it. */
+/* The BUSIEST track's ends, not the sorted array's. `sorted()` interleaves vehicles, so its
+   endpoints can splice two people's journeys into one claim that is true of neither — the
+   exported zip read "Chicago O'Hare → Reno–Tahoe" for a trip that goes San Francisco → Reno.
+   Found by downloading the file and reading it. */
+function docRoute(ord){
+  const byTrack=new Map();
+  for(const s of ord){ if(!byTrack.has(s.track)) byTrack.set(s.track,[]); byTrack.get(s.track).push(s); }
+  const lists=[...byTrack.values()].sort((a,b)=>b.length-a.length);
+  /* Only when one track is STRICTLY bigger. Two equal vehicles are two journeys, and a tie
+     broken by iteration order is not a decision — it picks one and states it as fact. */
+  const main = lists.length===1 ? lists[0]
+             : (lists.length>1 && lists[0].length>lists[1].length) ? lists[0] : null;
+  if(!main) return "";
+  const named=main.map(s=>docPlace(s.place)).filter(Boolean);
+  if(!named.length) return "";
+  const first=named[0], last=named[named.length-1];
+  const nw=t=>'<span class="term">'+esc(t)+'</span>';
+  return first===last ? nw(first) : nw(first) + " → " + nw(last);
+}
+function drawDocHead(){
+  const nm=document.getElementById("docName"), mt=document.getElementById("docMeta");
+  if(!nm||!mt) return;
+  nm.textContent = (CONFIG.name||"").trim() || "This trip";
+  const ord=sorted();
+  const bits=[];
+  const route=docRoute(ord);           if(route) bits.push(route);   // already escaped, see docRoute
+  /* The dates are one atom. Left to wrap freely the line broke as "Sep 4 – 7," / "2026",
+     which reads as two facts instead of one. The route is deliberately NOT nowrap — it is the
+     long part, and forcing it would push the whole line off a narrow screen. */
+  const span=docSpan(ord.map(s=>s.date)); if(span)  bits.push('<span class="term">'+esc(span)+'</span>');
+  /* The term is status, not decoration: every tier ends (D-059) and the trip should say so
+     without anyone opening a panel to find out. */
+  if(EXPIRES) bits.push('<span class="term">kept until ' +
+    esc(new Date(EXPIRES).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})) + '</span>');
+  mt.innerHTML = bits.join('<span class="sep">·</span>');
+  mt.hidden = !bits.length;
+}
+
 function render(stops){
   allStops=stops;
   if(document.activeElement && listEl.contains(document.activeElement)) return; // don't clobber mid-edit
   if(replayT!=null && !replayFrames().keys.includes(replayT)) closeReplay();  // timeline changed under us
-  drawMap(); drawList(); syncReplayBtn();
+  drawDocHead(); syncOpenPill(); drawMap(); drawList(); syncReplayBtn();
   if(!fitted && stops.length){ fitAll(); fitted=true; }
 }
 /* Fit to the trip, not to its widest outlier (audit F06).
@@ -1321,6 +2400,151 @@ function clusterFit(pts){
    fire for our own animation, hence the flag. */
 map.on("dragstart", ()=>{ if(!replayPanning) replayFollow=false; });
 map.on("zoomstart", ()=>{ if(!replayPanning) replayFollow=false; });
+/* F-3: a stop outside the view left its leg running off the screen to nowhere. Measured at
+   375x812 on the demo: five of twenty markers off-viewport with no indication where they went.
+
+   Fitting everything would undo clusterFit above, which exists on purpose — its comment records
+   that the textbook 1.5x IQR fence clipped legitimate stops, so it uses 3x to drop only the
+   genuinely far-flung point, like a crew member's flight origin. Zooming out to include that
+   point is exactly what it was written to prevent.
+
+   So the leg gets an edge label instead: pinned at the boundary, in the direction it went,
+   naming where it goes. Capped at three and deduped by place — the point is orientation, not a
+   second index of the trip. */
+let edgeGroup = L.layerGroup().addTo(map);
+function drawEdgeChips(){
+  edgeGroup.clearLayers();
+  if(!allStops.length) return;
+  /* SIZE COMES FROM THE DOM, NOT FROM LEAFLET. `map.getSize()` returns a memoised `_size` that
+     is only refreshed by invalidateSize() or a resize Leaflet happens to notice — and measured
+     2026-08-03 it said 1280x720 while the container was really 800 wide. Every chip was then
+     clamped to `1280 - 30 = 1250`: pinned to the edge of a viewport that no longer existed, 450px
+     off the real one. That is the whole "chips land on markers" bug — they were never being
+     placed against the frame the person is looking at.
+     A phone hits this on rotation, and whenever Safari's toolbar collapses or expands.
+     The rect cannot go stale; invalidateSize() would also fix it but fires moveend, and moveend
+     calls this function. */
+  const _cr = map.getContainer().getBoundingClientRect();
+  const _ls = map.getSize();
+  /* Prefer the live rect, fall back to Leaflet's cache when the rect is DEGENERATE. A hidden or
+     backgrounded container measures 0x0 — found immediately after the first version of this fix,
+     which then clamped every chip to x=-30. Leaflet's cache is stale but never zero, so between
+     them one is always usable: rect when it is real, cache when the container is not being
+     rendered. Neither alone is enough, which is the whole lesson. */
+  const size = (_cr.width > 1 && _cr.height > 1)
+    ? {x: Math.round(_cr.width), y: Math.round(_cr.height)}
+    : _ls;
+  if (size.x < 2 || size.y < 2) return;   // nothing is on screen; there is nothing to pin to
+  const b = map.getBounds(), m = 30, seen = new Set(), out = [];
+  const CHIP_ANCHOR = 8, CHIP_H = 21, CHIP_W = 120;   // W is a guess: a chip is measured after
+                                                     // it exists, and this runs before
+  /* Marker boxes in CONTAINER coordinates, same space as the clamp. drawMap adds its markers
+     synchronously and this runs from a setTimeout after it, so they are on the page by now —
+     verified 2026-08-03 by instrumenting the call: ten markers visible. */
+  const _mo = map.getContainer().getBoundingClientRect();
+  const placed = [...map.getContainer().querySelectorAll(".leaflet-marker-icon")]
+    .filter(el => !el.className.toString().includes("edgewrap"))
+    .map(el => { const r = el.getBoundingClientRect();
+                 return {x: r.x - _mo.x, y: r.y - _mo.y, w: r.width, h: r.height}; });    // must match iconAnchor below and .edgechip height
+                                        // — both dropped when the chip shrank, or the top and
+                                        // bottom insets clamp against a box that no longer exists's height
+  /* MEASURE the chrome, do not guess at it. A flat 30px inset put the top chips UNDER the
+     topbar, and on a 320px phone the pieces of one showing through the gaps between the
+     "View only" pill, the theme button and the menu button read as garbled text — found from
+     a photo of a real handset, 2026-08-02. Same mistake F-1/F-2 fixed on the builder's fit:
+     a number that was a guess at chrome height, right up until the chrome changed.
+     Bottom too: the sheet can be dragged up over a chip pinned to the bottom edge. */
+  const mapTop = map.getContainer().getBoundingClientRect().top;
+  const tb = document.getElementById("topbar");
+  const sh = document.getElementById("sheet");
+  /* The clamp positions the ANCHOR, and the chip's box does not sit on it: iconAnchor is
+     [0, CHIP_ANCHOR], so the box runs from anchorY-CHIP_ANCHOR to anchorY+(CHIP_H-CHIP_ANCHOR).
+     Clamping the anchor alone left a chip 2px under the topbar and another 8px under the sheet —
+     measured after the first fix, which is why it is worth measuring the fix and not just the
+     bug. Both constants have to match the divIcon below and .edgechip's height in CSS. */
+  const topIn = Math.max(m, tb ? Math.round(tb.getBoundingClientRect().bottom - mapTop) + 8 + CHIP_ANCHOR : m);
+  /* Whatever is actually sitting at the bottom — the sheet when it is open, the pill when it is
+     not. Measured after the sheet went on-demand: with the sheet off-screen the inset collapsed
+     to 30px and two chips landed on the pill. Take the higher edge of the two. */
+  const pill = document.getElementById("openSheet");
+  const bottomEdge = Math.min(
+    sh   ? sh.getBoundingClientRect().top   : Infinity,
+    /* NOT offsetParent — it is ALWAYS null on a position:fixed element, so this test could never
+       be true and the pill was never once taken into account. That is why a chip still sat
+       behind it on a real phone after the "fix". Ask about display instead. */
+    (pill && getComputedStyle(pill).display !== "none") ? pill.getBoundingClientRect().top : Infinity);
+  const botIn = Math.max(m, isFinite(bottomEdge)
+    ? Math.round(size.y - (bottomEdge - mapTop)) + 8 + (CHIP_H - CHIP_ANCHOR) : m);
+  for(const s of allStops){
+    if(hidden[s.track]) continue;
+    if(b.contains([s.lat, s.lng])) continue;
+    const name = (s.place || "").trim();
+    const key = name.toLowerCase();
+    if(!name || seen.has(key)) continue;
+    seen.add(key); out.push(s);
+  }
+  /* Three chips clamped to the same corner rendered at 0px apart — measured, two of them
+     perfectly stacked and unreadable. They are pinned to an EDGE, so there is nothing to
+     preserve by keeping them coincident: step each one along the edge it is on. */
+  const used = [];
+  for(const s of out.slice(0, 3)){
+    /* `label`, NOT `name`. The first loop's `const name` is block-scoped to that loop, so the
+       identifier here resolved to `window.name` — a built-in that is "" — and every chip
+       rendered with an empty span and no error. Measured, not noticed. */
+    /* docPlace(), the same clamp the document header uses: these carried whole titles —
+       "SACRAMENTO — IN-N-OUT + GAS", "SAN FRANCISCO — LOAD UP, CO…" — three at a time, in
+       pills wider than half the screen. A chip's job is to name where a line goes. */
+    const label = docPlace(s.place);
+    const p = map.latLngToContainerPoint([s.lat, s.lng]);
+    const cx = Math.min(Math.max(p.x, m), size.x - m);
+    const maxY = Math.max(topIn, size.y - botIn);
+    let cy = Math.min(Math.max(p.y, topIn), maxY);
+    /* Step past anything already placed within a chip's height on the same side — and step
+       AWAY from whichever limit we are sitting on. The first version always stepped down and
+       then re-clamped to maxY, which put it straight back where it started: three chips
+       clamped to the bottom edge still measured 0px apart. Down, unless down is full. */
+    const side = cx > size.x / 2, step = CHIP_H + 4;
+    const clash = y => used.some(u => u.side === side && Math.abs(u.cy - y) < step);
+    /* Pick ONE direction and keep going. Deciding per step oscillated: a third chip pinned to
+       the bottom stepped up into the second, then back down into the first, then out of guard
+       — measured, three chips and two of them still at 0px. Away from the limit we are on. */
+    const dir = cy >= maxY - 1 ? -1 : 1;
+    for (let k = 0; k < 4 && clash(cy); k++)
+      cy = Math.min(maxY, Math.max(topIn, cy + dir * step));
+    used.push({ side, cy });
+    const at = map.containerPointToLatLng([cx, cy]);
+    /* Anchor away from the edge it is pinned to, or a chip on the right runs off the frame it
+       is meant to be labelling — measured at x=345 on a 375px screen. */
+    /* Now that `size` is the frame the person is actually looking at, keep off the markers too.
+       This was tried once and appeared to do nothing — because it was stepping chips around a
+       1280-wide space while the map was 800, so every computed collision was against geometry
+       that did not exist. Fix the coordinate system first; the avoidance is ten lines.
+       A right-half chip is drawn with translateX(-100%), so its box runs LEFT of the anchor. */
+    const onRight = cx > size.x / 2;
+    const hits = (px, py) => {
+      const x0 = onRight ? px - CHIP_W : px;
+      return placed.some(o => x0 + CHIP_W > o.x && x0 < o.x + o.w &&
+                              py + (CHIP_H - CHIP_ANCHOR) > o.y && py - CHIP_ANCHOR < o.y + o.h);
+    };
+    const away = cy < size.y / 2 ? 1 : -1;        // step away from the edge it is pinned to
+    for (let k = 0; k < 4 && hits(cx, cy); k++) cy += away * (CHIP_H + 8);
+    cy = Math.min(Math.max(cy, topIn), Math.max(topIn, size.y - botIn));
+
+    const rightHalf = onRight;
+    L.marker(at, {interactive:false, zIndexOffset:600, icon: L.divIcon({
+      className: rightHalf ? "edgewrap right" : "edgewrap",
+      html:`<div class="edgechip">${icon(s.mode === "fly" ? "fly" : (s.mode || "drive"), 12)}<span>${esc(label)}</span></div>`,
+      iconSize:[null,null], iconAnchor:[0,CHIP_ANCHOR]})}).addTo(edgeGroup);
+  }
+}
+map.on("moveend zoomend", drawEdgeChips);
+/* THE FAN IS A PIXEL OFFSET STORED AS A LATLNG, so it is only correct at the zoom it was
+   computed at. drawMap ran on sync and on edits but never on zoom, so two pins sharing a
+   coordinate drifted back together as you zoomed — measured 13px apart on 30px pins, which is
+   more than half-covered, and worse further out. Redrawing here costs no more than the ten
+   second poll already does, and it is the only way the offset stays what it claims to be. */
+map.on("zoomend", () => { if (allStops.length || allPosts.length) drawMap(); });
+
 function fitAll(animate){
   const pts=clusterFit(allStops.filter(s=>!hidden[s.track]).map(s=>[s.lat,s.lng]));
   if(!pts.length) return;
@@ -1339,9 +2563,34 @@ const ROAD_ROUTING = true;
 const routeCache = new Map();          // sig -> [[lat,lng],...] | null (failed)
 const routePending = new Set();
 const runSig = pts => pts.map(p=>p[0].toFixed(4)+","+p[1].toFixed(4)).join(";");
+/* Encoded polyline → [[lat,lng],…] (D-110). Kept byte-identical to new.html's copy.
+   The server sends `geometries=polyline` because the same road is 15.9 KB encoded against
+   120.3 KB as coordinate pairs. Google's algorithm: each number is a zigzag-encoded delta from
+   the previous one, sliced into 5-bit chunks low-first, every chunk but the last carrying bit 6,
+   and 63 added so the result is printable ASCII. Precision 5 — hence 1e5. */
+function decodePoly(s){
+  if(typeof s!=="string"||!s) return null;
+  const out=[]; let i=0,lat=0,lng=0;
+  while(i<s.length){
+    let r=0,sh=0,b;
+    do{ b=s.charCodeAt(i++)-63; r|=(b&31)<<sh; sh+=5; }while(b>=32);
+    lat+=(r&1)?~(r>>1):(r>>1);
+    r=0;sh=0;
+    do{ b=s.charCodeAt(i++)-63; r|=(b&31)<<sh; sh+=5; }while(b>=32);
+    lng+=(r&1)?~(r>>1):(r>>1);
+    out.push([lat/1e5,lng/1e5]);
+  }
+  return out.length?out:null;
+}
 function cachedRoute(sig){
   if(routeCache.has(sig)) return routeCache.get(sig);
-  try{ const s=localStorage.getItem("ttb_route_"+sig); if(s){ const v=JSON.parse(s); routeCache.set(sig,v); return v; } }catch(e){}
+  try{ const s=localStorage.getItem("ttb_route_"+sig);
+    if(s){ const v=JSON.parse(s);
+      /* An ARRAY here is a v1 entry: the old 22-points-per-470-miles geometry. It is stale by
+         definition, so drop it and refetch rather than drawing the thing we just fixed. */
+      if(Array.isArray(v)){ localStorage.removeItem("ttb_route_"+sig); return undefined; }
+      const geo = v===null ? null : decodePoly(v);
+      routeCache.set(sig,geo); return geo; } }catch(e){}
   return undefined;
 }
 let redrawTimer=null;
@@ -1350,18 +2599,39 @@ function scheduleRedraw(){ clearTimeout(redrawTimer);
 async function fetchRoute(pts, sig){
   if(routePending.has(sig)) return; routePending.add(sig);
   try{
-    const coords=pts.map(p=>p[1]+","+p[0]).join(";");
-    /* Item 14: through our own server, so OSRM never sees a traveller's IP and the road
-       geometry caches site-wide. Our endpoint returns [lat,lng] already — no flipping. */
+    /* lat,lng — NOT flipped. The comment below was right and the line above it was wrong for
+       weeks: `pts` are Leaflet pairs, [lat,lng], and this built "lng,lat" because that is what
+       OSRM wants and OSRM is what the browser used to call directly. Item 14 put our own
+       endpoint in front, and ours takes lat,lng; new.html was updated, this file was not.
+       rt_route() range-checks latitude, so every request arrived with lat=-122, failed the
+       check and returned null — and null is indistinguishable from "no road exists", so the
+       map drew its dashed straight-line fallback and looked merely unfinished rather than
+       broken. Road routing has never once worked in the trip view. */
+    const coords=pts.map(p=>p[0]+","+p[1]).join(";");
     const r=await fetch("/api/route?c="+encodeURIComponent(coords));
     const d=await r.json();
-    const geo=Array.isArray(d && d.path) ? d.path : null;
+    const enc=(d && typeof d.poly==="string" && d.poly) ? d.poly : null;
+    const geo=enc ? decodePoly(enc) : null;
     routeCache.set(sig,geo);
-    try{ localStorage.setItem("ttb_route_"+sig, JSON.stringify(geo)); }catch(e){}
+    /* The ENCODED string is what gets stored — 16 KB against 120 KB, which is the difference
+       between ~300 cached legs and ~40 before the quota bites. Decoding is cheap and happens
+       once per run into routeCache. */
+    try{ localStorage.setItem("ttb_route_"+sig, JSON.stringify(enc)); }catch(e){}
   }catch(e){ routeCache.set(sig,null); }
   routePending.delete(sig); scheduleRedraw();
 }
 function drawRoadRun(pts, color){        // color: resolved line color (vehicle track OR person)
+  /* IN REPLAY, ROUTE LEG BY LEG. The cache is keyed on the whole run's signature, and replay
+     reveals one stop at a time — so every frame produced a run that had never been requested,
+     refetched from scratch, and showed the dashed straight-line fallback until it landed.
+     Peter, watching it: "showed an unrouted polyline first, then routed."
+     Split into consecutive pairs and each leg caches independently. openReplay() opens on the
+     fully-revealed frame, so raising the scrubber warms every pair up front — by the time Play
+     is pressed each step is a cache hit and the road is simply there. */
+  if(replayT!=null && pts.length>2){
+    for(let i=1;i<pts.length;i++) drawRoadRun([pts[i-1],pts[i]], color);
+    return;
+  }
   const sig=runSig(pts);
   const geo = ROAD_ROUTING ? cachedRoute(sig) : null;
   if(geo && geo.length){
@@ -1385,6 +2655,27 @@ function drawFlightArc(A, B, color){
    Inline keeps the no-build-step rule and costs no extra request; currentColor means
    they inherit whatever they sit on. */
 const ICON_PATHS={
+  back:'<path d="M20 12H5M10.5 6.5 4 12l6.5 5.5"/>',
+  collapse:'<path d="M9.2 4v5.2H4M14.8 20v-5.2H20M14.8 4v5.2H20M9.2 20v-5.2H4"/>',
+  /* Added 2026-08-05 to retire the character-glyphs the UI leaned on. Emoji and dingbats
+     render differently on every platform and are the strongest dated signal in an interface.
+     Same spec as the originals: 24x24, no fill, stroke currentColor 1.85, round caps. */
+  play:'<path d="M8 4.8 19 12 8 19.2z"/>',
+  pause:'<path d="M9.2 5v14M14.8 5v14"/>',
+  alert:'<path d="M12 3.2 21.6 20H2.4z"/><path d="M12 9.6v4.2M12 17.1v.01"/>',
+  spark:'<path d="M12 3.2 13.9 9 19.7 10.9 13.9 12.8 12 18.6 10.1 12.8 4.3 10.9 10.1 9z"/><path d="M18.6 3.4v2.8M17.2 4.8H20"/>',
+  up:'<path d="M5.5 15 12 8.5 18.5 15"/>',
+  down:'<path d="M5.5 9 12 15.5 18.5 9"/>',
+  upload:'<path d="M12 15.6V3.8M7.9 7.9 12 3.8l4.1 4.1"/><path d="M4 15.4v3.1a1.7 1.7 0 0 0 1.7 1.7h12.6a1.7 1.7 0 0 0 1.7-1.7v-3.1"/>',
+  download:'<path d="M12 3.8v11.8M7.9 11.5 12 15.6l4.1-4.1"/><path d="M4 15.4v3.1a1.7 1.7 0 0 0 1.7 1.7h12.6a1.7 1.7 0 0 0 1.7-1.7v-3.1"/>',
+  expand:'<path d="M4 9.2V4h5.2M20 14.8V20h-5.2M20 9.2V4h-5.2M4 14.8V20h5.2"/>',
+  locate:'<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.6"/><path d="M12 1.6v2.8M12 19.6v2.8M1.6 12h2.8M19.6 12h2.8"/>',
+  undo:'<path d="M4.4 9.2h11a5.2 5.2 0 0 1 0 10.4H9.6"/><path d="M8.4 5.2 4.4 9.2l4 4"/>',
+  print:'<path d="M7 9.4V3.4h10v6"/><path d="M7 18.6H5.4a2 2 0 0 1-2-2v-4.8a2 2 0 0 1 2-2h13.2a2 2 0 0 1 2 2v4.8a2 2 0 0 1-2 2H17"/><path d="M7 14.6h10v6H7z"/>',
+  search:'<circle cx="10.4" cy="10.4" r="6.4"/><path d="M15.2 15.2 20.6 20.6"/>',
+  settings:'<path d="M3.6 6.4h8.2M16.4 6.4h4M3.6 12h3.2M11.4 12h9M3.6 17.6h9.8M18 17.6h2.4"/><circle cx="14.2" cy="6.4" r="2.2"/><circle cx="9.2" cy="12" r="2.2"/><circle cx="15.6" cy="17.6" r="2.2"/>',
+  camera:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.4" r="3.6"/><path d="M8.6 7l1.5-2.6h3.8L15.4 7"/>',
+  auto:'<circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/>',
  arrow:'<path d="M4 12h15M13.5 6.5 20 12l-6.5 5.5"/>',
   bike:'<circle cx="6" cy="17" r="3.3"/><circle cx="18" cy="17" r="3.3"/><path d="M6 17l4-8h5M9.5 9h4l3.5 8M14.5 6h2.5"/>',
   walk:'<circle cx="13" cy="4.2" r="1.8"/><path d="M11 21l2-6-2.5-2.5.8-4.3 3.2 2 2.5 1M9 12.5L7.5 16M12.5 15l2.5 6"/>',
@@ -1497,6 +2788,7 @@ map.on("zoomend",()=>{ if(!appDrawing) drawMap(); });   // fan offsets are pixel
 
 function drawMap(){
   layerGroup.clearLayers();
+  setTimeout(drawEdgeChips, 0);   // after this frame's markers exist and the view has settled
   // replay reveals only dated stops up to the scrubber date; the latest per group is "current".
   // grouping is by vehicle (default, everywhere) or by PERSON (replay + "People" view, D-023).
   const inReplay = replayT!=null;
@@ -1516,16 +2808,64 @@ function drawMap(){
      normal case, not an edge one. On a six-stop trip with four posts it hid four stops
      completely: same pixel, post drawn second, stop gone. */
   const postsNow = inReplay ? allPosts.filter(replayPostVisible() || (()=>false)) : allPosts;
-  const fan=new Map();
+  /* THE FAN GROUPS BY RENDERED PIXELS, not by rounded coordinates. It used to key on
+     toFixed(4) — about 11m — which caught a post pinned exactly on its stop and nothing else.
+     Measured on the demo trip: four separate things at one cabin, tens of metres apart, sat
+     within 3px of each other from zoom 11 down and the fan never fired, because 11m is not
+     the question. The question is whether they overlap ON SCREEN, and that depends on zoom.
+     Safe now that drawMap re-runs on zoomend: at a zoom where the offset would misrepresent
+     the geography, the points are already further apart than NEAR and no offset is applied.
+     Each fanned marker keeps a hairline back to its true point, and a drag subtracts the
+     offset before saving. */
+  /* THE MARKER THAT SAYS WHERE YOU ARE IS NEVER SWALLOWED. Everything else in a pile can wait
+     for a tap; the live position is the one thing a person is looking for. */
+  const neverCluster=new Set();
+  if(inReplay){ const f={}; for(const s of base){ const k=gkey(s); if(validKey(k)) f[k]=s.id; }
+                for(const k in f) neverCluster.add(f[k]); }
+  else base.forEach(s=>{ if(s.here) neverCluster.add(s.id); });
+
+  const fan=new Map(), inCluster=CLUSTERED, clusters=[];
+  inCluster.clear();
   (function(){
-    const at={};
-    base.forEach(s=>{ const k=s.lat.toFixed(4)+","+s.lng.toFixed(4); (at[k]=at[k]||[]).push(s.id); });
-    postsNow.forEach(p=>{ const k=(+p.lat).toFixed(4)+","+(+p.lng).toFixed(4); (at[k]=at[k]||[]).push(p.id); });
-    for(const k in at){
-      const ids=at[k]; if(ids.length<2) continue;
-      const r=13+3*ids.length;                       // px — keeps 30px pins legible
-      ids.forEach((id,i)=>{ const a=(2*Math.PI*i)/ids.length - Math.PI/2;
-        fan.set(id,[Math.cos(a)*r, Math.sin(a)*r]); });
+    const items=[...base.map(s=>({id:s.id,lat:+s.lat,lng:+s.lng})),
+                 ...postsNow.map(p=>({id:p.id,lat:+p.lat,lng:+p.lng}))]
+      .filter(a=>isFinite(a.lat)&&isFinite(a.lng) && !neverCluster.has(a.id));
+    if(!items.length) return;
+    const NEAR=26;                                   // px — a 30px pin, so closer than this covers
+    const CLUSTER_AT=4;                              // fan two or three; past that, count them
+
+    /* AGGLOMERATIVE, not one greedy pass. The single pass clustered a pile and then put the
+       badge at its centroid, which promptly landed on the next pile — measured at z6: badges
+       "9" and "4" drawn, and still four marker pairs under 20px. Merging until nothing is
+       within NEAR of anything else is the only version that settles. Bounded by construction:
+       every merge removes a node, so it cannot run more than items.length times. */
+    let nodes=items.map(a=>{ const q=map.latLngToContainerPoint([a.lat,a.lng]);
+      return {ids:[a.id], pts:[[a.lat,a.lng]], x:q.x, y:q.y}; });
+    for(let guard=nodes.length; guard>0; guard--){
+      let hit=null;
+      for(let i=0;i<nodes.length && !hit;i++)
+        for(let j=i+1;j<nodes.length;j++)
+          if(Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y) < NEAR){ hit=[i,j]; break; }
+      if(!hit) break;
+      const [i,j]=hit, a=nodes[i], b=nodes[j], wa=a.ids.length, wb=b.ids.length;
+      nodes[i]={ids:a.ids.concat(b.ids), pts:a.pts.concat(b.pts),
+                x:(a.x*wa+b.x*wb)/(wa+wb), y:(a.y*wa+b.y*wb)/(wa+wb)};
+      nodes.splice(j,1);
+    }
+
+    for(const nd of nodes){
+      if(nd.ids.length<2) continue;
+      if(nd.ids.length>=CLUSTER_AT){
+        nd.ids.forEach(id=>inCluster.add(id));
+        clusters.push({n:nd.ids.length, pts:nd.pts,
+          lat:nd.pts.reduce((t,q)=>t+q[0],0)/nd.pts.length,
+          lng:nd.pts.reduce((t,q)=>t+q[1],0)/nd.pts.length});
+        continue;
+      }
+      /* Two or three: fan them around their own true points, which keeps the hairline honest. */
+      const r=13+3*nd.ids.length;
+      nd.ids.forEach((id,k)=>{ const ang=(2*Math.PI*k)/nd.ids.length - Math.PI/2;
+        fan.set(id,[Math.cos(ang)*r, Math.sin(ang)*r]); });
     }
   })();
   const fanned=s=>{ const o=fan.get(s.id); if(!o) return [s.lat,s.lng];
@@ -1541,10 +2881,14 @@ function drawMap(){
     (groups[k]=groups[k]||[]).push(s);
     seq[k]=(seq[k]||0)+1;
     if(isHidden(k)) return;
+    if(inCluster.has(s.id)) return;   // the badge stands for it until you zoom in
     const isHere = inReplay ? (frontier[k]===s.id) : s.here;
     const pinStyle = byPerson ? `background:${gcolor(k)};color:#fff` : "";
+    /* Same rule replayFocusPts() uses to decide where to point the camera, so the pin that
+       pulses and the pin the map flies to are always the same pin. */
+    const isNew = inReplay && REPLAY_FRESH.has(s.id);
     const icon=L.divIcon({className:"",
-      html:`<div class="pin ${byPerson?"":s.track} ${isHere?"is-here":""}" style="position:relative;${pinStyle}">${seq[k]}</div>`,
+      html:`<div class="pin ${byPerson?"":s.track} ${isHere?"is-here":""} ${isNew?"arrive":""}" style="position:relative;${pinStyle}">${seq[k]}</div>`,
       iconSize:[30,30], iconAnchor:[15,15]});
     const pos=fanned(s);
     const m=L.marker(pos,{icon,draggable:!READONLY}).addTo(layerGroup);
@@ -1559,7 +2903,7 @@ function drawMap(){
        read the trip keys this origin keeps in localStorage. The author was already escaped
        here; the place was not. */
     m.bindTooltip(`${byPerson&&s.author?esc(s.author)+" · ":""}${s.fly?"✈ ":""}${esc(s.place)}${s.date?" · "+fmtDate(s.date):""}`,{direction:"top",offset:[0,-14]});
-    m.on("click",()=>focusCard(s.id));
+    m.on("click",()=>{ if(sheetState==="shut") setSheet("half"); focusCard(s.id); });
     m.on("dragend",e=>{ const p=e.target.getLatLng(); const o=fan.get(s.id);
       if(!o) return store.update(s.id,{lat:p.lat,lng:p.lng});
       const q=map.latLngToLayerPoint(p);       // subtract the fan offset we added
@@ -1596,6 +2940,7 @@ function drawMap(){
     /* NOT named `icon`: this block calls the global icon() helper above, and a `const icon`
        here shadows it for the whole block — the calls then hit the temporal dead zone and
        throw, killing the render for any trip that has a post. (CLAUDE.md sharp edge.) */
+    if(inCluster.has(p.id)) return;   // ditto — counted in a badge, not drawn
     const pinIcon=L.divIcon({className:"",html,iconSize:[36,36],iconAnchor:[18,18]});
     // Same fan as the stops, so a post sitting on one steps aside instead of covering it.
     const ppos = fanned({id:p.id, lat:+p.lat, lng:+p.lng});
@@ -1604,8 +2949,8 @@ function drawMap(){
     const m=L.marker(ppos,{icon:pinIcon, draggable: !READONLY && p.author===CURRENT_NAME}).addTo(layerGroup);
     { const pe=m.getElement();
       if(pe){ pe.setAttribute("role","button");
-        pe.setAttribute("aria-label",`${p.type==="sealed"?"Sealed drop":p.type==="quest"?"Quest":"Post"}${p.author?" by "+p.author:""}${p.caption?": "+p.caption:""}`); } }
-    m.on("click",()=>focusPost(p.id));
+        pe.setAttribute("aria-label",`${p.type==="sealed"?"Easter egg":p.type==="quest"?"Quest":"Post"}${p.author?" by "+p.author:""}${p.caption?": "+p.caption:""}`); } }
+    m.on("click",()=>{ if(sheetState==="shut") setSheet("half"); focusPost(p.id); });
     m.on("dragend",e=>{ const ll=e.target.getLatLng(); const o=fan.get(p.id);
       // Subtract the fan offset before saving, or every drag walks the post further from
       // where it actually happened — the stop markers have guarded this since they fanned.
@@ -1614,6 +2959,23 @@ function drawMap(){
       const t=map.layerPointToLatLng(L.point(q.x-o[0], q.y-o[1]));
       store.updatePost(p.id,{lat:t.lat,lng:t.lng}); });
   });
+
+  /* The badges go on LAST so they sit above whatever is still drawn around them.
+     A tap fits the map to what is inside it, which separates the pile by definition rather
+     than by a guessed zoom step — and if everything in the cluster is at one point, fitBounds
+     would zoom to the maximum, so maxZoom stops it somewhere a person can still read. */
+  for(const c of clusters){
+    const m=L.marker([c.lat,c.lng],{zIndexOffset:900, icon:L.divIcon({className:"",
+      html:`<div class="clustertap"><div class="cluster">${c.n}</div></div>`,
+      iconSize:[44,44], iconAnchor:[22,22]})}).addTo(layerGroup);
+    const el=m.getElement();
+    if(el){ el.setAttribute("role","button"); el.setAttribute("tabindex","0");
+      el.setAttribute("aria-label",`${c.n} stops and posts here — open to see them`); }
+    const open=()=>map.fitBounds(c.pts,{padding:[70,70],paddingBottomRight:[70,200],maxZoom:16});
+    m.on("click",open);
+    if(el) el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+    m.bindTooltip(`${c.n} here`,{direction:"top",offset:[0,-16]});
+  }
 }
 
 /* ── replay: scrub the trip along its dated stops ──────────────────
@@ -1711,9 +3073,33 @@ function replayVisible(){
   const upto=new Set(f.keys.slice(0, f.keys.indexOf(replayT)+1));
   return s=>upto.has(s.id);
 }
+/* Peter, 2026-08-05: "replay should just be hitting play again because it's right there — not
+   a redundant button to show the play bar." So this is ONE tap: it opens the scrubber AND
+   starts playing. playReplay() already restarts from the top when it is pressed at the end, so
+   replaying really is just pressing play again — that part was always true, it was buried
+   behind a reveal step nobody reached. */
+function tapPlay(){
+  if(replayT == null) openReplay();   // first press also opens the scrubber
+  playReplay();
+}
+/* The header button mirrors the transport's state, so the two can never disagree about
+   whether the trip is running. */
+function syncPlayBtn(){
+  const b=document.getElementById("playBtn");
+  if(!b) return;
+  const can = replayFrames().keys.length >= 2;
+  b.hidden = !can;
+  const running = !!replayTimer;
+  b.innerHTML = icon(running ? "pause" : "play", 18);
+  b.setAttribute("aria-label", running ? "Pause the trip" : "Play the trip from the start");
+  b.title = running ? "Pause" : "Play the trip";
+}
 function syncReplayBtn(){
+  syncPlayBtn();
   const btn=document.getElementById("replayBtn");
   if(btn) btn.hidden = replayFrames().keys.length<2 || replayT!=null;
+  /* §2v prototype: the action bar's Replay tracks the same rule from the same place, so the
+     two can never disagree about whether this trip can replay. No-op without the flag. */
 }
 /* Move the map to the part of the trip happening NOW.
 
@@ -1752,14 +3138,20 @@ function fitReplay(){
     // maxZoom matters on the frames that resolve to a single point: fitBounds would
     // otherwise slam to street level, which reads as a glitch rather than an arrival.
     map.fitBounds(pts,{padding:[46,46],paddingBottomRight:[46,210],
-                       animate:true,duration:.7,maxZoom:11});
+                       animate:true,duration:.45,maxZoom:11});
   }catch(e){}
-  setTimeout(()=>{ replayPanning=false; }, 850);
+  setTimeout(()=>{ replayPanning=false; }, 520);
 }
 function setReplay(i){
   const f=replayFrames(); if(!f.keys.length) return;
   i=Math.max(0,Math.min(f.keys.length-1, +i));
   replayT=f.keys[i];
+  /* What is NEW at this frame, by the same rule replayFocusPts() uses. Recomputed here rather
+     than inside drawMap, because drawMap also runs on every 10s sync — and a pin that pulses
+     again every ten seconds while you are reading is worse than one that never pulses. */
+  { const shown=sorted().filter(replayVisible()||(()=>true));
+    const fr = f.by==="date" ? shown.filter(x=>x.date===replayT) : shown.slice(-1);
+    REPLAY_FRESH = new Set(fr.map(x=>x.id)); }
   const sl=document.getElementById("replaySlider"), txt=f.label(replayT,i);
   sl.value=i; sl.setAttribute("aria-valuetext", txt);
   document.getElementById("replayLabel").textContent=txt;
@@ -1784,7 +3176,7 @@ function renderReplayStory(){
     const thumb = p.photo ? `<div class="rs-thumb" style="background-image:url('${esc(p.photo)}')"></div>`
                           : `<div class="rs-thumb">${icon(p.type==="quest"?"flag":sealed?"mail":"star",16)}</div>`;
     const body = sealed
-      ? `<span class="rs-sealed">a sealed drop, still sealed</span>`
+      ? `<span class="rs-sealed">an easter egg, not opened yet</span>`
       : `<span class="rs-cap">${esc(p.caption||"(no caption)")}</span>`;
     return `<div class="rs-item">${thumb}<div>${p.author?`<div class="rs-who">${esc(p.author)}</div>`:""}${body}</div></div>`;
   }).join("");
@@ -1818,7 +3210,8 @@ function openReplay(){
 }
 function stopPlay(){
   if(replayTimer){ clearInterval(replayTimer); replayTimer=null; }
-  document.getElementById("replayPlay").textContent="▶";
+  document.getElementById("replayPlay").innerHTML=icon("play",15);
+  syncPlayBtn();
 }
 function playReplay(){
   if(replayTimer){ stopPlay(); return; }
@@ -1827,15 +3220,22 @@ function playReplay(){
   let i=+document.getElementById("replaySlider").value;
   if(i>=f.keys.length-1) i=0;       // replay from the top
   setReplay(i);
-  document.getElementById("replayPlay").textContent="⏸";
+  document.getElementById("replayPlay").innerHTML=icon("pause",15);
   // Stop-by-stop runs faster than day-by-day: a 16-stop shuttle at 1.1s a frame is
   // 18 seconds of watching, which is longer than the trip deserves.
-  const step = f.by==="date" ? 1100 : 650;
+  /* The pan was .7s with an 850ms lockout while stop-by-stop stepped every 650ms — so every
+     single camera move was cut off by the next frame and the map never settled anywhere. The
+     motion read as drift rather than arrival, which is most of what "too subtle" was.
+     Pan is now .45s and the step gives it room to land before the next stop appears. */
+  const step = f.by==="date" ? 1600 : 1400;
+  /* AFTER the timer is assigned: syncPlayBtn() reads replayTimer to decide play vs pause,
+     so calling it earlier renders a play glyph on a trip that is already running. */
   replayTimer=setInterval(()=>{
     i++;
     if(i>=f.keys.length){ stopPlay(); return; }
     setReplay(i);
   }, step);
+  syncPlayBtn();
 }
 function closeReplay(){
   stopPlay(); replayT=null;
@@ -1925,10 +3325,9 @@ function card(s,from){
   el.className=`card ${s.track}`+(from?"":" origin"); el.dataset.id=s.id;
   el.innerHTML=`
     <div class="ctype">${from?("Leg "+seq):"Starts at"}</div>
-    ${from?`<div class="legfrom"><input class="place from" value="${esc(from.place)}" readonly aria-label="Starts where the last leg ended"></div>
-    <div class="from-note">Starts where leg ${seq-1} ended.</div>
-    <div class="card-top"><span class="legarrow">${icon("arrow",17)}</span>
-      <input class="place" value="${esc(s.place)}" placeholder="Place" aria-label="Where this leg goes"></div>`
+    ${from?`<div class="card-top"><span class="legarrow">${icon("arrow",17)}</span>
+      <input class="place" value="${esc(s.place)}" placeholder="Place" aria-label="Where this leg goes"></div>
+    <div class="legfrom"><span class="fromlbl">from</span><input class="place from" value="${esc(from.place)}" readonly aria-label="Starts where the last leg ended"></div>`
     :`<div class="card-top"><span class="stopnum">${seq}</span>
       <input class="place" value="${esc(s.place)}" placeholder="Place" aria-label="Where the trip starts"></div>`}
     <div class="card-when">${from?`<span class="wmode">${icon(s.mode,13)}${esc(MODE_LABEL[s.mode]||"")}</span>`:""}${s.date?esc(fmtDate(s.date)):'<span class="nodate">no date yet</span>'}</div>
@@ -1943,7 +3342,7 @@ function card(s,from){
       ${from?`<div class="field wide"><label>Getting there</label>
         <div class="chips how" role="radiogroup" aria-label="Getting there">
           ${["drive","fly","train","ferry","water","bike","walk"].map(m=>
-            `<button type="button" class="chip mode${s.mode===m?" sel":""}" data-mode="${m}" role="radio" aria-checked="${s.mode===m}">${icon(m,15)}${MODE_LABEL[m]}</button>`).join("")}
+            `<button type="button" class="chip mode${s.mode===m?" sel":""}" data-mode="${m}" role="radio" aria-checked="${s.mode===m}"${READONLY?" disabled":""}>${icon(m,15)}${MODE_LABEL[m]}</button>`).join("")}
         </div></div>`:""}
       ${s.mode==="fly"?`<div class="field"><label for="g-${s.id}">Flight #</label><input id="g-${s.id}" class="f-flight" value="${esc(s.lodging)}" placeholder="e.g. UA 1234"></div>`:""}
       ${from?`<div class="field ${s.mode==="water"?"wide":""}">
@@ -1953,7 +3352,7 @@ function card(s,from){
       <div class="field wide"><label for="n-${s.id}">Notes</label><textarea id="n-${s.id}" class="f-notes" rows="1" placeholder="Anything the others should know">${esc(s.notes)}</textarea></div>
     </div>
     ${(SELF_POWERED.includes(s.mode)||s.mode==="train")?`<button class="drawpath edit-only ${Array.isArray(s.path)&&s.path.length?"done":""}">${icon("pencil",14)}${(Array.isArray(s.path)&&s.path.length?" Edit the ":" Draw the ")+({water:"boat",bike:"bike",walk:"walking",train:"rail"}[s.mode]||"")+" route"}</button>`:""}
-    <div class="card-foot"><button class="here-btn ${s.here?"on":""}" aria-pressed="${!!s.here}">${s.here?"Here":"Set here"}</button>${s.date?"":`<span class="reorder edit-only"><button class="mv-up" title="Move earlier" aria-label="Move earlier">←</button><button class="mv-dn" title="Move later" aria-label="Move later">→</button></span>`}<button class="del edit-only">Remove stop</button></div>`;
+    <div class="card-foot"><button class="here-btn ${s.here?"on":""}" aria-pressed="${!!s.here}">${s.here?"Here":"Set here"}</button>${s.date?"":`<span class="reorder edit-only"><button class="mv-up" title="Move earlier" aria-label="Move earlier">${icon("back",14)}</button><button class="mv-dn" title="Move later" aria-label="Move later">${icon("arrow",14)}</button></span>`}<button class="del edit-only">Remove stop</button></div>`;
   if(s.notes) el.classList.add("open");
   { const mt=el.querySelector(".moretog");
     if(mt){ const sync=()=>{ const o=el.classList.contains("open");
@@ -1984,10 +3383,29 @@ function card(s,from){
   { const db=el.querySelector(".drawpath"); if(db) db.onclick=()=>startAppDraw(s); }
   el.querySelectorAll("input,textarea").forEach(i=>i.addEventListener("blur",()=>setTimeout(()=>render(allStops),80)));
   el.querySelector(".here-btn").onclick=()=>{ if(!READONLY) store.setHere(s.id,s.track); };
-  el.querySelector(".del").onclick=()=>{ if(confirm(`Remove ${s.place}?`)) store.remove(s.id); };
+  /* D-117: a hand-drawn route is the ONE kind of content in this product that NOTHING can
+     rebuild. A geocoder can find a stop again; routing can redraw a drive; a photo can be
+     re-uploaded. A line somebody traced down a river by hand exists once. Until now it was
+     deleted behind the same four-word confirm as an empty stop.
+     Found the hard way 2026-08-03: rebuilding the Kishwaukee trip deleted a `water` pin
+     carrying a 50-point traced river. Only the soft delete saved it — the tombstone still had
+     the geometry — and nothing about the UI suggested there was anything to be careful of. */
+  el.querySelector(".del").onclick=()=>{
+    const n = Array.isArray(s.path) ? s.path.length : 0;
+    const msg = n
+      ? `Remove ${s.place}?\n\nThis leg carries a route you drew by hand — ${n} points. `
+        + `Deleting the stop deletes that route with it, and nothing can draw it back for you.`
+      : `Remove ${s.place}?`;
+    if(confirm(msg)) store.remove(s.id);
+  };
   el.querySelector(".card-top").addEventListener("click",e=>{
     if(e.target.classList.contains("here-btn"))return;
     map.setView([s.lat,s.lng],8,{animate:true});
+    /* If it is still inside a badge at that zoom, go closer — you asked for this stop, not for
+       a count. Four levels is a 16x scale change, which separates anything a trip can hold, and
+       it is one extra step rather than a loop fighting the zoom animation. */
+    map.once("moveend",()=>{ if(CLUSTERED.has(s.id))
+      map.setView([s.lat,s.lng], Math.min(map.getMaxZoom()||18, map.getZoom()+4), {animate:true}); });
   });
 
   /* The stay is where you land, not how you got there — its own card (D-037). Shown once it
@@ -2192,7 +3610,7 @@ function settingsCard(){
       <div class="linkbox"><b>Your personal link — it is how the trip knows you are ${esc(ME)}</b>${esc(editUrl)}
         <button class="copybtn scopy">copy</button></div>
       <p class="set-hint"><b>Keep this one.</b> Anyone who opens it is you here — your posts, and
-        the sealed drops left for you. To bring someone in, add them to the crew below and they
+        the easter eggs left for you. To bring someone in, add them to the crew below and they
         get their own.</p>` : `
       <div class="linkbox"><b>Your edit link — anyone with it can add to the trip</b>${esc(editUrl)}
         <button class="copybtn scopy">copy</button></div>
@@ -2207,9 +3625,11 @@ function settingsCard(){
     </div>
     <div class="set-take">
       <b>Take it with you</b>
-      <p class="set-hint" style="margin:4px 0 8px">A zip with the whole trip in it: the structured
-      data, a readable page that opens with no internet, and your photos at the size you uploaded
-      them. Yours at every tier — we are not going to charge you to hold your own trip.</p>
+      <p class="set-hint" style="margin:4px 0 8px"><b>Going somewhere without signal? Download a
+      copy first.</b> This page needs the internet; that file does not. It holds the whole trip —
+      the data, a page you can read on any device with nothing installed, and your photos at the
+      size you uploaded them. Yours at every tier: we are not going to charge you to hold your own
+      trip.</p>
       <div class="set-row">
         <button class="set-btn s-export">${icon("sheet",14)} Download a copy</button>
         <button class="set-btn s-print">Print / PDF</button>
@@ -2231,8 +3651,8 @@ function settingsCard(){
     </div>
     <div class="set-out"></div>
     <div class="set-row">
-      <button class="set-btn export">⬇ Download (.json)</button>
-      <button class="set-btn do-import">⬆ Import (.json)</button>
+      <button class="set-btn export"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.8v11.8M7.9 11.5 12 15.6l4.1-4.1"/><path d="M4 15.4v3.1a1.7 1.7 0 0 0 1.7 1.7h12.6a1.7 1.7 0 0 0 1.7-1.7v-3.1"/></svg> Download (.json)</button>
+      <button class="set-btn do-import"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.6V3.8M7.9 7.9 12 3.8l4.1 4.1"/><path d="M4 15.4v3.1a1.7 1.7 0 0 0 1.7 1.7h12.6a1.7 1.7 0 0 0 1.7-1.7v-3.1"/></svg> Import (.json)</button>
     </div>
     <input type="file" accept=".json,application/json" class="set-import" hidden aria-label="Import a trip file">
     ${expiry}
@@ -2255,23 +3675,7 @@ function settingsCard(){
      like every other call rather than linked, because a plain <a href> cannot carry one — and
      putting the phrase in a URL is how phrases end up in history, referrers and shoulder shots. */
   const sx=el.querySelector(".s-export");
-  if(sx) sx.onclick=async()=>{
-    const was=sx.textContent; sx.disabled=true; sx.textContent="Packing…";
-    try{
-      /* API_BASE has no /api on it — api() appends it. Getting that wrong here made the button
-         404 while every other call worked, because nothing else builds a URL by hand. */
-      const r=await fetch(`${API_BASE}/api/trip/export`,{headers:{Authorization:`Bearer ${KEY}`}});
-      if(!r.ok) throw new Error((await r.json().catch(()=>({}))).error||"could not build it");
-      const blob=await r.blob();
-      const cd=r.headers.get("content-disposition")||"";
-      const m=/filename="([^"]+)"/.exec(cd);
-      const u=URL.createObjectURL(blob), a=document.createElement("a");
-      a.href=u; a.download=m?m[1]:"trip.zip"; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(u),4000);
-      toast("Downloaded — keep the photos folder next to the html file");
-    }catch(e){ toast(e.message||"could not build it"); }
-    finally{ sx.disabled=false; sx.textContent=was; }
-  };
+  if(sx) sx.onclick=()=>downloadTrip(sx);
   const sp=el.querySelector(".s-print"); if(sp) sp.onclick=()=>window.print();
   el.querySelector(".crew-add").onclick=()=>addPerson(el);
   el.querySelector(".crew-name").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addPerson(el); } });
@@ -2313,7 +3717,7 @@ function importTrip(file){   // restore/merge a .json export into the current tr
   };
   reader.readAsText(file);
 }
-// share helpers — mailto opens the user's OWN email client (we never see the addresses)
+// share helpers — mailto opens the user's OWN email client, so no recipient reaches us here
 function emailInvite(url, emails){
   const s=encodeURIComponent("Join our trip — this trip, btw");
   const b=encodeURIComponent("You're invited to our trip on this trip, btw.\n\nOpen it here — the words in the link are the password, so keep it handy:\n"+url+"\n");
@@ -2342,7 +3746,7 @@ async function rotate(which,el){
   }catch(e){ alert("Couldn't rotate: "+e.message); }
 }
 // D-023: add a person → mint their personal link (shown ONCE; server stores only the hash).
-// Email is send-only via the user's own mail client — we never see or store an address.
+// The invite leaves from the user's own mail client, so no address is sent to us or kept for it.
 async function addPerson(el){
   const inp=el.querySelector(".crew-name"); const handle=inp.value.trim();
   const out=el.querySelector(".crew-out");
@@ -2374,6 +3778,8 @@ async function deleteTrip(){
   try{
     await api("trip",{method:"DELETE"});
     localStorage.removeItem("ttb_key_"+slug);
+    /* "Gone. All of it." is a promise, and the offline copy is part of "all of it". */
+    clearTripCache();
     document.body.innerHTML='<div style="position:fixed;inset:0;background:#1E3F66;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:30px;letter-spacing:.08em;text-transform:uppercase">Gone. All of it.</div>';
   }catch(e){ alert("Couldn't delete: "+e.message); }
 }
@@ -2394,7 +3800,7 @@ function postCard(p){
   const opened=!locked || mine || (!!ME && (p.openedBy||[]).includes(ME));
   el.className="card post"+(isQuest?" quest":""); el.dataset.id="p_"+p.id;
   const when=p.ts?new Date(p.ts).toLocaleString(undefined,{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
-  const kind=isQuest?"Quest":isSealed?"Sealed drop":isNear?"Was there?":"";
+  const kind=isQuest?"Quest":isSealed?"Easter egg":isNear?"Was there?":"";
 
   if(!opened){
     el.innerHTML=`
@@ -2402,9 +3808,11 @@ function postCard(p){
       <div class="sealed-box">
         <div class="env">${icon("mail",30)}</div>
         ${ME
-          ? `<p>${isNear
+          ? `<p>${p.radiusMi != null
+               ? `Stays shut until you're within ${fmtRadius(p.radiusMi)} of the pin.`
+               : isNear
                ? `Left for whoever comes here. Opens when you're standing at the pin.`
-               : `Sealed until you're within ${SEAL_RADIUS_MI} miles of the pin.`}</p>
+               : `Stays shut until you're within ${SEAL_RADIUS_MI} miles of the pin.`}</p>
              <button class="openbtn">Am I close enough?</button>`
           : `<p>This one opens for a person, and this link doesn't say who you are.
                Ask whoever set up the trip for your own link.</p>`}
@@ -2438,6 +3846,16 @@ function postCard(p){
   const capPH = isQuest ? "Set the challenge" : isSealed ? "Write the secret — only openers see it" : "Say something about this spot";
   /* Offer only what the tier actually takes. Accepting a video on a photo-only tier would let
      someone pick a 200 MB file, wait for the upload, and then be told no (D-088). */
+  /* F-5: a viewer was shown an empty mm/dd/yyyy input and a "Paste a Spotify link" placeholder
+     on every post. `body.readonly` only set pointer-events:none, so the form scaffolding still
+     rendered — it read as a broken editor rather than as somebody's trip. A set date now renders
+     as text; an empty one renders as nothing; and the tier note ("photos are on the $5 tier")
+     is for the buyer, not for the person they shared it with. */
+  const ro = ACCESS !== "edit";
+  const dateISO = p.ts ? new Date(p.ts).toLocaleDateString("en-CA") : "";
+  const dateCtl = ro
+    ? (p.ts ? `<span class="post-when">${esc(new Date(p.ts).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}))}</span>` : "")
+    : `<input type="date" class="post-date" value="${dateISO}">`;
   const photoAccept = CAN_VIDEO ? "image/*,video/mp4,video/quicktime,video/webm" : "image/*";
   const photoCtl = CAN_PHOTO
     ? `<button class="chipbtn addphoto edit-only">${p.photo ? "Change photo" : (CAN_VIDEO ? "Add photo / video" : "Add photo")}</button>`
@@ -2447,13 +3865,23 @@ function postCard(p){
     <div class="post-meta">${esc(p.author||"")}${kind?" · "+kind:""}${when?" · "+when:""}</div>
     <textarea class="post-caption" placeholder="${capPH}">${esc(p.caption)}</textarea>
     ${claimHTML}
-    ${emb?`<button type="button" class="spot-chip" data-embed="${emb}">▶ song attached — tap to play</button>`:""}
+    ${emb?`<button type="button" class="spot-chip" data-embed="${emb}"><svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4.8 19 12 8 19.2z"/></svg> song attached — tap to play</button>`:""}
     <div class="post-actions">
-      ${photoCtl}
-      <input type="date" class="post-date" value="${p.ts?new Date(p.ts).toLocaleDateString("en-CA"):""}">
-      <input class="spot-in" placeholder="Paste a Spotify link" value="${esc(p.spotify)}">
-      <input type="file" accept="${photoAccept}" hidden>
+      ${ro ? "" : photoCtl}
+      ${dateCtl}
+      ${ro ? "" : `<input class="spot-in" placeholder="Paste a Spotify link" value="${esc(p.spotify)}">`}
+      ${ro ? "" : `<input type="file" accept="${photoAccept}" hidden>`}
     </div>
+    ${(!ro && (isSealed || p.nearOnly)) ? `
+    <div class="fence-row edit-only">
+      <label for="fence-${p.id}">Opens within</label>
+      <select class="fence" id="fence-${p.id}">
+        ${FENCES.map(f=>`<option value="${f[0]}"${fenceSel(p,f[0])?" selected":""}>${f[1]}</option>`).join("")}
+      </select>
+      <span class="fence-why">${p.radiusMi!=null
+        ? "Set for this one."
+        : (isSealed ? `Default — ${SEAL_RADIUS_MI} miles.` : "Default — you have to be at the pin.")}</span>
+    </div>` : ""}
     <div class="card-foot">${(!isQuest && !isSealed && (!ME || p.author===ME || !p.author))
       ? `<button class="nearbtn edit-only ${p.nearOnly?"on":""}" aria-pressed="${!!p.nearOnly}"
            title="Only people who come here can read it">${icon("mail",13)}${p.nearOnly?"Was there? on":"Was there?"}</button>`
@@ -2463,6 +3891,11 @@ function postCard(p){
   requestAnimationFrame(grow); cap.addEventListener("input",grow);
   cap.addEventListener("change",e=>store.updatePost(p.id,{caption:e.target.value}));
   el.querySelector(".spot-in").addEventListener("change",e=>store.updatePost(p.id,{spotify:e.target.value.trim()}));
+  const fence=el.querySelector(".fence");
+  if(fence) fence.addEventListener("change",e=>{
+    const v=e.target.value;
+    store.updatePost(p.id,{radiusMi: v==="" ? null : parseFloat(v)});
+  });
   el.querySelector(".post-date").addEventListener("change",e=>{
     if(!e.target.value) return;
     const [y,mo,d]=e.target.value.split("-").map(Number);
@@ -2516,7 +3949,13 @@ function focusCard(id){
   requestAnimationFrame(()=>{
     const el=listEl.querySelector(`[data-id="${id}"]`);
     if(!el) return;
-    el.scrollIntoView({behavior:"smooth",block:"center"});
+    /* F-10: rail mode scrolls HORIZONTALLY, so `block:"center"` centres the wrong axis and the
+       inline axis falls back to "nearest" — which parks the card you just tapped flush against
+       the viewport edge, clipped. The post handler above already gets this right; this one is
+       the same list in the same two modes and did not. */
+    el.scrollIntoView(listEl.classList.contains("rail")
+      ? {behavior:"smooth",inline:"center",block:"nearest"}
+      : {behavior:"smooth",block:"center"});
     el.classList.add("focus"); setTimeout(()=>el.classList.remove("focus"),1600);
   });
 }
@@ -2689,7 +4128,12 @@ document.getElementById("editVeh").onclick=()=>{
 };
 
 /* ── replay controls ───────────────────────────────────── */
-document.getElementById("replayBtn").onclick=openReplay;
+document.getElementById("playBtn").onclick=tapPlay;
+/* #replayBtn was the reveal step — it opened the scrubber and then asked for a second tap
+   to actually play. The header play does both, so the old trigger is retired rather than
+   left as a second way to do the same thing. Its markup stays hidden for one release in
+   case the treatment is reverted; syncReplayBtn still keeps it correct if it comes back. */
+const _rb=document.getElementById("replayBtn"); if(_rb) _rb.remove();
 document.getElementById("replayClose").onclick=closeReplay;
 document.getElementById("replayPlay").onclick=playReplay;
 document.getElementById("replaySlider").addEventListener("input",e=>{ stopPlay(); setReplay(e.target.value); });
@@ -2767,55 +4211,88 @@ map.on("click",async e=>{
 
 /* ── bottom sheet drag ─────────────────────────────────── */
 const sheet=document.getElementById("sheet");
-let sheetState="peek";
+/* SHUT at rest. A shared link opens on the map, which is the thing worth looking at; the pill
+   says whose trip it is and that there is a list behind it. */
+let sheetState="shut";
 function setSheet(st){ sheetState=st;
-  sheet.classList.remove("half","full");
+  sheet.classList.remove("half","full","shut");
   if(st!=="peek") sheet.classList.add(st);
+  document.body.classList.toggle("sheet-shut", st==="shut");
+  const ob=document.getElementById("openSheet");
+  if(ob){ ob.setAttribute("aria-expanded", st==="shut" ? "false" : "true");
+          sheet.setAttribute("aria-hidden", st==="shut" ? "true" : "false"); }
+  if(st!=="shut") sheet.removeAttribute("aria-hidden");
+  /* The chips clear whatever is at the bottom, and what is at the bottom just changed. They
+     are drawn before the pill is displayed on first paint, so without this the two bottom
+     chips spend the first frame — and then forever — tucked behind it. */
+  if(typeof drawEdgeChips === "function") setTimeout(drawEdgeChips, 0);
 }
+/* What the pill says when the sheet is away: the trip's name and how much is in it. Without
+   this the map is anonymous and there is nothing to suggest a list exists. */
+function syncOpenPill(){
+  const ob=document.getElementById("openSheet"); if(!ob) return;
+  ob.querySelector(".nm").textContent=(CONFIG.name||"").trim()||"This trip";
+  const n=allStops.length, p=allPosts.length;
+  ob.querySelector(".ct").textContent=n ? `${n} stop${n===1?"":"s"}${p?` · ${p} post${p===1?"":"s"}`:""}` : "";
+  ob.setAttribute("aria-label",`Open the trip: ${ob.querySelector(".nm").textContent}, ${ob.querySelector(".ct").textContent||"empty"}`);
+}
+document.getElementById("openSheet").addEventListener("click",()=>{ setSheet("peek"); syncGrab(); });
+/* Apply the resting state for real. `let sheetState="shut"` only names it — the class that
+   moves the sheet and the body class the pill keys off both come from setSheet, and this is
+   the first point past the TDZ where it can be called. */
+setSheet(sheetState);
+/* The gesture moved to /sheet.js on 2026-08-05 so the builder's sheet could be the SAME thing
+   rather than a second implementation of it. The arithmetic below is unchanged — it had been
+   shipping for months and this extraction was not the moment to redesign it — including the two
+   quirks that are easy to mistake for bugs and are carried on purpose:
+     · `peek` RESTS at .88H-112 but SNAPS at .88H-132. Twenty pixels, longstanding.
+     · A release can land on peek/half/full but never on `shut`. The pill (#openSheet) is the
+       way back, so the finger cannot close the sheet — see the note under syncGrab. */
 (()=>{
-  let startY=0,startT=0,cur=0;
   const H=()=>window.innerHeight;
-  const posFor=st=>st==="full"?0:st==="half"?H()*.44:H()*.88-132;
-  const grabZone=[document.getElementById("grab"),document.getElementById("sheetHead")];
-  grabZone.forEach(z=>z.addEventListener("pointerdown",down));
-  const ORDER=["peek","half","full"];
+  const posFor=st=>st==="full"?0:st==="half"?H()*.44:st==="peek"?H()*.88-112:H();
   const g=document.getElementById("grab");
-  g.addEventListener("keydown",e=>{
-    if(e.key==="Enter"||e.key===" "){ e.preventDefault();
-      setSheet(ORDER[(ORDER.indexOf(sheetState)+1)%ORDER.length]); syncGrab(); }
-    else if(e.key==="ArrowUp"){ e.preventDefault();
-      setSheet(ORDER[Math.min(ORDER.length-1,ORDER.indexOf(sheetState)+1)]); syncGrab(); }
-    else if(e.key==="ArrowDown"){ e.preventDefault();
-      setSheet(ORDER[Math.max(0,ORDER.indexOf(sheetState)-1)]); syncGrab(); }
-  });
   window.syncGrab=()=>g.setAttribute("aria-label",
-    sheetState==="full"?"Collapse the trip panel":"Expand the trip panel");
+    sheetState==="full"?"Collapse the trip panel"
+    /* This label promised "drag down to close it" for a long time while the snap list had no
+       `shut` in it. Peter's call, 2026-08-05: make it true. See snapFor/max below. */
+    : sheetState==="peek"?"Expand the trip panel, or drag down to close it"
+    : "Expand the trip panel");
   syncGrab();
-  function down(e){
-    if(e.target.id!=="grab" && e.target.closest("button,input,textarea"))return;
-    startY=e.clientY; startT=posFor(sheetState); cur=startT;
-    sheet.classList.add("dragging");
-    window.addEventListener("pointermove",move);
-    window.addEventListener("pointerup",up,{once:true});
-  }
-  function move(e){
-    cur=Math.max(0,Math.min(H()*.88-100,startT+(e.clientY-startY)));
-    sheet.style.transform=`translateY(${cur}px)`;
-  }
-  function up(){
-    window.removeEventListener("pointermove",move);
-    sheet.classList.remove("dragging"); sheet.style.transform="";
-    const snaps=[["full",0],["half",H()*.44],["peek",H()*.88-132]];
-    snaps.sort((a,b)=>Math.abs(a[1]-cur)-Math.abs(b[1]-cur));
-    setSheet(snaps[0][0]);
-  }
+  createSheetDrag({
+    handles: [g, document.getElementById("sheetHead")],
+    states:     ["shut","peek","half","full"],
+    /* `shut` is snappable now (Peter, 2026-08-05: "make drag down close the sheet"), which the
+       peek label had been claiming all along. It could not simply be added: `shut` RESTS at H,
+       which is far below the old drag clamp of .88H-100, so it was never the nearest snap to
+       anywhere the finger could actually reach — adding it to this list alone would have
+       changed nothing at all. It needs a threshold of its own AND room to be dragged into. */
+    snapStates: ["shut","peek","half","full"],
+    posFor,
+    snapFor: st => st==="peek" ? H()*.88-132
+                 : st==="shut" ? H()*.88-40      /* reachable, and 92px below peek's threshold */
+                 : posFor(st),
+    current: () => sheetState,
+    /* Raised from .88H-100 so there is travel BELOW peek to close into. The midpoint between
+       peek (.88H-132) and shut (.88H-40) is .88H-86, so from peek's resting .88H-112 a ~27px
+       downward flick closes it, while from half it takes a decisive ~270px. Cheap when you mean
+       it, hard to do by accident. */
+    max:     () => H()*.88-40,
+    onStart: () => sheet.classList.add("dragging"),
+    onEnd:   () => { sheet.classList.remove("dragging"); sheet.style.transform=""; },
+    onDrag:  px => { sheet.style.transform=`translateY(${px}px)`; },
+    /* syncGrab after a DRAG too. The old code called it after a keyboard change and not after a
+       release, so the handle's label described the state you had just left. */
+    onSnap:  st => { setSheet(st); syncGrab(); }
+  });
 })();
 
 /* ── boot ──────────────────────────────────────────────── */
 applyTheme();
 function renderConfig(cfg){
   if(cfg && cfg.labels) TRACK_LABELS={...TRACK_LABELS,...cfg.labels};
-  document.getElementById("tripName").textContent = (cfg && cfg.name) ? cfg.name : "this trip";
+  drawDocHead();   // #15: the document header carries the name too, and is repainted here
+                   // rather than waiting for the next render — renaming should feel instant
   if(!editingVeh) buildLegend();
   applyLabels();
   if(!(document.activeElement && listEl.contains(document.activeElement))) drawList();
@@ -2826,6 +4303,42 @@ store.subscribePosts(renderPosts);
 store.subscribeConfig(renderConfig);
 
 let syncFails=0;
+/* ── the signed-in indicator on the trip page (D-132, extended here on Peter's say-so) ──
+   Same rule as the sixteen marketing pages: shown ONLY when signed in, and with the flag
+   absent it asks nothing at all. /account writes and reconciles the flag; the session cookie
+   is httpOnly, so no page can read it directly.
+
+   Two things are specific to THIS page and neither is cosmetic:
+
+   1. The path is the ROOT /api/account/me, NOT API_BASE + "/api/...". Every other call on this
+      page is slug-scoped (D-021 routing), and account state is not a property of a trip.
+      Checked 200 against the live root before wiring it.
+
+   2. It says nothing about WHO opened this trip. Most people arrive holding a phrase and are
+      not signed in at all — they correctly see nothing. Even for someone who is, this is an
+      ACCOUNT mark and not an identity: D-047 is why access_level()'s account branch returns no
+      `member` key, and hanging a face on the chrome must not quietly undo that. Generic
+      avatar, no name, no email. */
+(function(){
+  var flag=null; try{ flag=localStorage.getItem("ttb_acct"); }catch(e){}
+  if(!flag) return;
+  var host=document.getElementById("topright");
+  if(!host || document.getElementById("acctBtn")) return;
+  fetch("/api/account/me",{credentials:"same-origin"})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(me){
+      if(!me || !me.signed_in){ try{ localStorage.removeItem("ttb_acct"); }catch(e){} return; }
+      var a=document.createElement("a");
+      a.id="acctBtn"; a.href="/account";
+      var n=(me.trips||[]).length;
+      a.title="Signed in" + (n ? " \u2014 " + n + (n===1?" trip":" trips") : "");
+      a.setAttribute("aria-label", a.title + ". Go to your account.");
+      a.innerHTML=icon("person",19);
+      host.insertBefore(a, document.getElementById("themeBtn"));
+    })
+    .catch(function(){});
+})();
+
 const offEl=document.getElementById("offline");
 /* ALWAYS try the server first, even with no phrase in hand. This used to be
    `if(KEY){ sync() } else showGate()`, which meant a visitor without a stored phrase was shown
@@ -2834,10 +4347,18 @@ const offEl=document.getElementById("offline");
    trip could sign in, see it listed, click it, and be asked for words they never kept.
    No guard is needed: access_level() falls through to the account session precisely when no
    phrase is presented, and api() already opens the gate on a 401. */
-sync().then(onAuthed).catch(()=>{});
+/* Offline copy, second half. A 401 is NOT a network failure — the gate is already up and
+   showing a cached trip over it would be both wrong and a small leak, so `auth` is excluded.
+   Anything else (no bars, DNS, a timeout in a canyon) falls back to the last saved copy. */
+const OFF_LIVE  = icon("alert",14)+" Offline — your changes may not be saving. Reconnecting…";
+const OFF_CACHE = icon("alert",14)+" No signal — showing the copy saved on this phone. Changes wait until you’re back.";
+sync().then(onAuthed).catch(e=>{
+  if(e && e.message === "auth") return;
+  if(restoreTrip()){ offEl.innerHTML = OFF_CACHE; offEl.classList.add("show"); }
+});
 setInterval(()=>{
   if(KEY && !gateEl.classList.contains("show"))
-    sync().then(()=>{ syncFails=0; offEl.classList.remove("show"); })
+    sync().then(()=>{ syncFails=0; offEl.classList.remove("show"); offEl.innerHTML = OFF_LIVE; })
           .catch(e=>{ if((e&&e.message)!=="auth" && ++syncFails>=2) offEl.classList.add("show"); });
 }, 10000);
 </script>

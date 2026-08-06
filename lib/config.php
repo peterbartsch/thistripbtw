@@ -47,6 +47,6 @@ define('PHOTOS_DIR', APP_ROOT . '/photos');   // media store, slug-prefixed subd
    index.php serves the landing for anything listed here; unlisted paths fall through
    to a trip lookup and 404. Account routes (D-031/D-032) are reserved ahead of the
    build so they can't 404; they get real handlers in phase B/E of
-   _agents/HANDOFF_ACCOUNTS_BUILD.md. */
+ */
 define('RESERVED', ['www', 'api', 'app', 'mail', 'admin', 'status', 'privacy', 'about', 'mission', 'help', 'terms', 'faq',
                     'login', 'signin', 'signup', 'account', 'trips', 'unsubscribe', 'verify']);

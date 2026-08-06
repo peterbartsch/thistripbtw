@@ -107,7 +107,70 @@ function mcp_build_link(array $input): array {
     return ['url' => 'https://' . APEX . '/new#d=' . $b64, 'legs' => count($legs)];
 }
 
+/** The inverse of mcp_build_link — see readLink() in the .mjs for why it exists and why a
+ *  kept trip's #k= link is refused rather than fumbled. Mirrored here because the remote
+ *  endpoint must offer the same tools as the stdio one; test/mcp-parity.php pins them. */
+function mcp_read_link(array $input): array {
+    $raw = trim((string)($input['link'] ?? ''));
+    if ($raw === '') throw new \InvalidArgumentException('no link given');
+
+    $at = strpos($raw, '#d=');
+    if ($at !== false)              $b64 = substr($raw, $at + 3);
+    elseif (str_contains($raw, '#k='))
+        throw new \InvalidArgumentException("that is a kept trip's link — the #k= fragment is its password, not the trip. Its contents live on the server and only the people holding that link can read them; there is nothing here to decode");
+    elseif (preg_match('~^https?://~i', $raw))
+        throw new \InvalidArgumentException('that URL carries no trip — a readable trip link has a #d= fragment holding the itinerary');
+    else                            $b64 = $raw;
+
+    $b64 = preg_split('/[?&\s#]/', $b64)[0] ?? '';
+    if ($b64 === '') throw new \InvalidArgumentException('the link has an empty #d= fragment');
+
+    $json = base64_decode(strtr($b64, '-_', '+/'), false);
+    $payload = $json === false ? null : json_decode($json, true);
+    if (!is_array($payload))
+        throw new \InvalidArgumentException('that fragment did not decode to a trip — it may have been truncated when the link was pasted');
+    if (empty($payload['o']) || !isset($payload['l']) || !is_array($payload['l']))
+        throw new \InvalidArgumentException('that decoded, but it is not shaped like a trip');
+
+    $legs = [];
+    foreach ($payload['l'] as $l) {
+        $out = ['to' => $l['to'] ?? null, 'mode' => $l['mode'] ?? 'drive'];
+        foreach (['date','note','who','subtype','craft','flight'] as $k)
+            if (array_key_exists($k, $l)) $out[$k] = $l[$k];
+        if (!empty($l['stay']['lodging'])) {
+            $out['lodging'] = $l['stay']['lodging'];
+            if (!empty($l['stay']['note'])) $out['stayNote'] = $l['stay']['note'];
+        }
+        $legs[] = $out;
+    }
+    $trip = ['name' => $payload['n'] ?? '', 'origin' => $payload['o'], 'legs' => $legs];
+
+    $where = fn($p) => (is_array($p) && !empty($p['name'])) ? $p['name'] : 'an unnamed place';
+    $lines = [];
+    foreach ($legs as $i => $l) {
+        $bits = array_values(array_filter([
+            $l['date'] ?? null, $l['mode'] ?? null, $l['flight'] ?? null,
+            !empty($l['who']) ? implode(' & ', (array)$l['who']) : null,
+            !empty($l['lodging']) ? 'stay: ' . $l['lodging'] : null,
+        ]));
+        $lines[] = ($i + 1) . '. ' . $where($l['to'] ?? null) . ($bits ? '  —  ' . implode(' · ', $bits) : '');
+    }
+    $n = count($legs);
+    $summary = (($trip['name'] !== '') ? $trip['name'] : 'Untitled trip') . " — {$n} leg" . ($n === 1 ? '' : 's') . "\n"
+             . 'Starts: ' . $where($payload['o']) . "\n" . implode("\n", $lines);
+
+    return ['trip' => $trip, 'summary' => $summary, 'legs' => $n];
+}
+
 /** The tool as the model sees it — read from the file the .mjs generated, never retyped. */
+function mcp_read_tool(): array {
+    static $t = null;
+    if ($t === null) {
+        $raw = @file_get_contents(dirname(__DIR__) . '/mcp/tool-schema-read.json');
+        $t = $raw ? (json_decode($raw, true) ?: []) : [];
+    }
+    return $t;
+}
 function mcp_tool(): array {
     static $t = null;
     if ($t === null) {
@@ -147,10 +210,29 @@ function mcp_handle(array $msg): ?array {
         ]);
     }
     if ($method === 'ping')       return mcp_ok($id, new stdClass());
-    if ($method === 'tools/list') return mcp_ok($id, ['tools' => [mcp_tool()]]);
+    if ($method === 'tools/list') return mcp_ok($id, ['tools' => [mcp_tool(), mcp_read_tool()]]);
+    /* We declare only `tools`, so a client that follows the spec never asks for resources or
+       prompts — and -32601 is the correct answer when it does. But scanners ask anyway: Smithery's
+       2026-08-03 scan logged "Failed to list resources" and "Failed to list prompts" as WARNINGS
+       on our public directory page, which reads as a fault in the server rather than a capability
+       we never claimed. An empty list is true, costs two lines, and says the same thing without
+       looking broken. */
+    if ($method === 'resources/list') return mcp_ok($id, ['resources' => []]);
+    if ($method === 'prompts/list')   return mcp_ok($id, ['prompts'   => []]);
 
     if ($method === 'tools/call') {
         $name = (string)($params['name'] ?? '');
+        if ($name === 'read_trip_link') {
+            $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+            try {
+                $r = mcp_read_link($args);
+                return mcp_ok($id, ['content' => [['type' => 'text',
+                    'text' => $r['summary'] . "\n\nAs build_trip_link arguments:\n"
+                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+            } catch (\Throwable $e) {
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not read that: ' . $e->getMessage()]], 'isError' => true]);
+            }
+        }
         if ($name !== 'build_trip_link') return mcp_err($id, -32602, "no tool called \"$name\"");
         $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
         try {

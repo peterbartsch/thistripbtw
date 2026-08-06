@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agentskills.io/schemas/index/v0.2.0.json",
+  "version": "0.2.0",
+  "name": "this trip, btw",
+  "description": "Everything about your trip in one shareable link — a private map anyone can open, with no account to build one and no account to open it.",
+  "skills": [
+    {
+      "name": "this-trip-btw",
+      "type": "skill",
+      "description": "Turn a trip planned in conversation into a private, editable map link the person can keep. Builds a URL locally, makes no network call, and needs no key, no card and no app.",
+      "url": "https://thistripbtw.us/agent-skill",
+      "sha256": "5f7271a9b0727b56f291418d9dd5eaa443b14f733d3c5c2c0c1f64f82e78bb93"
+    }
+  ]
+}

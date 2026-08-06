@@ -10,6 +10,7 @@
 */
 if (!defined('SECURE_ACCESS')) { http_response_code(403); exit('forbidden'); }
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/varstore.php';
 
 const MAIL_FROM_NAME = 'this trip, btw';
 
@@ -18,14 +19,13 @@ function mail_replyto() { return env('MAIL_REPLY_TO', 'support@' . env('APEX', '
 
 /* Count sends by kind so we can see volume without ever storing who was mailed. */
 function mail_count($kind) {
-    $dir = dirname(__DIR__) . '/var';
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $f = $dir . '/mail-counts.json';
-    $c = [];
-    if (is_file($f)) { $j = json_decode((string)@file_get_contents($f), true); if (is_array($j)) $c = $j; }
-    $key = date('Y-m') . ':' . $kind;
-    $c[$key] = ($c[$key] ?? 0) + 1;
-    @file_put_contents($f, json_encode($c), LOCK_EX);
+    // Counting only — nothing depends on it — but it is the same shape, and leaving one racy
+    // writer behind is how the pattern comes back.
+    var_update(dirname(__DIR__) . '/var/mail-counts.json', function (array $c) use ($kind) {
+        $key = date('Y-m') . ':' . $kind;
+        $c[$key] = ($c[$key] ?? 0) + 1;
+        return [$c, null];
+    });
 }
 
 /**
@@ -36,7 +36,13 @@ function mail_count($kind) {
  * @param string $kind    short label for counting only, e.g. 'login', 'offer'
  * @param string|null $unsubscribe  absolute URL; adds List-Unsubscribe (required on offers)
  */
-function send_mail($to, $subject, $text, $kind = 'generic', $unsubscribe = null) {
+/**
+ * $attach = ['name' => 'trip.zip', 'path' => '/tmp/...', 'type' => 'application/zip'] (D-109).
+ * Only the expiry notice uses it, and only for a zip with the photos left out — see
+ * export_build()'s $withPhotos. Everything else still sends exactly the plain-text message it
+ * always did: with no attachment the headers and body are byte-for-byte what they were.
+ */
+function send_mail($to, $subject, $text, $kind = 'generic', $unsubscribe = null, $attach = null) {
     $to = trim($to);
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -73,6 +79,18 @@ function send_mail($to, $subject, $text, $kind = 'generic', $unsubscribe = null)
     // normalise line endings; keep lines short so nothing is soft-wrapped oddly
     $body = preg_replace("/\r\n?/", "\n", trim($text)) . "\n";
 
+    /* An attachment turns this into multipart/mixed. The text stays the first part, so a client
+       that cannot handle the attachment still shows the message — which matters, because the
+       message is the notice and the zip is the courtesy. The Content-Type and
+       Content-Transfer-Encoding headers move INTO the text part; leaving a top-level
+       `text/plain` beside a multipart body is how a mail arrives as an unreadable dump. */
+    if ($attach && is_array($attach) && is_file($attach['path'] ?? '')) {
+        $raw = @file_get_contents($attach['path']);
+        if ($raw !== false && $raw !== '')
+            [$headers, $body] = mail_multipart($headers, $body, $raw,
+                (string)($attach['name'] ?? 'attachment'), (string)($attach['type'] ?? 'application/octet-stream'));
+    }
+
     // Relay through DreamHost when configured (see smtp_send); otherwise hand to the local MTA.
     $ok = env('SMTP_HOST', '') !== ''
         ? smtp_send($to, $subject, $body, $headers, $from)
@@ -80,6 +98,37 @@ function send_mail($to, $subject, $text, $kind = 'generic', $unsubscribe = null)
 
     mail_count($kind . ($ok ? '' : '.fail'));
     return $ok;
+}
+
+/**
+ * Wrap a plain-text body and one file into multipart/mixed. Pure, and separate from send_mail()
+ * so it can be tested without SMTP — MIME that is subtly wrong arrives as an unreadable dump and
+ * there is no way to notice that from a return value of `true`, which is exactly how the comma
+ * in the From header hid for weeks.
+ *
+ * Two things here are load-bearing. The text stays the FIRST part, so a client that cannot handle
+ * the attachment still shows the message — the message is the notice and the zip is the courtesy.
+ * And the top-level Content-Type and Content-Transfer-Encoding are REMOVED and re-declared inside
+ * the text part; leaving a `text/plain` header beside a multipart body is the classic way to make
+ * a mail arrive as raw base64.
+ */
+function mail_multipart(array $headers, string $body, string $raw, string $name, string $type): array {
+    $b = 'ttb' . bin2hex(random_bytes(12));
+    $headers = array_values(array_filter($headers, fn($h) =>
+        !str_starts_with($h, 'Content-Type:') && !str_starts_with($h, 'Content-Transfer-Encoding:')));
+    $headers[] = 'Content-Type: multipart/mixed; boundary="' . $b . '"';
+    $fname = preg_replace('/[^A-Za-z0-9._-]/', '-', $name) ?: 'attachment';
+    $out = "--$b\n"
+         . "Content-Type: text/plain; charset=UTF-8\n"
+         . "Content-Transfer-Encoding: 8bit\n\n"
+         . $body . "\n"
+         . "--$b\n"
+         . "Content-Type: $type; name=\"$fname\"\n"
+         . "Content-Transfer-Encoding: base64\n"
+         . "Content-Disposition: attachment; filename=\"$fname\"\n\n"
+         . chunk_split(base64_encode($raw), 76, "\n")
+         . "--$b--\n";
+    return [$headers, $out];
 }
 
 /**

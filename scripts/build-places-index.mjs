@@ -21,7 +21,7 @@
  * a same-sized town in Kazakhstan can arrive via Nominatim once fully typed.
  *
  * Row format (arrays, to keep bytes down):  [name, region, cc, lat, lng, weight, kind, extra]
- *   kind: "c" city · "a" airport (extra = IATA) · "p" park
+ *   kind: "c" city · "a" airport (extra = IATA, then ICAO when known) · "p" park
  *   weight: log10(population), airports 3.5-5 by size, parks 4 — comparable scale on purpose.
  */
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
@@ -117,9 +117,16 @@ for (const r of csvRows(csv)) {
   if (sched !== "yes" || !iata || !/^[A-Z]{3}$/.test(iata)) continue;
   if (type !== "large_airport" && type !== "medium_airport") continue;
   const w = type === "large_airport" ? 50 : 38;     // rank majors like big cities
-  rows.push([r[head.name], r[head.municipality] || "", r[head.iso_country],
-             +(+r[head.latitude_deg]).toFixed(4), +(+r[head.longitude_deg]).toFixed(4),
-             w, "a", iata]);
+  /* ICAO too (D-112). Pilots, flight trackers and anyone reading a tail number type KORD, not
+     ORD, and it is REAL DATA here rather than a rule — "K + the IATA code" holds across the
+     contiguous US and nowhere else, and guessing it would turn PISA into Mount Isa, Australia.
+     ~7 bytes per airport on a 2 MB file. */
+  const icao = r[head.icao_code];
+  const row = [r[head.name], r[head.municipality] || "", r[head.iso_country],
+               +(+r[head.latitude_deg]).toFixed(4), +(+r[head.longitude_deg]).toFixed(4),
+               w, "a", iata];
+  if (/^[A-Z0-9]{4}$/.test(icao || "")) row.push(icao);
+  rows.push(row);
   nAir++;
 }
 console.log(`  ${nAir} airports`);

@@ -6,6 +6,7 @@
 :root {
   /* ── brand (the sign) ── */
   --color-brand-teal:   #035A83;
+  --color-brand-teal-deep: #024260;   /* F-14: the outline under the plate */
   --color-brand-orange: #F7B304;
   --color-brand-board:  #ECECEC;
   --color-brand-ink:    #141414;
@@ -36,12 +37,16 @@
   --color-route-blue-deep:  #2C5A82;
   --color-route-rail:       #8A6FB0;
   --color-route-self:       #1B9AAA;
+  --color-route-self-deep:  #147A86;   /* the same hue, for TEXT — see tokens.json */
 
-  /* ── time-of-day skies (assembled, ~162deg) ── */
-  --gradient-sky-dawn:  linear-gradient(162deg, #2C3A47 0%, #556B7D 52%, #AEBEC8 100%);
-  --gradient-sky-day:   linear-gradient(162deg, #F0F7FB 0%, #3E8FC4 100%);
-  --gradient-sky-night: linear-gradient(162deg, #1A1730 0%, #26203A 100%);
-  --gradient-sky-dusk:  linear-gradient(162deg, #2A2450 0%, #8A3B6E 40%, #D9531F 72%, #F2A63B 100%);
+  /* ── time-of-day skies ── */
+  /* F-14, 2026-08-02: these now match sky.css EXACTLY. They described a ~162deg gradient
+     nothing used while four tuned 172deg ones shipped, so /new invented a fifth. A token
+     that disagrees with what renders is worse than no token — it invites a third value. */
+  --gradient-sky-dawn:  linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
+  --gradient-sky-day:   linear-gradient(172deg,#EAF3FA 0%,#7FBBDE 60%,#3E8FC4 100%);
+  --gradient-sky-night: linear-gradient(172deg,#0A0F2A 0%,#131240 38%,#1D1652 70%,#281B5C 100%);
+  --gradient-sky-dusk:  linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
 
   /* ── type ── */
   --font-family-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -53,7 +58,7 @@
   --font-size-xs: 11px;
   --font-size-sm: 12px;
   --font-size-base: 14px;
-  --font-size-md: 15px;
+  --font-size-md: 16px;      /* F-17: was 15px, below the floor */
   --font-size-lg: 17px;
   --font-size-xl: 20px;
   --font-size-2xl: 24px;

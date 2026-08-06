@@ -80,8 +80,55 @@ foreach ($cases as $label => $args) {
 /* The schema is generated from the .mjs and only read here. If it is stale, tools/list lies. */
 $live = json_decode(shell_exec("printf '%s\\n' '" . json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/list'])
       . "' | node " . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . " 2>/dev/null") ?: '{}', true);
-$fromJs  = $live['result']['tools'][0] ?? null;
-ok('committed tool-schema.json still matches the .mjs', $fromJs !== null && $fromJs == mcp_tool());
+$byName = [];
+foreach (($live['result']['tools'] ?? []) as $t) $byName[$t['name']] = $t;
+ok('committed tool-schema.json still matches the .mjs',
+   isset($byName['build_trip_link']) && $byName['build_trip_link'] == mcp_tool());
+/* Added with read_trip_link: the remote endpoint must offer the SAME TOOLS as the stdio one.
+   A tool added to one server and not the other is a client that works over npx and fails over
+   HTTP, which is the exact class of divergence this file exists to catch. */
+ok('committed tool-schema-read.json still matches the .mjs',
+   isset($byName['read_trip_link']) && $byName['read_trip_link'] == mcp_read_tool());
+$phpList = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/list']);
+$phpNames = array_column($phpList['result']['tools'] ?? [], 'name');
+sort($phpNames); $jsNames = array_keys($byName); sort($jsNames);
+ok('both servers list the same tools', $phpNames === $jsNames, implode(',', $phpNames) . ' vs ' . implode(',', $jsNames));
+
+/* read_trip_link must decode identically in both, or an agent gets a different itinerary
+   depending on which transport it happened to use. */
+$sample = mcp_build_link(['name'=>'Round trip','origin'=>['name'=>'Chicago, IL','lat'=>41.8781,'lng'=>-87.6298],
+  'legs'=>[['to'=>['name'=>'Moab, UT','lat'=>38.5733,'lng'=>-109.5498],'mode'=>'drive','date'=>'2026-09-04',
+            'who'=>['Mel','Sam'],'lodging'=>'Hotel Maverick','stayNote'=>'late check-in']]]);
+$phpRead = mcp_read_link(['link'=>$sample['url']]);
+$jsRead = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+    'params'=>['name'=>'read_trip_link','arguments'=>['link'=>$sample['url']]]]))
+  . ' | node ' . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null') ?: '{}', true);
+$jsText = $jsRead['result']['content'][0]['text'] ?? '';
+$phpText = $phpRead['summary'];
+ok('read_trip_link summarises identically in both servers', str_starts_with($jsText, $phpText),
+   'php: ' . str_replace("\n", ' / ', $phpText));
+ok('read_trip_link round-trips back to the same link in PHP',
+   mcp_build_link($phpRead['trip'])['url'] === $sample['url']);
+
+/* The two servers must answer the same set of METHODS, not just produce the same link. Added
+   2026-08-03 after Smithery's scan logged "Failed to list resources" and "Failed to list prompts"
+   as warnings on the public listing — correct per the spec, since we declare only `tools`, but it
+   reads as a broken server. Both now answer an empty list, and both must keep doing so: a fix
+   applied to one server and not the other is exactly what this file exists to catch. */
+$root = dirname(__DIR__);   // not defined above; this file uses dirname(__DIR__) inline
+$mjs = file_get_contents("$root/mcp/thistripbtw-mcp.mjs");
+$php = file_get_contents("$root/lib/mcp.php");
+foreach (['resources/list' => 'resources', 'prompts/list' => 'prompts'] as $method => $key) {
+  ok("the stdio server answers $method",  str_contains($mjs, '"' . $method . '"'));
+  ok("the hosted server answers $method", str_contains($php, "'" . $method . "'"));
+  /* Whitespace-tolerant: the PHP is column-aligned, so a literal match fails on alignment
+     rather than on the thing being wrong. */
+  ok("and both return an EMPTY $key rather than an error",
+     preg_match('/' . $key . ':\s*\[\s*\]/', $mjs) &&
+     preg_match("/'" . $key . "'\s*=>\s*\[\s*\]/", $php));
+}
+ok('neither has quietly started declaring a capability it does not have',
+   !str_contains($mjs, "resources: {") && !str_contains($php, "'resources' => new stdClass"));
 
 echo "\n" . ($fail ? "\033[31m$fail failed\033[0m, " : '') . "\033[32m$pass\033[0m passed\n";
 exit($fail ? 1 : 0);

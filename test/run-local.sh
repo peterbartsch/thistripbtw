@@ -49,3 +49,11 @@ MYSQL_CMD="$MYSQL_CMD -h $DB_HOST -P $DB_PORT $DB_NAME"
 
 BASE_URL="http://127.0.0.1:$APP_PORT" APEX_HOST="localhost" MYSQL_CMD="$MYSQL_CMD" \
   bash test/smoke.sh
+RC=$?
+
+# D-098: needs the same database and none of the HTTP surface, so it rides along here rather
+# than in test-tools, which is deliberately DB-free.
+echo
+echo "expiry notice (D-098)"
+"$PHP_BIN" test/expiry-test.php || RC=1
+exit $RC

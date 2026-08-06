@@ -1,12 +1,28 @@
 /* time-of-day sky theme — shared across pages. A tiny inline <script> sets html[data-sky]. */
+/* --ground is the page BEHIND a card, and it belongs here with the other surfaces rather
+   than in a per-page :root. It was defined only in index.html and dark.css, so on the
+   twelve pages that load pages.css it was UNDEFINED — measured 2026-08-02 on /for-agents:
+   `#menu a:hover{background:var(--ground)}` resolved to nothing and the menu hover did
+   nothing at all. One definition per sky fixes every one of them at once. */
 html[data-sky="day"]  {--sky:linear-gradient(172deg,#EAF3FA 0%,#7FBBDE 60%,#3E8FC4 100%);
-  --card:#fff;--ink:#333333;--soft:#5f6b70;--line:#E4E1D8}
+  --card:#fff;--ink:#333333;--soft:#5f6b70;--line:#E4E1D8;--ground:#F5F6F4}
 html[data-sky="dawn"] {--sky:linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
-  --card:rgba(28,34,42,.82);--ink:#F2F3EF;--soft:#C7CDD3;--line:rgba(255,255,255,.16);--pine:#5FD0D6}
+  --card:rgba(28,34,42,.82);--ink:#F2F3EF;--soft:#C7CDD3;--line:rgba(255,255,255,.16);--pine:#5FD0D6;--ground:#1B2129}
 html[data-sky="dusk"] {--sky:linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
-  --card:rgba(26,20,38,.80);--ink:#FBF6EF;--soft:#E7D8CB;--line:rgba(255,255,255,.18);--pine:#6FDAD0}
-html[data-sky="night"]{--sky:linear-gradient(172deg,#14121E 0%,#1A1730 55%,#26203A 100%);
-  --card:rgba(28,34,42,.85);--ink:#EAEBE7;--soft:#AAB0B7;--line:rgba(255,255,255,.14);--pine:#5FD0D6}
+  --card:rgba(26,20,38,.80);--ink:#FBF6EF;--soft:#E7D8CB;--line:rgba(255,255,255,.18);--pine:#6FDAD0;--ground:#1A1424}
+/* Peter, 2026-08-05: night wants "darker purples and blues". The old ramp
+   (#14121E/#1A1730/#26203A) was a desaturated purple-grey that read as flat charcoal — three
+   stops that were nearly the same colour, so it barely resolved as a gradient at all.
+   This one is a night drive: deep NAVY overhead easing to VIOLET at the horizon, which is
+   where the light-pollution glow actually sits. Four stops, because three could not carry blue
+   and purple both.
+   The first attempt went near-black at the top (#070B1A) and measured beautifully — 16:1 ink —
+   but LOOKED like flat black on screen. The gradient spans the whole PAGE, not the viewport, so
+   on a long page the only thing above the fold is its darkest slice. A sky nobody scrolls far
+   enough to see is not a sky. These stops are chromatic from 0%: dark, but recognisably blue at
+   the top of the very first screen. */
+html[data-sky="night"]{--sky:linear-gradient(172deg,#0A0F2A 0%,#131240 38%,#1D1652 70%,#281B5C 100%);
+  --card:rgba(28,34,42,.85);--ink:#EAEBE7;--soft:#AAB0B7;--line:rgba(255,255,255,.14);--pine:#5FD0D6;--ground:#14181D}
 
 /* `color-scheme` is what the BROWSER reads, and it is not the same thing as the
    prefers-color-scheme queries elsewhere in this project: those ask what the OS wants, this
@@ -24,7 +40,16 @@ html[data-sky="dawn"],html[data-sky="dusk"],html[data-sky="night"]{color-scheme:
    text met a different stop depending on scroll position and the palette could
    never be tuned against it (audit F13). */
 html{min-height:100%}
-body{background:var(--sky, var(--ground)) no-repeat;background-size:100% 100%;min-height:100%}
+/* `100%` measures the LAYOUT viewport, which on mobile browsers is the tall one that assumes
+   the toolbars are hidden. Firefox and Safari on iOS keep a toolbar over the bottom of the
+   screen, so the last ~80px of a `100%`-tall page sits UNDERNEATH it — which is exactly where
+   the footer lives. Reported as "slammed to the bottom and lost"; it was not slammed, it was
+   covered.
+   `100dvh` is the dynamic viewport height: it tracks the toolbar as it shows and hides. The
+   `100%` line stays first as the fallback for anything that does not know dvh — a browser that
+   ignores the second declaration is no worse off than it is today. */
+body{background:var(--sky, var(--ground)) no-repeat;background-size:100% 100%;min-height:100%;
+     min-height:100dvh}
 .card,.priv,.pagefoot{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 /* text sitting on the sky gets a subtle shadow on the darker skies */
 html:not([data-sky="day"]) body{text-shadow:0 1px 2px rgba(0,0,0,.32)}
@@ -33,9 +58,15 @@ html:not([data-sky="day"]) body{text-shadow:0 1px 2px rgba(0,0,0,.32)}
 .lede{text-wrap:balance}
 
 /* shared footer Stripe badge (legitimacy) */
-.stripe-line{display:flex;justify-content:center;margin:30px auto 14px;padding:0 20px}
+/* Peter, 2026-08-05: the badge is the LAST element on the page now, after the footer rather
+   than wedged above it, and it wants room under it — 14px read as the page being cut off.
+   The footer above supplies the top gap, so this only adds a little. */
+.stripe-line{display:flex;justify-content:center;margin:22px auto 64px;padding:0 20px}
+/* 11px, not 9px: measured 41px tall, under DESIGN.md's 44. The old footer text was exempt on
+   the grounds that it was "a line you read, not one you aim at" — fair for a line of prose,
+   wrong for a bordered pill, which reads as a control whether or not we meant it to. */
 .stripe-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
-  border-radius:999px;padding:9px 18px;text-decoration:none;text-shadow:none}
+  border-radius:999px;padding:11px 18px;text-decoration:none;text-shadow:none}
 .stripe-badge .lbl{color:var(--soft);font-size:13px;font-weight:500}
 .stripe-mark{font-family:var(--body);font-weight:700;font-size:18px;color:#635BFF;letter-spacing:-.02em;line-height:1}
 html:not([data-sky="day"]) .stripe-mark{color:#9C95FF}

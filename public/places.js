@@ -39,22 +39,33 @@
 
   function loadIndex() {
     if (IDX_PROMISE) return IDX_PROMISE;
-    IDX_PROMISE = fetch("/places-index.json?v=1", { headers: { accept: "application/json" } })
+    IDX_PROMISE = fetch("/places-index.json?v=2", { headers: { accept: "application/json" } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
         if (!j || !j.rows) return null;
         // [name, region, cc, lat, lng, weight, kind, extra?] → search rows with a normalised
         // name. Buckets by first letter keep the typo pass from scanning all 40k rows.
-        var rows = [], buckets = {};
+        var rows = [], buckets = {}, codes = {};
         for (var i = 0; i < j.rows.length; i++) {
           var r = j.rows[i];
           var row = { name: r[0], region: r[1], cc: r[2], lat: r[3], lng: r[4],
-                      w: r[5] / 10, kind: r[6], iata: r[7] || null, n: norm(r[0]) };
+                      w: r[5] / 10, kind: r[6], iata: r[7] || null, icao: r[8] || null,
+                      n: norm(r[0]) };
           rows.push(row);
           var b = row.n.charAt(0);
           (buckets[b] || (buckets[b] = [])).push(row);
+          // Codes are indexed SEPARATELY from names, because they do not agree: "ORD" is
+          // "Chicago O'Hare", "EWR" is "Newark", "MCO" is "Orlando". Bucketing by name alone
+          // is what made those three unreachable — see searchLocal.
+          // IATA (3) and ICAO (4) share one map: different lengths, so they cannot collide.
+          for (var ci = 0; ci < 2; ci++) {
+            var code = ci ? row.icao : row.iata;
+            if (!code) continue;
+            var c = code.toLowerCase();
+            if (!codes[c] || row.w > codes[c].w) codes[c] = row;
+          }
         }
-        IDX = { rows: rows, buckets: buckets };
+        IDX = { rows: rows, buckets: buckets, codes: codes };
         return IDX;
       })
       .catch(function () { return null; });
@@ -84,7 +95,8 @@
    * exactly: "sfo" must be one cheap hit.
    */
   function scoreRow(row, qtokens, qjoined, near) {
-    if (row.iata && qjoined === row.iata.toLowerCase())
+    if ((row.iata && qjoined === row.iata.toLowerCase()) ||
+        (row.icao && qjoined === row.icao.toLowerCase()))
       return 40 + row.w;                             // typed the code; done
     var words = row.n.split(/[\s'-]+/), score = 0;
     for (var t = 0; t < qtokens.length; t++) {
@@ -131,9 +143,34 @@
       return found;
     }
     var out = scan(IDX.buckets[qjoined.charAt(0)] || []);
+    /* An airport code is bucketed under the AIRPORT'S NAME, not the code, and the widening
+       pass below cannot rescue it because every IATA code is 3 characters and that pass wants
+       4. Measured before this line existed: 8 of 25 major US codes returned NOTHING (MCO, EWR,
+       BNA, MSY, DCA, IAD, MDW, HNL) and "ORD" returned Ord, Nebraska — population 2,000 — with
+       O'Hare absent. A wrong stop that looks right is worse than no result, so the code is
+       looked up directly and scored above everything the letter bucket found. */
+    var air = IDX.codes[qjoined];
+    if (air) out.push({ row: air, s: 1000 });
+    /* …but a code must not bury a SUBSTANTIAL city that is genuinely spelled that way. Measured
+       against this index, 69 codes are also city names: PALU is a city of 398,000 in Indonesia
+       and the ICAO of a radar station in Alaska; ABA is a Nigerian city of 1.2 million and
+       Abakan's IATA; LIRA is a Ugandan city and Rome Ciampino.
+       Prominence is the test, NOT exactness. "Any exact name match wins" was tried first and
+       put Ord, Nebraska — population 2,000 — back above O'Hare, which is the defect this whole
+       branch exists to fix.
+       The city has to out-weigh THE AIRPORT IT COLLIDES WITH, on the weight scale the index
+       already shares between them (log10 population for cities, size band for airports). A
+       fixed population threshold was tried too and it is the wrong instrument: San, in Mali,
+       has a population of exactly 100,000, so any round number lands on top of it and decides
+       San Diego by a rounding artefact.
+       And it ADDS rather than assigns, because assigning a flat rank flattened the several
+       Portlands to equal scores and the near-anchor stopped deciding between them — the
+       proximity bonus is already inside `s` and has to survive. */
+    if (air) for (var oi = 0; oi < out.length; oi++)
+      if (out[oi].row.n === qjoined && out[oi].row.w > air.w) out[oi].s += 1000;
     if (out.length < 3 && qtokens[0].length >= 4) {
       var wide = scan(IDX.rows);
-      if (wide.length > out.length) out = wide;
+      if (wide.length > out.length) { out = wide; if (air) out.push({ row: air, s: 1000 }); }
     }
     out.sort(function (a, b) { return b.s - a.s; });
     var top = [], seen = {};

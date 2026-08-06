@@ -6,9 +6,9 @@
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=2">
-<link rel="stylesheet" href="/sky.css?v=5">
-<link rel="stylesheet" href="/pages.css?v=25">
+<link rel="stylesheet" href="/tokens.css?v=6">
+<link rel="stylesheet" href="/sky.css?v=11">
+<link rel="stylesheet" href="/pages.css?v=36">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   label{display:block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
@@ -21,14 +21,14 @@
   .msg.bad{color:#B23A24}
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
-<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 
 <header class="pagehead">
-  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
   <h1>Set a new password</h1>
   <p class="lede" id="lede">For your account &mdash; not for a trip.</p>
 </header>
@@ -57,6 +57,7 @@
 </main>
 
 <footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -82,6 +83,6 @@
   $("pw").addEventListener("keydown", e => { if(e.key==="Enter") $("go").click(); });
 })();
 </script>
-<script src="/pages.js?v=1"></script>
-<script src="/theme.js?v=1"></script>
+<script src="/pages.js?v=2"></script>
+<script src="/theme.js?v=4"></script>
 </html>

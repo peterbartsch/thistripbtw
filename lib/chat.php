@@ -21,6 +21,7 @@
  */
 
 declare(strict_types=1);
+require_once __DIR__ . '/varstore.php';
 
 require_once __DIR__ . '/tools.php';
 
@@ -76,14 +77,13 @@ function chat_tokens_used() {
 }
 
 function chat_tokens_add($n) {
-    $dir = dirname(chat_tokens_path());
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $f = chat_tokens_path();
-    $j = is_file($f) ? json_decode((string)@file_get_contents($f), true) : [];
-    if (!is_array($j)) $j = [];
-    $k = date('Y-m');
-    $j[$k] = (int)($j[$k] ?? 0) + max(0, (int)$n);
-    @file_put_contents($f, json_encode($j), LOCK_EX);
+    // D-091: locked across read and write. This is the ceiling that turns the feature off by
+    // itself; a counter that loses increments under load is a ceiling that does not hold.
+    var_update(chat_tokens_path(), function (array $j) use ($n) {
+        $k = date('Y-m');
+        $j[$k] = (int)($j[$k] ?? 0) + max(0, (int)$n);
+        return [$j, null];
+    });
 }
 
 const CHAT_DRAFT_TURNS   = 2;    // D-035: 2 turns per draft, pre-purchase
@@ -112,17 +112,17 @@ function chat_rate_ok($ip) {
     $salt = env('RATE_SALT', '') !== '' ? env('RATE_SALT') : ($day . '|' . env('APEX', 'thistripbtw.us'));
     $key  = substr(hash('sha256', $ip . '|' . $salt), 0, 16);
 
-    $dir = dirname(__DIR__) . '/var';
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $f = $dir . '/chat-rate.json';
-    $j = is_file($f) ? json_decode((string)@file_get_contents($f), true) : [];
-    if (!is_array($j)) $j = [];
-    foreach (array_keys($j) as $d) if ($d !== $day) unset($j[$d]);   // yesterday is forgotten
-    $n = (int)($j[$day][$key] ?? 0);
-    if ($n >= CHAT_DRAFT_PER_IP) return false;
-    $j[$day][$key] = $n + 1;
-    @file_put_contents($f, json_encode($j), LOCK_EX);
-    return true;
+    /* D-091: the check and the increment happen under ONE lock. They used to be a read, a
+       comparison and a separate write — so parallel requests all read the same count and all
+       passed, which is precisely how an abuser would hit an unauthenticated endpoint that
+       spends tokens. The decision is returned from inside the lock it was made in. */
+    return var_update(dirname(__DIR__) . '/var/chat-rate.json', function (array $j) use ($day, $key) {
+        foreach (array_keys($j) as $d) if ($d !== $day) unset($j[$d]);   // yesterday is forgotten
+        $n = (int)($j[$day][$key] ?? 0);
+        if ($n >= CHAT_DRAFT_PER_IP) return [$j, false];
+        $j[$day][$key] = $n + 1;
+        return [$j, true];
+    });
 }
 
 /** Compact view of what's already on the trip — replaces a whole list_trip round-trip. */

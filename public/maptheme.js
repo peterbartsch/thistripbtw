@@ -25,6 +25,15 @@
   var tiles = null;
   function apply() {
     d.setAttribute("data-theme", dark ? "dark" : "light");
+    /* Tell the browser what colour its own chrome should be. It cannot be HIDDEN from a web page
+       — on iOS that needs standalone mode, which is Add to Home Screen and a D-017 decision — but
+       it can stop being a white band bolted onto a night map. Set from JS rather than a
+       media-query <meta> because this toggle is manual: someone on "night drive" at noon has a
+       dark app and prefers-color-scheme would still say light. */
+    var tc = document.querySelector('meta[name="theme-color"]');
+    if (!tc) { tc = document.createElement("meta"); tc.setAttribute("name", "theme-color");
+               document.head.appendChild(tc); }
+    tc.setAttribute("content", dark ? "#14181D" : "#F5F6F4");
     b.textContent = dark ? "☀" : "☾";
     b.title = dark ? "Day" : "Night drive";
     b.setAttribute("aria-label", "Theme: " + (dark ? "night drive" : "day") + ". Tap to change.");

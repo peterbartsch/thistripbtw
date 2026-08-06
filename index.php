@@ -54,8 +54,8 @@ if (!$segs) {
 
 $slug = $segs[0];
 
-/* static content pages: /privacy, /about, /mission, /help, /what-you-get, /account */
-if (count($segs) === 1 && in_array($slug, ['privacy','about','mission','help','terms','faq','what-you-get','account','for-agents','reset','starts'], true)
+/* static content pages: /privacy, /about, /mission, /help, /what-you-get, /account, /tutorials */
+if (count($segs) === 1 && in_array($slug, ['privacy','about','mission','help','terms','faq','what-you-get','account','for-agents','agent-ready','reset','starts','tutorials'], true)
     && is_file(PUBLIC_DIR . '/' . $slug . '.html')) {
   serve_html(PUBLIC_DIR . '/' . $slug . '.html'); exit;
 }
@@ -97,11 +97,72 @@ if (count($segs) >= 2
    which is what lets the listing bind a remote endpoint to this domain. The private half never
    goes near this repo. */
 if (count($segs) === 2 && $segs[0] === '.well-known'
-    && in_array($segs[1], ['mcp.json', 'mcp-registry-auth'], true)
+    && in_array($segs[1], ['mcp.json', 'mcp-registry-auth', 'api-catalog'], true)
     && is_file(PUBLIC_DIR . '/.well-known/' . $segs[1])) {
   // no extension on mcp-registry-auth, so name the type rather than letting it guess
   if ($segs[1] === 'mcp-registry-auth') { header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-store'); readfile(PUBLIC_DIR . '/.well-known/mcp-registry-auth'); exit; }
+  /* RFC 9727 wants application/linkset+json, and the file has no extension to infer it from.
+     It lists ONE api, because there is one: the MCP endpoint. The trip API is per-trip and
+     phrase-gated, so it is not a public API and does not belong in a public catalog. */
+  if ($segs[1] === 'api-catalog') { header('Content-Type: application/linkset+json; charset=utf-8'); header('Cache-Control: public, max-age=3600'); readfile(PUBLIC_DIR . '/.well-known/api-catalog'); exit; }
   serve_asset(PUBLIC_DIR . '/.well-known/mcp.json'); exit;
+}
+
+/* /.well-known/agent-skills/index.json — the skills discovery index. THREE segments, so the
+   two-segment .well-known rule above cannot reach it, and .htaccess only opens `.well-known/`
+   rather than serving what is inside it.
+
+   We publish this one because we have a skill to publish: D-119's Claude Skill is real, tested by
+   test/skill-parity.mjs, and until now was announced nowhere. That is the whole test applied to
+   the rest of the agentic-web checklist too — an api-catalog, an OAuth issuer, an x402 wallet and
+   an agent-registration endpoint were all declined on 2026-08-04 because we do not have those
+   things and saying we do would be the same lie in machine-readable form. */
+if (count($segs) === 3 && $segs[0] === '.well-known' && $segs[1] === 'agent-skills'
+    && $segs[2] === 'index.json'
+    && is_file(PUBLIC_DIR . '/.well-known/agent-skills/index.json')) {
+  serve_asset(PUBLIC_DIR . '/.well-known/agent-skills/index.json'); exit;
+}
+
+/* /skill — the Claude Skill (D-119), served EXTENSIONLESS and only this one file.
+
+   `.htaccess` denies every `.md` in the tree by FilesMatch, and FilesMatch is evaluated against
+   the REQUESTED filename, so the rewrite to index.php cannot rescue it: /skill/SKILL.md is a hard
+   403 no routing can undo. Exactly the trap /mcp/readme already works around, and I walked into
+   it anyway — it 403'd in production while returning 200 locally, because the deny lives in
+   Apache config that `php -S` never reads.
+
+   `.py` is worse: it 500s, because the server tries to hand it to a handler. Not served at all.
+   The skill references build_link.py as a path INSIDE the installed skill, never as a URL, so
+   nothing needs it over HTTP.
+
+   AND THE URL IS `/agent-skill`, NOT `/skill`, for a third reason found the same way. Adding
+   `skill` to deploy.sh's allowlist puts a REAL DIRECTORY at the docroot, and Apache resolves a
+   real path before it rewrites to index.php: `/skill` hit the directory, directory listing is
+   off, and it 403'd — with this handler's Content-Type header on the response, which is how you
+   can tell PHP ran and lost anyway. Any single-segment route whose name matches a shipped
+   top-level directory has this problem. */
+/* /agent-skill/build_link.py — the script the skill actually runs.
+   The note above is right that an INSTALLED skill reaches this by relative path and never needs
+   a URL. But `/.well-known/agent-skills/index.json` advertises `/agent-skill` to the world, and
+   a model that fetches that gets a document telling it to run a file it was never given and has
+   no way to get. The index made a promise the URL could not keep.
+   PHP readfile()s it as text/plain for the same reason /agent-skill works: Apache never sees a
+   real `.py` to hand to a handler, so the 500 documented above cannot happen on this path.
+   `agent-skill` is not a shipped top-level directory, so the 403 trap does not apply either. */
+if (count($segs) === 2 && $segs[0] === 'agent-skill' && $segs[1] === 'build_link.py'
+    && is_file(__DIR__ . '/skill/scripts/build_link.py')) {
+  header('Content-Type: text/plain; charset=utf-8');
+  header('Cache-Control: public, max-age=3600');
+  header('X-Content-Type-Options: nosniff');
+  readfile(__DIR__ . '/skill/scripts/build_link.py');
+  exit;
+}
+if (count($segs) === 1 && $segs[0] === 'agent-skill' && is_file(__DIR__ . '/skill/SKILL.md')) {
+  header('Content-Type: text/markdown; charset=utf-8');
+  header('Cache-Control: public, max-age=3600');
+  header('X-Content-Type-Options: nosniff');
+  readfile(__DIR__ . '/skill/SKILL.md');
+  exit;
 }
 
 /* POST /mcp → the remote MCP endpoint (D-081). Connectors take a URL, and a URL is a click
@@ -147,17 +208,39 @@ if (count($segs) === 2 && $segs[0] === 'mcp' && $segs[1] === 'readme'
   exit;
 }
 
-/* /quick → the ring builder, and the promoted way to START a trip (D-063). /new is where a
-   trip is EDITED, by leg card, and holds the chat and the road routing. /quicktree is the
-   previous node builder, kept routed as the fallback. All three write the same v3 draft. */
-if (count($segs) === 1 && $slug === 'radial') {          // /radial moved; keep old links alive
-  header('Location: /quick', true, 301); exit;
+/* ONE builder (D-120, §2e). There were three, all writing the same v3 draft: /quick's ring,
+   /new's leg cards, and /quicktree's node tree. /new survives — it is the only INDEXABLE one,
+   and it holds everything expensive: the chat, road routing, both import families, export, the
+   `#d=` agent handover that /starts, /for-agents and /tutorials all hardcode, multi-route, crew,
+   stays and the three-tier checkout. Six test files also extract real functions out of it by
+   filename. The ring ported IN rather than /new porting out, as public/ring.js.
+
+   /radial points straight at /new rather than at /quick, which now redirects too — a
+   301 → 301 chain costs a round trip and every crawler that follows it reads a slower site. */
+if (count($segs) === 1 && in_array($slug, ['radial', 'quick', 'quicktree'], true)) {
+  header('Location: /new', true, 301); exit;
 }
-if (count($segs) === 1 && in_array($slug, ['new', 'quick', 'quicktree'], true)
-    && is_file(PUBLIC_DIR . '/' . $slug . '.html')) { serve_html(PUBLIC_DIR . '/' . $slug . '.html'); exit; }
+if (count($segs) === 1 && $slug === 'new'
+    && is_file(PUBLIC_DIR . '/new.html')) { serve_html(PUBLIC_DIR . '/new.html'); exit; }
 
 /* a reserved word as the first segment is never a trip → landing */
 if (in_array($slug, RESERVED, true)) { serve_html(PUBLIC_DIR . '/index.html'); exit; }
+
+/* /{slug}/og.png → the trip's link-preview card (D-123). Public by design — it IS a preview —
+   and it draws the trip's NAME and nothing else. See lib/ogcard.php for why that boundary is
+   where it is, and why no scraper here can ever be authenticated. */
+if (count($segs) === 2 && ($segs[1] ?? null) === 'og.png'
+    && preg_match('/^[a-hj-km-np-z2-9]{7}$/', $slug)) {
+  /* require_once, all three: config.php is ALREADY loaded at the top of this file, and a plain
+     require re-declares its functions, which is a fatal — the endpoint 500'd on the server
+     while rendering perfectly when run standalone. SECURE_ACCESS likewise may already be set. */
+  if (!defined('SECURE_ACCESS')) define('SECURE_ACCESS', true);
+  require_once __DIR__ . '/lib/config.php';
+  require_once __DIR__ . '/lib/db.php';
+  require_once __DIR__ . '/lib/ogcard.php';
+  og_card_serve($slug);
+  exit;
+}
 
 /* /{slug}/api/* → trip API */
 if (($segs[1] ?? null) === 'api') {
@@ -184,7 +267,7 @@ if (($segs[1] ?? null) === 'api') {
    here: they are why /sitemap, /privacy, /account and most English words cannot be mistaken
    for a trip. Keep the two in step. */
 if (count($segs) === 1 && preg_match('/^[a-hj-km-np-z2-9]{7}$/', $slug)) {
-  serve_html(PUBLIC_DIR . '/app.html');
+  serve_html(PUBLIC_DIR . '/app.html', null, $slug);
   exit;
 }
 
@@ -202,6 +285,16 @@ function serve_404() {
   header('X-Content-Type-Options: nosniff');
   header('X-Frame-Options: DENY');
   header('Referrer-Policy: no-referrer');
+  /* RFC 8288 discovery, using REGISTERED IANA relations only and pointing at two things that
+     genuinely exist: the MCP manifest and the agent documentation. An agent-readiness checker
+     flagged the absence 2026-08-04.
+     Its other six findings were declined and the reason is worth keeping: four of them asked us
+     to publish OAuth discovery, protected-resource metadata and an agent-registration auth.md.
+     This product has no accounts on the agent path and no protected API — that is the whole
+     differentiator /agent-ready is built on — so advertising auth endpoints would be a false
+     claim, not a missing feature. DNS-AID was declined too: an IETF draft whose fix is signing
+     the zone with DNSSEC, which misconfigured takes the domain offline. */
+  header('Link: </.well-known/mcp.json>; rel="service-desc"; type="application/json", </for-agents>; rel="service-doc"; type="text/html"');
   header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; "
     . "style-src 'self' 'unsafe-inline'; font-src 'self'; "
     . "img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
@@ -211,7 +304,10 @@ function serve_404() {
 }
 
 /* $strip names a block id to remove before sending, or null to send the file as it is. */
-function serve_html($file, $strip = null) {
+/* $ogSlug points this trip's link preview at its OWN card (D-123). It is a string swap and
+   deliberately touches no database: index.php does not load api.php unless it is routing to the
+   API, and that stays true — the card endpoint does the lookup, so the page never has to. */
+function serve_html($file, $strip = null, $ogSlug = null) {
   if (!is_file($file)) {
     http_response_code(404);
     header('Content-Type: text/html; charset=utf-8');
@@ -225,6 +321,19 @@ function serve_html($file, $strip = null) {
   header('Referrer-Policy: no-referrer');
   header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
   header('Permissions-Policy: geolocation=(self), camera=(), microphone=()');
+  /* RFC 8288 Link headers, so an agent that reads headers and never parses HTML can still find
+     the three things worth finding. Deliberately SHORT: every relation here points at something
+     that already exists and is already true. We do not advertise an api-catalog, an OAuth issuer
+     or a payment endpoint, because there is no public agent-facing API, no authorization server,
+     and paying is the human's step by decision rather than by omission — announcing any of them
+     would be describing a product we did not build.
+     Not on the trip shell: a trip is nobody's business but the people holding the phrase, and
+     headers are as public as the page. */
+  if (basename($file) !== 'app.html') {
+    header('Link: </llms.txt>; rel="describedby"; type="text/plain", '
+         . '</.well-known/mcp.json>; rel="service-desc"; type="application/json", '
+         . '</for-agents>; rel="service-doc"; type="text/html"', false);
+  }
   // CSP. app.html needs its external origins (Leaflet, Carto tiles, OSRM, Nominatim, Spotify);
   // landing + content pages are locked down tight.
   /* 2026-07-30: Leaflet and the fonts are served from here now, so cdnjs, fonts.googleapis and
@@ -247,12 +356,27 @@ function serve_html($file, $strip = null) {
   // conditional GET: revalidate cheaply (304) instead of re-downloading the whole shell
   $mtime = filemtime($file);
   // The stripped and unstripped shapes are different documents and must not share an ETag.
-  $etag  = '"' . dechex($mtime) . '-' . dechex(filesize($file)) . ($strip ? '-s' : '') . '"';
+  /* The slug is part of the ETag because the body now differs per trip: without it, a cache
+     holding one trip's HTML would answer 304 for another and hand over the wrong preview. */
+  $etag  = '"' . dechex($mtime) . '-' . dechex(filesize($file)) . ($strip ? '-s' : '')
+         . ($ogSlug ? '-' . $ogSlug : '') . '"';
   header('ETag: ' . $etag);
   header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
   $inm = trim($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
   $ims = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
   if ($inm === $etag || ($ims && @strtotime($ims) >= $mtime)) { http_response_code(304); exit; }
+  /* Swap the site-wide card for this trip's own (D-123). str_replace on the exact literal, so
+     if that markup ever changes shape the page ships unmodified rather than half-rewritten.
+     $strip is the homepage's post-payment block and $ogSlug is a trip: they are never both set,
+     and combining them is not silently half-handled — it is refused. */
+  if ($ogSlug !== null) {
+    if ($strip !== null) { readfile($file); return; }
+    echo str_replace(
+      'content="https://thistripbtw.us/og.png?v=1"',
+      'content="https://thistripbtw.us/' . $ogSlug . '/og.png"',
+      (string)file_get_contents($file));
+    return;
+  }
   if ($strip === null) { readfile($file); return; }
 
   /* Remove <div id="{$strip}"> ... its matching close. Counted, not regexed: the block contains

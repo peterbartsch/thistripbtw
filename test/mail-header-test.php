@@ -62,5 +62,52 @@ ok('csvCell neutralises a leading = + - @ (X3)',
    str_contains($appjs, '/^[=+\\-@\\t\\r]/.test(t)'));
 ok('and it still doubles embedded quotes', str_contains($appjs, 'replace(/"/g, \'""\')'));
 
+/* ── D-109: the attachment MIME, checked by parsing it ──────────────────────────────────
+   A subtly wrong multipart arrives as an unreadable base64 dump and send_mail() still returns
+   true — which is precisely how the unquoted comma in the From header hid for weeks. So this
+   builds a message and reads it back rather than trusting the string concatenation. */
+$zipBytes = "PK\x03\x04" . random_bytes(64);          // enough to be binary and non-empty
+$base = ['From: "this trip, btw" <info@x.test>', 'MIME-Version: 1.0',
+         'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: 8bit'];
+[$h, $body] = mail_multipart($base, "Your trip ends on 1 August.\n", $zipBytes,
+                             'Weekend at Tahoe.zip', 'application/zip');
+
+$ct = implode("\n", $h);
+ok('the top-level type becomes multipart/mixed', str_contains($ct, 'multipart/mixed; boundary="'));
+ok('and the plain-text headers are REMOVED from the top level, not left beside it',
+   !preg_match('/^Content-Type: text\/plain/m', $ct) &&
+   !preg_match('/^Content-Transfer-Encoding:/m', $ct));
+
+preg_match('/boundary="([^"]+)"/', $ct, $bm);
+$boundary = $bm[1] ?? '';
+ok('the boundary is present and non-trivial', strlen($boundary) > 12);
+ok('the boundary never occurs inside the payload it delimits',
+   substr_count($body, $boundary) === 3);   // open, separator, close
+
+$parts = array_values(array_filter(explode("--$boundary", $body), fn($x) => trim($x, "-\n ") !== ''));
+ok('there are exactly two parts', count($parts) === 2);
+ok('the TEXT is first, so a client that cannot open the zip still shows the message',
+   str_contains($parts[0], 'Your trip ends on 1 August'));
+ok('the text part declares its own charset', str_contains($parts[0], 'text/plain; charset=UTF-8'));
+ok('the attachment is base64 and named',
+   str_contains($parts[1], 'Content-Transfer-Encoding: base64') &&
+   str_contains($parts[1], 'filename="Weekend-at-Tahoe.zip"'));
+/* Extract the VALUE and inspect it — the first version of this asserted
+   `filename="[^"]*[\s"]` finds nothing, which can never pass, because `[\s"]` matches the
+   closing quote. It was testing the delimiter, not the name. */
+preg_match('/filename="([^"]*)"/', $parts[1], $fm);
+ok('the filename is sanitised — a space or quote in a trip name cannot break the header',
+   isset($fm[1]) && $fm[1] !== '' && !preg_match('/[\s"\\\\;]/', $fm[1]));
+[$h2, $b2] = mail_multipart($base, "x\n", 'zz', 'Sam"s "trip"; rm -rf /.zip', 'application/zip');
+preg_match('/filename="([^"]*)"/', $b2, $fm2);
+ok('a hostile trip name cannot escape the header either',
+   isset($fm2[1]) && !preg_match('/[\s"\\\\;]/', $fm2[1]));
+ok('the body ends with the closing delimiter', str_ends_with(trim($body), "--$boundary--"));
+
+/* The bytes must survive the round trip, or the zip a customer keeps is corrupt. */
+preg_match('/\n\n(.*)$/s', $parts[1], $pm);
+$decoded = base64_decode(preg_replace('/--$/', '', trim($pm[1] ?? '')), true);
+ok('the attachment decodes back to exactly the bytes we put in', $decoded === $zipBytes);
+
 echo "\n" . ($fail ? "\033[31m$fail failed\033[0m, " : '') . "\033[32m$pass\033[0m passed\n";
 exit($fail ? 1 : 0);

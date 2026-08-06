@@ -36,5 +36,111 @@ ok('every sitemap URL is on the apex', !array_filter($locs, fn($l) => !str_start
 ok('robots.txt points at the sitemap', str_contains(file_get_contents("$root/public/robots.txt"),
    'Sitemap: https://thistripbtw.us/sitemap.xml'));
 
+/* 5. One mark on every non-trip page (Peter, 2026-08-02). These carried a teal name plate in
+      Barlow Condensed while the landing page carried the full guide sign — two logos, and
+      nobody noticed until F2 put them on one stylesheet and the difference became the only
+      one left. A page that grows a header is a page that can grow the wrong header, so this
+      asserts the file rather than trusting the pattern.
+      The builders came along on the same day: their toolbars carry it at 34px inside a 44px
+      tap target, which is why the artwork and the target are sized separately. Only app.html
+      is out, and only because a trip is not one of these pages. */
+$TOOLBARS = ['app.html'];
+$missing = [];
+foreach (glob("$root/public/*.html") as $f) {
+  if (in_array(basename($f), $TOOLBARS, true)) continue;
+  if (!str_contains(file_get_contents($f), 'src="/sign.svg')) $missing[] = basename($f);
+}
+ok('every non-trip page carries /sign.svg (' . (count(glob("$root/public/*.html")) - count($TOOLBARS)) . ' pages)',
+   $missing === []);
+if ($missing) echo "      missing: " . implode(', ', $missing) . "\n";
+ok('and the retired text plate is gone from all of them',
+   !array_filter(glob("$root/public/*.html"),
+     fn($f) => !in_array(basename($f), ['app.html'], true)
+               && str_contains(file_get_contents($f), '<b>this trip, btw</b>')));
+ok('the sign file exists and is one file, not a per-page copy', is_file("$root/public/sign.svg"));
+
+/* 6. ONE POSITIONING LINE, on every surface an assistant quotes verbatim (#14, 2026-08-02).
+      Before this, six surfaces each opened with a different sentence — the title said "one link
+      for the whole trip", the meta description said "Plan, share, and keep a trip", llms.txt said
+      "A private, paid, no-profiling trip planner and recorder", the MCP README said something
+      else again. Ask an assistant what this product is and the answer depended on which one it
+      had retrieved. That is the defect; the hero rewrite is the easy half.
+
+      NOT a byte comparison, and that is deliberate rather than lazy: llms.txt and the README wrap
+      the sentence across lines, /for-agents writes the dash as &mdash;, and the JSON-LD escapes it
+      as \u2014. All three are the same sentence and all three must pass. So the text is normalised
+      — entities decoded, \u escapes resolved, whitespace collapsed — and THEN compared exactly.
+      The agent-facing opener ("Persistent, shareable travel workspaces for AI agents") is
+      untouched on the three agent surfaces: it was blind-tested before any listing existed
+      (queue #8) and it answers a different question than this sentence does. */
+$LINE = 'Everything about your trip in one shareable link — a private map anyone can open, '
+      . 'with no account to build one and no account to open it.';
+$norm = function (string $t): string {
+  /* llms.txt puts the line in a blockquote, so every wrapped line carries a "> " that lands in
+     the MIDDLE of the sentence once whitespace is collapsed. The marker is markup, the same as
+     an entity, so it comes off first. Missing this made the guard fail on a file that was
+     correct — worth the extra line, because a guard that cries wolf gets deleted. */
+  $t = preg_replace('/^[ \t]*>[ \t]?/m', '', $t);
+  $t = str_replace(['\u2014', '\u2013', '\u2019'], ['—', '–', '’'], $t);
+  $t = html_entity_decode($t, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+  return trim(preg_replace('/\s+/u', ' ', $t));
+};
+$SURFACES = [
+  'index.html <title> + meta + JSON-LD' => "$root/public/index.html",
+  'llms.txt'                            => "$root/public/llms.txt",
+  '/for-agents'                         => "$root/public/for-agents.html",
+  /* /agent-ready is pinned deliberately (§2o). It exists to be RETRIEVED and quoted by an
+     assistant deciding which tool to reach for, which is the moment the whole channel turns on,
+     so it is exactly the wrong surface to let drift to a fifth description of the product. */
+  '/agent-ready'                        => "$root/public/agent-ready.html",
+];
+if (is_dir("$root/mcp")) $SURFACES['mcp/README.md'] = "$root/mcp/README.md";
+$want = $norm($LINE);
+foreach ($SURFACES as $label => $file) {
+  ok("the positioning line is on $label", str_contains($norm(file_get_contents($file)), $want));
+}
+/* index.html must carry it three times over — the tag, the meta and the structured data are
+   three separate retrievals and any one of them can be the one an assistant reads. */
+$idx = $norm(file_get_contents("$root/public/index.html"));
+ok('index.html carries it in all three slots (title, meta, JSON-LD)',
+   substr_count($idx, $want) >= 2);
+ok('and the <title> names the same thing the line does',
+   str_contains($norm(file_get_contents("$root/public/index.html")),
+                'this trip, btw — everything about your trip, one link'));
+
+/* 7. ONE definition per design value (F-14, 2026-08-02). The deep teal under the sign plate had
+      FOUR definitions because tokens.css had none — three files said #024260 and app.html said
+      #025468, so the same plate had two different edges depending on the page. And the sky
+      gradients in tokens.css described a ~162deg ramp nothing used while four tuned 172deg ones
+      shipped in sky.css, which is how /new came to invent a fifth. A token that disagrees with
+      what renders is worse than no token: it invites the next person to add another value. */
+$pub = glob("$root/public/*.{html,css}", GLOB_BRACE);
+$invented = [];
+foreach ($pub as $f) {
+  if (basename($f) === 'tokens.css') continue;
+  foreach (preg_split('/\R/', file_get_contents($f)) as $n => $line)
+    if (preg_match('/--(?:pine|brand)-deep\s*:\s*#/', $line)) $invented[] = basename($f) . ':' . ($n + 1);
+}
+ok('nothing invents its own deep teal — it comes from --color-brand-teal-deep', $invented === []);
+if ($invented) echo "      " . implode(', ', $invented) . "\n";
+
+$tok = file_get_contents("$root/public/tokens.css");
+$skyCss = file_get_contents("$root/public/sky.css");
+preg_match_all('/html\[data-sky="(\w+)"\]\s*\{--sky:(linear-gradient\([^)]*\))/', $skyCss, $sm, PREG_SET_ORDER);
+ok('sky.css still defines four skies', count($sm) === 4);
+/* Compare on collapsed whitespace: tokens.css column-aligns its values and sky.css does not,
+   so a literal match would fail on alignment rather than on drift. */
+$flat = fn(string $t) => preg_replace('/\s+/', '', $t);
+$tokFlat = $flat($tok);
+$mismatch = [];
+foreach ($sm as $x)
+  if (!str_contains($tokFlat, $flat("--gradient-sky-{$x[1]}:" . $x[2]))) $mismatch[] = $x[1];
+ok('and every one of them matches its token exactly', $mismatch === []);
+if ($mismatch) echo "      drifted: " . implode(', ', $mismatch) . "\n";
+
+ok('design/tokens.css and public/tokens.css have not drifted apart',
+   is_file("$root/design/tokens.css") &&
+   file_get_contents("$root/design/tokens.css") === $tok);
+
 echo "\n" . ($fail ? "\033[31m$fail failed\033[0m, " : '') . "\033[32m$pass\033[0m passed\n";
 exit($fail ? 1 : 0);

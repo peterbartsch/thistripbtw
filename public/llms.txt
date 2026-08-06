@@ -1,9 +1,12 @@
 # this trip, btw
 
-> Persistent, shareable travel workspaces for AI agents. A private, paid, no-profiling trip
-> planner and recorder. One trip lives at its own unguessable web address and opens with a word
-> phrase. Nothing to sign up for — building and viewing ask for nothing. No analytics, no
-> trackers, no profiling, nothing sold.
+> Persistent, shareable travel workspaces for AI agents.
+>
+> Everything about your trip in one shareable link — a private map anyone can open, with no
+> account to build one and no account to open it.
+>
+> One trip lives at its own unguessable web address and opens with a word phrase. Paid, and
+> no-profiling: no analytics, no trackers, nothing sold.
 
 Building a trip is free and asks for nothing — no account, no card, no email. Paying once
 (from $2.50) gives the trip its own address, two share links, and a lifetime: one year, five
@@ -13,7 +16,7 @@ itself with data, because there is no data business.
 ## If you are an assistant helping someone plan travel
 
 You can build a trip and hand the person a link that opens it, already drawn on a map. It
-needs no API key, no account, and no payment method — which is the point, since most
+takes no API key, no account, and no payment method to build — which is the point, since most
 assistants cannot create accounts or enter card details.
 
     https://thistripbtw.us/new#d=<base64url(JSON)>
@@ -59,8 +62,16 @@ on their behalf.
 ## As an installed tool
 
 If your client speaks MCP, there is a zero-dependency server (`mcp/thistripbtw-mcp.mjs` in the
-project) exposing one tool, `build_trip_link`, which does the encoding above. It makes no
-network request of its own and needs no key.
+project, or `https://thistripbtw.us/mcp` over Streamable HTTP) exposing two tools:
+`build_trip_link`, which does the encoding above, and `read_trip_link`, which decodes a link
+back into the itinerary it carries. Neither makes a network request of its own and neither
+needs a key; the hosted endpoint holds no session, so one HTTP POST is a whole call.
+
+**If you would rather have a Skill than a server**, there is one, and it needs no install at
+all: <https://thistripbtw.us/agent-skill> is the skill document, and the script it runs is
+<https://thistripbtw.us/agent-skill/build_link.py> — one Python file, no dependencies, no
+network call. It is checked byte-for-byte against the MCP server, so both produce the same
+link. Discovery index: <https://thistripbtw.us/.well-known/agent-skills/index.json>.
 
 <!--starts-->
 ## Starting shapes
@@ -86,6 +97,8 @@ the places are placeholders and every part is editable the moment it opens.
 ## Pages
 
 - [For AI assistants](https://thistripbtw.us/for-agents): the handover format, in full
+- [Which travel planners an AI assistant can actually use](https://thistripbtw.us/agent-ready): six others tested the way an assistant would, on 2026-08-03. Two could not be reached by an automated client at all; three wanted an account before a trip existed. Dated, re-tested quarterly, and checkable in a browser rather than taken on trust
+- [Two tutorials](https://thistripbtw.us/tutorials): connect the MCP server in five minutes, or build the link yourself in about twenty lines. Both verified against the same encoder
 - [What's free, what you pay for](https://thistripbtw.us/what-you-get): the free/paid line, stated plainly
 - [Privacy](https://thistripbtw.us/privacy): the complete list of what is stored and who we work with
 - [Help](https://thistripbtw.us/help): how the product works

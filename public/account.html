@@ -6,11 +6,29 @@
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=2">
-<link rel="stylesheet" href="/sky.css?v=5">
-<link rel="stylesheet" href="/pages.css?v=25">
+<link rel="stylesheet" href="/tokens.css?v=6">
+<link rel="stylesheet" href="/sky.css?v=11">
+<link rel="stylesheet" href="/pages.css?v=36">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
+  /* §2i — two zones, not one form doing two jobs.
+     Before: three buttons of near-equal weight (Sign in, Forgot it, Make one) with the third
+     wedged INSIDE a paragraph, prose wrapping both sides of it. Nobody arriving could tell
+     which control was theirs. Now each path owns a block and each block has exactly one
+     button, so the hierarchy is positional rather than a matter of button styling. */
+  .acts{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 4px}
+  /* "Forgot it" was a button competing with Sign in. It is a recovery path, not a choice —
+     demoted to a link so the primary action stands alone in its own zone. */
+  .linkish{background:none;border:0;padding:0;color:var(--link,var(--brand));
+    font-family:var(--font-family-body);font-size:14px;text-decoration:underline;cursor:pointer;
+    min-height:44px}
+  .orline{display:flex;align-items:center;gap:12px;margin:22px 0 18px;
+    color:var(--soft);font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase}
+  .orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
+  .newhere h2{font-family:var(--font-family-display);font-weight:700;font-size:19px;
+    letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}
+  .newhere p{margin:0 0 12px;line-height:1.6}
   .card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:22px}
   label{display:block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
     letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin:0 0 5px}
@@ -20,28 +38,54 @@
   .fld{margin-bottom:14px}
   .msg{margin:12px 0 0;font-size:14px;line-height:1.5}
   .msg.bad{color:#B23A24}
-  .trip{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
-  .trip:last-child{border-bottom:0}
-  .trip a{font-family:var(--font-family-display);font-weight:700;font-size:18px;letter-spacing:.02em;
-    text-decoration:none;color:var(--link)}
-  .trip .meta{font-size:13px;color:var(--soft)}
+  /* §2l — the row IS the link.
+     It used to be a flex row carrying THREE separate links to the same destination: the title,
+     the URL inside .meta, and a trailing `Open` button. On a phone that is clutter plus a
+     genuine question about what to tap, and the Open button measured 38x38 against DESIGN.md's
+     44px minimum — the smallest target on a page whose entire job is getting you into a trip.
+     One <a> per trip removes the ambiguity, makes the whole card the target, and drops a
+     control at the same time. Measured before: rows grew to 107px at 343px wide. */
+  #list{display:flex;flex-direction:column;gap:10px}
+  .trip{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;
+    padding:14px 14px 14px 16px;border:1.5px solid var(--line);border-radius:14px;
+    background:var(--card);min-height:64px;
+    transition:border-color .15s ease,transform .15s ease}
+  .trip:hover{border-color:var(--link)}
+  .trip:active{transform:scale(.99)}
+  .trip:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+  .t-main{flex:1;min-width:0}
+  .t-name{display:block;font-family:var(--font-family-display);font-weight:700;font-size:18px;
+    letter-spacing:.02em;color:var(--link);
+    /* A long trip name gets one line and an ellipsis rather than pushing the badge off the
+       card — "Des Plaines canoe shuttle" already runs to the edge at 343px. */
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t-meta{display:block;font-size:13px;color:var(--soft);margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* The chevron is the whole affordance now that the button is gone: it says "this opens"
+     without being a second thing to aim at. Decorative, so hidden from assistive tech —
+     the card is already a link and announces itself. */
+  .t-go{flex:none;font-size:20px;line-height:1;color:var(--soft)}
+  .trip:hover .t-go{color:var(--link)}
   .tag{font-family:var(--font-family-display);font-weight:700;font-size:10.5px;letter-spacing:.1em;
     text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1.5px solid var(--line);
     color:var(--soft);flex:none}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .trip .meta a{color:inherit;text-decoration:underline;text-underline-offset:2px}
-  .trip .meta a:hover{color:var(--link)}
-  .openbtn{flex:none;text-decoration:none;display:inline-flex;align-items:center;min-height:38px;padding:0 14px}
+  @media (prefers-reduced-motion:reduce){ .trip{transition:none} .trip:active{transform:none} }
+  @media (max-width:420px){
+    /* The address is the least useful thing on a phone — the name says which trip it is and
+       the card opens it. Keep the term, which is the one fact you cannot get anywhere else. */
+    .t-meta .addr{display:none}
+  }
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change.">◐</button>
-<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 
 <header class="pagehead">
-  <a href="/" class="sign"><b>this trip, btw</b></a>
+  <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
   <h1 id="head">Your trips</h1>
   <p class="lede" id="lede">Sign in to open the trips you own and the ones you were invited to.</p>
 </header>
@@ -57,16 +101,27 @@
       <label for="pw">Password</label>
       <input id="pw" type="password" autocomplete="current-password" placeholder="your password">
     </div>
-    <p><button class="btn" id="go">Sign in</button>
-       <button class="btn btn-quiet" id="forgot" style="margin-left:8px">Forgot it</button></p>
+    <p class="acts"><button class="btn" id="go">Sign in</button>
+       <button class="linkish" id="forgot">Forgot your password?</button></p>
     <p class="msg" id="msg"></p>
+
+    <!-- §2i: the second path is its OWN block, not a button wedged into a paragraph with prose
+         wrapping both sides of it — which is what made this screen read as unfinished.
+         The password field above belongs to THIS path only, and saying so matters: D-076 creates
+         an account that is unverified and has no password, so a first-timer was being shown a
+         field that could not help them and no hint that it was not for them. -->
+    <div class="orline"><span>or</span></div>
+    <section class="newhere">
+      <h2>New here?</h2>
+      <p>Anyone can make an account — you do not need to have bought anything. We will email a
+      link to the address above; opening it is what sets your password.</p>
+      <p><button class="btn btn-quiet" id="signup">Make an account</button></p>
+      <p class="msg" id="msg2"></p>
+    </section>
     <p class="msg" style="color:var(--soft)">
-      No account yet? Anyone can make one — you do not need to have bought anything. Put your
-      address in above and we will send you a link to finish.
-      <button class="btn btn-quiet" id="signup" style="margin-left:6px">Make one</button>
-    </p>
-    <p class="msg" style="color:var(--soft)">
-      An account is one email and a list of the trips you own or were invited to. Nothing else.
+      An account is one email and a list of the trips you own or were invited to. Nothing else —
+      no tracking, no profile. It does mean our server can open those trips;
+      <a href="/privacy">the privacy page</a> says exactly what that costs.
       And <a href="/what-you-get">building a trip still asks for nothing at all</a> — an account
       is for getting back to the ones you keep.
     </p>
@@ -103,8 +158,9 @@
 </main>
 
 <footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
-<script src="/pages.js?v=1"></script>
-<script src="/theme.js?v=1"></script>
+<div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
+<script src="/pages.js?v=2"></script>
+<script src="/theme.js?v=4"></script>
 <script>
 /* The account page (D-046). Deliberately thin: sign in, see your trips, attach one you were
    invited to, sign out. No profile, no settings, nothing to fill in — the account holds an
@@ -138,14 +194,15 @@
       /* Every part of this that looks like a way in IS one. The address reads as a URL and was
          plain text, while the only link was the title styled as a heading — so the row showed a
          trip and offered no obvious way to open it. */
-      return `<div class="trip">
-        <div style="flex:1;min-width:0">
-          <a href="/${esc(t.slug)}">${esc(t.name || "our trip")}</a>
-          <div class="meta"><a href="/${esc(t.slug)}">thistripbtw.us/${esc(t.slug)}</a> &middot; ${esc(life)}</div>
-        </div>
+      /* One <a>, not three. See the note by .trip in the stylesheet. */
+      return `<a class="trip" href="/${esc(t.slug)}">
+        <span class="t-main">
+          <span class="t-name">${esc(t.name || "our trip")}</span>
+          <span class="t-meta"><span class="addr">thistripbtw.us/${esc(t.slug)} &middot; </span>${esc(life)}</span>
+        </span>
         <span class="tag">${t.role === "member" ? "invited" : "yours"}</span>
-        <a class="btn btn-quiet openbtn" href="/${esc(t.slug)}">Open</a>
-      </div>`;
+        <span class="t-go" aria-hidden="true">&rsaquo;</span>
+      </a>`;
     }).join("");
   }
 
@@ -157,7 +214,7 @@
     const p = document.createElement("p");
     p.className = "msg";
     p.style.color = "var(--soft)";
-    p.textContent = "These open because you are signed in. Sealed drops left for other people stay "
+    p.textContent = "These open because you are signed in. Easter eggs left for other people stay "
                   + "shut — being signed in opens the trip, not a person.";
     $("mine").appendChild(p);
   }
@@ -169,6 +226,12 @@
       await call("account/login",{method:"POST",
         body:JSON.stringify({email:$("em").value.trim(), password:$("pw").value})});
       show(await call("account/me")); noteAboutLinks();
+      /* The other fifteen pages cannot see the session cookie — it is httpOnly, deliberately.
+         This flag is how they know whether it is worth ASKING. It is not a credential and
+         proves nothing: the server still decides. localStorage, not a cookie, because
+         CLAUDE.md forbids adding cookies and D-113 already set the precedent — the browser
+         remembering the person's own state leaves no record here and links nothing to anyone. */
+      try{ localStorage.setItem("ttb_acct","1"); }catch(e){}
     }catch(e){ m.textContent=e.message; m.className="msg bad"; }
     finally{ b.disabled=false; b.textContent=l; }
   };
@@ -178,8 +241,8 @@
      says "no such account" tells a stranger which addresses do. */
   $("forgot").onclick = async () => {
     const m=$("msg"), email=$("em").value.trim();
-    m.className="msg";
-    if(!email){ m.textContent="Put your email in first."; m.className="msg bad"; $("em").focus(); return; }
+    m.className="msg"; $("msg2").textContent="";
+    if(!email){ m.textContent="Put your email in above first."; m.className="msg bad"; $("em").focus(); return; }
     try{ await call("account/reset-request",{method:"POST",body:JSON.stringify({email})}); }catch(e){}
     m.textContent = "If that address has an account, a reset link is on its way. It works for an hour.";
   };
@@ -188,9 +251,9 @@
      this message must be identical too. "Check your inbox" for a new address and anything else
      for an existing one would hand back exactly the oracle the endpoint refuses to be. */
   $("signup").onclick = async () => {
-    const b=$("signup"), m=$("msg"), email=$("em").value.trim();
-    m.className="msg";
-    if(!email){ m.textContent="Put your email in first."; m.className="msg bad"; $("em").focus(); return; }
+    const b=$("signup"), m=$("msg2"), email=$("em").value.trim();
+    m.className="msg"; $("msg").textContent="";
+    if(!email){ m.textContent="Put your email in above first."; m.className="msg bad"; $("em").focus(); return; }
     b.disabled=true;
     try{ await call("account/signup",{method:"POST",body:JSON.stringify({email})}); }catch(e){}
     m.textContent = "Check that address — there is a link on its way. It works for an hour, and "
@@ -214,10 +277,19 @@
 
   $("signout").onclick = async () => {
     await call("account/logout",{method:"POST"});
+    try{ localStorage.removeItem("ttb_acct"); }catch(e){}
     location.reload();
   };
 
-  call("account/me").then(me => { show(me); noteAboutLinks(); }).catch(()=>{});
+  /* This page asks unconditionally — it is the account page, the question is its whole job.
+     It also RECONCILES the flag, so a session that expired elsewhere stops the other pages
+     asking, and a session that exists without a flag (signed in before this shipped, or
+     localStorage cleared) starts them. */
+  call("account/me").then(me => {
+    show(me); noteAboutLinks();
+    try{ me && me.signed_in ? localStorage.setItem("ttb_acct","1")
+                            : localStorage.removeItem("ttb_acct"); }catch(e){}
+  }).catch(()=>{});
 })();
 </script>
 </html>

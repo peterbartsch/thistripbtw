@@ -13,7 +13,29 @@ CREATE TABLE trips (
   stripe_session  VARCHAR(255) NOT NULL UNIQUE,
   created         BIGINT NOT NULL,
   expires         BIGINT NULL,
-  updated         BIGINT NOT NULL
+  updated         BIGINT NOT NULL,
+  -- D-093: per-trip cap on the paid chat. On `trips` so it is atomic to increment and is
+  -- deleted with the trip, rather than a slug-keyed table delete_trip() would have to remember.
+  chat_turns  INT NOT NULL DEFAULT 0,
+  -- D-094: bytes of media this trip holds. Per-file caps never bounded the total, and a
+  -- one-time $10 buys storage that does not reset. Counted from bytes actually WRITTEN,
+  -- never from Content-Length, which is the client's word.
+  media_bytes BIGINT NOT NULL DEFAULT 0,
+  -- D-094 above; D-098 here. NULL = we have never mailed the buyer about this trip lapsing;
+  -- otherwise the ms timestamp we sent at. Claimed with a conditional UPDATE before the send,
+  -- which is the whole once-only guarantee: the sweep runs daily against a fourteen-day window,
+  -- so anything weaker mails the same person fourteen times. A timestamp, not a flag, because
+  -- the first question about a notice is always WHEN.
+  expiry_notified BIGINT NULL,
+  -- D-114: an in-house QA trip. Peter's own trips and the ones he shares with beta testers,
+  -- which never expire ON PURPOSE rather than by omission. A flag, not a fourth `tier`, because
+  -- tier drives photo/video permissions, the media cap and the pricing copy, and a value none
+  -- of those recognise falls through all of them. This says only WHY a trip has no end date.
+  -- The invariant it makes checkable, and which smoke.sh asserts: every trip has an expiry
+  -- UNLESS qa = 1. Without it, a customer trip created down a path that leaves `expires` NULL
+  -- becomes silently permanent — never notified, never deleted — while check-copy gates the
+  -- build on never claiming any such thing.
+  qa TINYINT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- unified pin: stops, posts, sealed drops, quests are one object
@@ -40,6 +62,7 @@ CREATE TABLE pins (
                                                           -- cargo riding on that leg's track.
   here          TINYINT NOT NULL DEFAULT 0,
   near_only     TINYINT NOT NULL DEFAULT 0,              -- D-050: a post you have to have been
+  radius_mi     SMALLINT NULL DEFAULT NULL,               -- D-124: custom geofence; NULL = the default for this kind
                                                           -- near to read. Same machinery as a
                                                           -- sealed drop, applied to a post.
   seq           BIGINT NOT NULL DEFAULT 0,

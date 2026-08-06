@@ -28,6 +28,14 @@ const TIERS = [
   'keep'  => ['cents' => 500,  'days' => 1826,  'photo' => true,  'video' => false],  // five years (leap-safe)
   'works' => ['cents' => 1000, 'days' => 3653,  'photo' => true,  'video' => true ],  // ten years (leap-safe)
 ];
+/* D-093: turns of the PAID chat one trip may spend. Peter, 2026-08-02 — the number
+   CHAT_AGENT_SPEC originally asked for. Generous for a real itinerary, and a hard stop on a
+   conversation that has stopped going anywhere. */
+const CHAT_TURNS_PER_TRIP = 40;
+/* D-094: total media one trip may hold. Peter, 2026-08-02. Per-file caps bounded a single
+   upload and nothing bounded the sum, so a one-time $10 bought unlimited storage on a finite
+   disk — and unlike the token ceiling, storage does not reset at the end of the month. */
+const MEDIA_MAX_PER_TRIP = 2147483648;   // 2 GB
 const IMG_MAX = 8388608;          // 8 MB
 const VID_MAX = 209715200;        // 200 MB
 const SLUG_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';           // no 0/1/i/l/o
@@ -209,6 +217,19 @@ function stripe_get_session($id) {
    tree cover or between buildings, and a pin dropped from across the car park. */
 const SEAL_RADIUS_MI = 30;      // sealed drops (D-010); the client shows the same number
 const NEAR_RADIUS_MI = 0.25;    // "was there?" posts (D-057)
+/* D-124: the bounds a CUSTOM geofence is clamped to. The floor is not zero because a drop you
+   can only open by standing on one exact point never opens — GPS on a phone in a moving car is
+   routinely off by a hundred metres. The ceiling is a day's drive: past that the drop is not
+   tied to a place any more, and "you had to be there" stops meaning anything. */
+const RADIUS_MIN_MI  = 0.05;    // ~80 metres
+const RADIUS_MAX_MI  = 500;
+/** A custom geofence, or null to mean "use the default for this kind". Clamped rather than
+ *  rejected: a trip that arrives beats a tool call that errors over one number, which is the
+ *  same rule the mode and subtype fields already follow. */
+function clamp_radius($v) {
+  if ($v === null || $v === '' || !is_numeric($v)) return null;
+  return max(RADIUS_MIN_MI, min(RADIUS_MAX_MI, (float)$v));
+}
 
 /** Great-circle miles between two points — used to enforce the sealed-drop radius. */
 function haversine_mi(float $aLat, float $aLng, float $bLat, float $bLng): float {
@@ -262,6 +283,7 @@ function normalize_pin($r) {
     'mode'         => (string)$r['mode'],
     'craft'        => (string)($r['craft'] ?? ''),
     'near_only'    => (int)($r['near_only'] ?? 0),
+    'radius_mi'    => ($r['radius_mi'] ?? null) !== null ? (float)$r['radius_mi'] : null,
     'here'         => (int)$r['here'],
     'seq'          => (int)$r['seq'],
     'opened_by'    => $r['opened_by'] !== null ? (string)$r['opened_by'] : '[]',
@@ -300,7 +322,15 @@ function delete_media_file($url) {
   $key = preg_replace('#^/photos/#', '', (string)$url);
   if (!preg_match('#^[a-z2-9]+/[A-Za-z0-9]+\.[a-z0-9]+$#', $key)) return;
   $path = PHOTOS_DIR . '/' . $key;
-  if (is_file($path)) @unlink($path);
+  if (!is_file($path)) return;
+  /* D-094: give the space back, or "remove something first" is advice a person cannot act on —
+     the trip would stay full forever. Size is read BEFORE the unlink, the slug comes from the
+     key's own first segment, and GREATEST(...,0) means a double-delete or a pre-D-094 file
+     cannot drive the counter negative. */
+  $bytes = (int)@filesize($path);
+  $slug  = explode('/', $key)[0];
+  @unlink($path);
+  if ($bytes > 0) q('UPDATE trips SET media_bytes = GREATEST(media_bytes - ?, 0) WHERE slug=?', [$bytes, $slug]);
 }
 function rrmdir($dir) {
   if (!is_dir($dir)) return;
@@ -519,11 +549,33 @@ function api_main($sub, $path) {
     $slug = strtolower(trim((string)($b['slug'] ?? '')));
     $tok  = strtolower(trim((string)($b['phrase'] ?? '')));
     if ($slug === '' || $tok === '') err_out('which trip, and your link phrase', 400);
+    /* D-091: this checks the SAME secret the trip gate checks — a member phrase — and until now
+       it did so with no limiter at all, while the gate rate-limits guesses at 30/trip/hour. A
+       4-word phrase is 240^4, about 31.6 bits, and 31.6 bits is only safe because guessing is
+       supposed to be slow. This was a second door onto the same lock, without the lock.
+
+       D-076 quietly made it cheaper to reach: the barrier used to be "has bought a trip", and
+       since open signup it is "has an account", which anyone can have for free.
+
+       So it shares the gate's limiter and its counter. A wrong guess here costs the attacker the
+       same budget a wrong guess at the front door costs, and burning it here also slows them
+       there — which is right, because it is one secret.
+
+       Note the ORDER: the limiter is consulted before the trip is looked up, so the 404/403
+       distinction below cannot be used as an unmetered slug oracle either. */
+    $win = intdiv(now_ms(), 3600000);
+    $g = q_first('SELECT hits FROM gate WHERE slug=? AND win=?', [$slug, $win]);
+    if ($g && (int)$g['hits'] >= 30) err_out('too many tries for this trip — wait an hour', 429);
+
     $trip = q_first('SELECT slug FROM trips WHERE slug=?', [$slug]);
-    if (!$trip) err_out('no such trip', 404);
     $hash = hash('sha256', $tok);
-    $mem = q_first('SELECT id FROM members WHERE slug=? AND phrase_hash=? AND deleted=0', [$slug, $hash]);
-    if (!$mem) err_out('that phrase is not a personal link for this trip', 403);
+    $mem  = $trip ? q_first('SELECT id FROM members WHERE slug=? AND phrase_hash=? AND deleted=0', [$slug, $hash]) : null;
+    if (!$mem) {
+      /* One answer for "no such trip" and for "wrong phrase". The old code returned 404 vs 403,
+         which confirmed which slugs exist to anyone with a free account. */
+      q('INSERT INTO gate (slug,win,hits) VALUES (?,?,1) ON DUPLICATE KEY UPDATE hits=hits+1', [$slug, $win]);
+      err_out('that phrase is not a personal link for this trip', 403);
+    }
     acct_attach_trip((string)$a['id'], $slug, 'member');
     json_out(['ok' => true]);
   }
@@ -553,8 +605,12 @@ function api_main($sub, $path) {
   if ($path === 'route' && $method === 'GET') {
     require_once __DIR__ . '/lib/routing.php';
     header('Cache-Control: public, max-age=604800');   // a week at the edge; roads do not move
+    /* `poly`, not `path` (D-110). The value is an encoded polyline now, not an array of pairs,
+       and a renamed key is how a stale cached page finds nothing rather than misreading a
+       string as coordinates — it falls back to the dashed straight line, which is the existing
+       no-route behaviour and degrades quietly. */
     $geo = rt_route((string)($_GET['c'] ?? ''));
-    json_out(['path' => $geo]);                        // null = no route; the client dashes it
+    json_out(['poly' => $geo]);                        // null = no route; the client dashes it
   }
 
   /* POST /api/draft-chat — the pre-purchase agent (D-035). Unauthenticated by necessity:
@@ -855,6 +911,10 @@ function api_main($sub, $path) {
       'photo'      => TIERS[$trip['tier']]['photo'],
       'video'      => TIERS[$trip['tier']]['video'],
       'expires'    => $trip['expires'] !== null ? (int)$trip['expires'] : null,
+      /* D-114: an in-house QA trip, so the client can say so. A beta tester must be able to
+         tell an internal trip from how the product actually behaves for a customer — chiefly
+         that this one has no end date, which no purchasable tier does. */
+      'qa'         => (int)($trip['qa'] ?? 0) === 1,
       'config'     => ['name' => $trip['name'], 'labels' => json_decode($trip['labels_json'], true)],
       'pins'       => array_map(fn($r) => seal_pin(normalize_pin($r), $who), $pins),
       'notes'      => array_map('normalize_note', $notes),
@@ -898,8 +958,8 @@ function api_main($sub, $path) {
     if (!is_number($p['lat'] ?? null) || !is_number($p['lng'] ?? null)) err_out('lat/lng required', 400);
     $id = 'p' . rand_str(12);
     $pmode = norm_mode($p['mode'] ?? '', !empty($p['fly']));
-    q('INSERT INTO pins (id,slug,kind,track,date,ts,lat,lng,title,lodging,notes,photo,spotify,path,fly,mode,craft,here,near_only,seq,opened_by,claimed_team,claimed_by,author,updated)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+    q('INSERT INTO pins (id,slug,kind,track,date,ts,lat,lng,title,lodging,notes,photo,spotify,path,fly,mode,craft,here,near_only,radius_mi,seq,opened_by,claimed_team,claimed_by,author,updated)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
       [$id, $sub, jor($p['kind'] ?? null, 'post'), jor($p['track'] ?? null, null),
        jor($p['date'] ?? null, null), jor($p['ts'] ?? null, null),
        $p['lat'], $p['lng'], mb_substr((string)jor($p['title'] ?? null, ''), 0, 300, 'UTF-8'),
@@ -908,7 +968,8 @@ function api_main($sub, $path) {
        jor($p['photo'] ?? null, ''), jor($p['spotify'] ?? null, ''), encode_path($p['path'] ?? null),
        ($pmode === 'fly') ? 1 : 0, $pmode,
        mb_substr((string)jor($p['craft'] ?? null, ''), 0, 24, 'UTF-8'),
-       !empty($p['here']) ? 1 : 0, !empty($p['near_only']) ? 1 : 0, (int)($p['seq'] ?? $t),
+       !empty($p['here']) ? 1 : 0, !empty($p['near_only']) ? 1 : 0, clamp_radius($p['radius_mi'] ?? null),
+       (int)($p['seq'] ?? $t),
        /* Clamped to the column widths (OT2). These two were the only user-writable strings left
           unclamped here, beside title/lodging/notes/craft/author which are all clamped above —
           so an over-long claim was ERROR 1406 under strict MySQL rather than a quiet trim. */
@@ -938,7 +999,12 @@ function api_main($sub, $path) {
 
     $b = body_json();
     if (!isset($b['lat'], $b['lng'])) err_out('opening a drop needs where you are', 400);
-    $limit = (($pin['kind'] ?? '') === 'sealed') ? SEAL_RADIUS_MI : NEAR_RADIUS_MI;
+    /* D-124: a pin may carry its own geofence. NULL keeps the global default for its kind, so
+       every pin made before this behaves exactly as it did. The server is the only place this
+       is enforced — the client shows the number, it does not decide it (D-047's shape). */
+    $limit = ($pin['radius_mi'] !== null && $pin['radius_mi'] !== '')
+      ? max(RADIUS_MIN_MI, min(RADIUS_MAX_MI, (float)$pin['radius_mi']))
+      : ((($pin['kind'] ?? '') === 'sealed') ? SEAL_RADIUS_MI : NEAR_RADIUS_MI);
     $d = haversine_mi((float)$b['lat'], (float)$b['lng'], (float)$pin['lat'], (float)$pin['lng']);
     if ($d > $limit) {
       /* "Still 0 miles too far" is what a mile-only message says when someone is standing
@@ -1034,6 +1100,7 @@ function api_main($sub, $path) {
     if (array_key_exists('path', $p)) { $sets[] = 'path=?'; $vals[] = encode_path($p['path']); }
     if (array_key_exists('here', $p)) { $sets[] = 'here=?'; $vals[] = $p['here'] ? 1 : 0; }
     if (array_key_exists('near_only', $p)) { $sets[] = 'near_only=?'; $vals[] = $p['near_only'] ? 1 : 0; }
+    if (array_key_exists('radius_mi', $p)) { $sets[] = 'radius_mi=?'; $vals[] = clamp_radius($p['radius_mi']); }
     /* opened_by is NOT patchable any more (D-047). It used to be whatever array the client
        sent, so a caller could simply write someone else's name into it and unseal their drop
        on the next read. Opening is now POST trip/pins/{id}/open, which appends the
@@ -1131,13 +1198,30 @@ function api_main($sub, $path) {
     if (!$len || $len > $max) err_out('file too large (max ' . round($max / 1048576) . ' MB)', 413);
     $dir = PHOTOS_DIR . '/' . $sub;
     if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    /* D-094: the aggregate cap. Checked here on the DECLARED length so an oversized upload is
+       refused before a byte is written — but see below, because the declared length is the
+       client's word and the bytes on disk are ours. */
+    $used = (int)($trip['media_bytes'] ?? 0);
+    if ($used + $len > MEDIA_MAX_PER_TRIP)
+      err_out('this trip is full — ' . round(MEDIA_MAX_PER_TRIP / 1073741824) . ' GB of photos and video. Remove something first', 413);
+
     $key = $sub . '/' . rand_str(20) . '.' . $ext;
     $in  = fopen('php://input', 'rb');
     $out = fopen(PHOTOS_DIR . '/' . $key, 'wb');
     if (!$in || !$out) err_out('upload failed', 500);
-    stream_copy_to_stream($in, $out);
+    $wrote = (int)stream_copy_to_stream($in, $out);
     fclose($in); fclose($out);
-    json_out(['url' => "/photos/{$key}"]);
+
+    /* Count what was actually written. Content-Length is supplied by the caller and the per-file
+       check above trusts it; the aggregate must not, or the cap is advisory. If the real bytes
+       push the trip over, the file goes back off the disk rather than being kept and billed. */
+    if ($used + $wrote > MEDIA_MAX_PER_TRIP) {
+      @unlink(PHOTOS_DIR . '/' . $key);
+      err_out('this trip is full — ' . round(MEDIA_MAX_PER_TRIP / 1073741824) . ' GB of photos and video. Remove something first', 413);
+    }
+    q('UPDATE trips SET media_bytes = media_bytes + ? WHERE slug=?', [$wrote, $sub]);
+    json_out(['url' => "/photos/{$key}",
+              'bytes_left' => max(0, MEDIA_MAX_PER_TRIP - ($used + $wrote))]);
   }
 
   // the delete-everything button — hard delete, including media
@@ -1146,6 +1230,21 @@ function api_main($sub, $path) {
      used for this request, and is handed straight back — nothing about it is ever stored. */
   if ($path === 'trip/chat' && $method === 'POST') {
     if (!$canWrite) err_out('the chat needs the edit link', 403);
+
+    /* D-093: a per-trip turn cap, checked BEFORE anything outbound — the same rule the guards in
+       CHAT_AGENT_SPEC follow, so an over-budget trip costs nothing rather than one more request.
+
+       Without it the only thing between one trip and the entire monthly token ceiling was six
+       tool rounds per request. A single $2.50 buyer could exhaust the global budget and turn the
+       chat off for every other customer, silently, and nothing would have said so.
+
+       Incremented with `chat_turns + 1` in the UPDATE rather than read-then-write: that is
+       atomic in MySQL and cannot lose increments the way the file counters did before D-091. */
+    $used = (int)($trip['chat_turns'] ?? 0);
+    if ($used >= CHAT_TURNS_PER_TRIP)
+      err_out('this trip has used its ' . CHAT_TURNS_PER_TRIP . ' chat turns — the rest is yours to add by hand', 429);
+    q('UPDATE trips SET chat_turns = chat_turns + 1 WHERE slug=?', [$sub]);
+
     require_once __DIR__ . '/lib/chat.php';
     $b        = body_json();
     $messages = chat_sanitize_history($b['messages'] ?? []);
@@ -1174,6 +1273,8 @@ function api_main($sub, $path) {
       'messages'     => $r['messages'],
       'added'        => $r['added'],
       'needs_places' => $r['needs_places'],
+      // D-093: so the client can warn before the cap rather than only at it
+      'turns_left'   => max(0, CHAT_TURNS_PER_TRIP - ($used + 1)),
     ]);
   }
 

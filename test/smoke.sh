@@ -13,13 +13,21 @@ set -u
 
 CONN="${BASE_URL:-http://127.0.0.1:8080}"
 TMP="$(mktemp)"
-PASS=0; FAIL=0
+PASS=0; FAIL=0; SKIP=0
 trap 'rm -f "$TMP"' EXIT
 
 grn(){ printf '\033[32m%s\033[0m' "$1"; }
 red(){ printf '\033[31m%s\033[0m' "$1"; }
+ylw(){ printf '\033[33m%s\033[0m' "$1"; }
 ok(){  PASS=$((PASS+1)); printf '  %s %s\n' "$(grn PASS)" "$1"; }
 bad(){ FAIL=$((FAIL+1)); printf '  %s %s\n' "$(red FAIL)" "$1"; }
+# A third outcome, because two were not enough. Several assertions here are of the shape
+# `grep -q X && bad || ok` — they pass when a string is ABSENT. That is the right test when the
+# fixture is present and the WRONG one when it is missing, because "the sealed title is not in
+# the archive" is trivially true of an archive with no sealed drop in it. Such an assertion
+# reports success on a build that leaks every drop. Skipped is not passed, and it is counted and
+# printed separately so it can never be mistaken for coverage.
+skip(){ SKIP=$((SKIP+1)); printf '  %s %s\n' "$(ylw SKIP)" "$1"; }
 step(){ printf '\n%s\n' "$1"; }
 
 # call METHOD PATH [TOKEN] [DATA] [CTYPE]  -> sets $CODE and $BODY
@@ -64,11 +72,22 @@ for want404 in /this-page-does-not-exist-12345 /openapi.json /.well-known/nothin
   C="$(rcode "$want404")"
   [ "$C" = "404" ] && ok "404: $want404" || bad "$want404 should be 404, got $C"
 done
-for want200 in / /privacy /about /faq /terms /help /what-you-get /account /for-agents /starts /new /quick /quicktree /robots.txt /llms.txt /pages.css /pages.js /fonts/barlow-400.woff2 /vendor/leaflet-1.9.4/leaflet.min.js /vendor/leaflet-1.9.4/leaflet.min.css; do
+for want200 in / /privacy /about /faq /terms /help /what-you-get /account /for-agents /starts /new /agent-ready /.well-known/agent-skills/index.json /.well-known/api-catalog /agent-skill /robots.txt /llms.txt /pages.css /pages.js /fonts/barlow-400.woff2 /vendor/leaflet-1.9.4/leaflet.min.js /vendor/leaflet-1.9.4/leaflet.min.css; do
   C="$(rcode "$want200")"
   [ "$C" = "200" ] && ok "200: $want200" || bad "$want200 should be 200, got $C"
 done
-C="$(rcode /radial)"; [ "$C" = "301" ] && ok "301: /radial still redirects" || bad "/radial should be 301, got $C"
+# D-120 (§2e): three builders became one. All three old entry points 301 to /new, and /radial
+# points straight there rather than at /quick — a 301 -> 301 chain costs a round trip and every
+# crawler that follows it reads a slower site.
+for want301 in /radial /quick /quicktree; do
+  C="$(rcode "$want301")"
+  [ "$C" = "301" ] && ok "301: $want301 -> /new" || bad "$want301 should be 301, got $C"
+  L="$(curl -s -o /dev/null -w '%{redirect_url}' "$CONN$want301")"
+  case "$L" in
+    *"/new") ok "   and lands on /new, not another redirect" ;;
+    *)       bad "$want301 redirects to $L, expected /new" ;;
+  esac
+done
 
 step "0-1. The checkout block is not on the public homepage (review 1.1)"
 call GET /
@@ -300,8 +319,22 @@ step "8c. D-085: export, and a sealed drop must not ride out in it"
 # A sealed drop authored by somebody else. The edit phrase carries no member identity, so this
 # is shut for the exporter — and an export is exactly the side door that skips the check the
 # on-screen path enforces.
+# THE FIXTURE IS ITSELF AN ASSERTION. Everything below about sealed content is of the form
+# "this string is not present", which an empty archive satisfies perfectly. So prove the drop
+# exists before trusting a single absence, and let the insert's error be SEEN rather than sent
+# to /dev/null — a swallowed error here is indistinguishable from a product that works.
+SEALED_FIXTURE=0
 if [ -n "${MYSQL_CMD:-}" ]; then
-  $MYSQL_CMD -e "INSERT INTO pins (id,slug,kind,lat,lng,title,notes,author,opened_by,seq,updated) VALUES ('pseal$$','$SLUG','sealed',40.1,-105.1,'SEALEDTITLEXYZ','SEALEDNOTESXYZ','Mel','[\\\"OPENEDBYXYZ\\\"]',9,1)" 2>/dev/null
+  SEAL_ERR="$($MYSQL_CMD -e "INSERT INTO pins (id,slug,kind,lat,lng,title,notes,author,opened_by,seq,updated) VALUES ('pseal$$','$SLUG','sealed',40.1,-105.1,'SEALEDTITLEXYZ','SEALEDNOTESXYZ','Mel','[\\\"OPENEDBYXYZ\\\"]',9,1)" 2>&1)"
+  SEAL_ROWS="$($MYSQL_CMD -N -e "SELECT COUNT(*) FROM pins WHERE id='pseal$$' AND slug='$SLUG'" 2>/dev/null | tr -d '[:space:]')"
+  [ "$SEAL_ROWS" = "1" ] && SEALED_FIXTURE=1
+fi
+if [ "$SEALED_FIXTURE" = "1" ]; then
+  ok "fixture: the sealed drop is in the database"
+elif [ -z "${MYSQL_CMD:-}" ]; then
+  skip "no MYSQL_CMD — the sealed-drop assertions cannot be trusted and are not run"
+else
+  bad "fixture insert FAILED, so every sealed assertion below would have passed vacuously: ${SEAL_ERR:-no error reported}"
 fi
 curl -s -o /tmp/exp.zip -w '%{http_code}' -H "Authorization: Bearer $EDIT" "$CONN$T/trip/export" > /tmp/expcode
 [ "$(cat /tmp/expcode)" = "200" ] && ok "export with the edit phrase -> 200" || bad "export expected 200, got $(cat /tmp/expcode)"
@@ -311,23 +344,50 @@ if command -v unzip >/dev/null 2>&1; then
   case "$NAMES" in *trip.json*) ok "carries trip.json" ;; *) bad "no trip.json: $NAMES" ;; esac
   case "$NAMES" in *itinerary.html*) ok "carries a standalone itinerary.html" ;; *) bad "no itinerary.html" ;; esac
   BODY_ALL="$(unzip -p /tmp/exp.zip 2>/dev/null)"
-  printf '%s' "$BODY_ALL" | grep -q "SEALEDTITLEXYZ" && bad "A SEALED DROP TITLE IS IN THE EXPORT" \
-    || ok "the sealed title is NOT in the archive"
-  printf '%s' "$BODY_ALL" | grep -q "SEALEDNOTESXYZ" && bad "A SEALED DROP NOTE IS IN THE EXPORT" \
-    || ok "the sealed notes are NOT in the archive"
-  printf '%s' "$BODY_ALL" | grep -q "still shut" && ok "and the itinerary says a drop was withheld, rather than hiding it" \
-    || bad "sealed drop vanished silently instead of being acknowledged"
+  # Gated on the fixture: an absence only proves something was withheld if it was there to
+  # withhold. Ungated, these two were green on any run where the insert did not happen.
+  if [ "$SEALED_FIXTURE" = "1" ]; then
+    printf '%s' "$BODY_ALL" | grep -q "SEALEDTITLEXYZ" && bad "A SEALED DROP TITLE IS IN THE EXPORT" \
+      || ok "the sealed title is NOT in the archive"
+    printf '%s' "$BODY_ALL" | grep -q "SEALEDNOTESXYZ" && bad "A SEALED DROP NOTE IS IN THE EXPORT" \
+      || ok "the sealed notes are NOT in the archive"
+  else
+    skip "the sealed title is NOT in the archive (no fixture to withhold)"
+    skip "the sealed notes are NOT in the archive (no fixture to withhold)"
+  fi
+  # Matches "not opened yet", NOT the noun in front of it. This assertion said "still shut" and
+  # went red the day §2a renamed sealed drops to easter eggs across nine renderable strings —
+  # including lib/export.php:218, which is what this line reads. The export was correct
+  # throughout: it withheld the content AND said so. Only the wording moved.
+  # So key on the part that is the POINT — that something exists and is not open — rather than
+  # on whatever it is currently called, and the next copy pass cannot turn a passing product
+  # into a failing suite.
+  if [ "$SEALED_FIXTURE" = "1" ]; then
+    printf '%s' "$BODY_ALL" | grep -q "not opened yet" && ok "and the itinerary says a drop was withheld, rather than hiding it" \
+      || bad "sealed drop vanished silently instead of being acknowledged"
+  else
+    skip "and the itinerary says a drop was withheld (no fixture)"
+  fi
 fi
 # S1: the content was blanked and the GUEST LIST was not — you could see who else had opened
 # theirs. Withheld with the content now.
 call GET "$T/trip/state" "$EDIT"
-printf '%s' "$BODY" | grep -q 'SEALEDTITLEXYZ' && bad "sealed title is on the wire" || ok "sealed title withheld in state"
-# OPENEDBYXYZ appears nowhere else in the fixture, so this cannot pass by matching nothing —
-# which is exactly how the first version of this assertion gave a false PASS.
-printf '%s' "$BODY" | grep -q 'OPENEDBYXYZ' && bad "S1: opened_by leaks who has opened the drop" \
-  || ok "S1: opened_by is withheld for a drop you have not opened"
-printf '%s' "$BODY" | grep -q '"author":"Mel"' && ok "but the author still shows — a drop from Dad is the point" \
-  || bad "author should NOT be withheld"
+# Same gate as the archive assertions above, and for the same reason. The comment below already
+# recorded that an earlier version of the opened_by check "gave a false PASS" by matching
+# nothing — the fix then was to pick a string that appears nowhere else, which stops it matching
+# the WRONG thing but does nothing about it matching NOTHING. That second half is what this gate
+# closes.
+if [ "$SEALED_FIXTURE" = "1" ]; then
+  printf '%s' "$BODY" | grep -q 'SEALEDTITLEXYZ' && bad "sealed title is on the wire" || ok "sealed title withheld in state"
+  printf '%s' "$BODY" | grep -q 'OPENEDBYXYZ' && bad "S1: opened_by leaks who has opened the drop" \
+    || ok "S1: opened_by is withheld for a drop you have not opened"
+  printf '%s' "$BODY" | grep -q '"author":"Mel"' && ok "but the author still shows — a drop from Dad is the point" \
+    || bad "author should NOT be withheld"
+else
+  skip "sealed title withheld in state (no fixture)"
+  skip "S1: opened_by is withheld for a drop you have not opened (no fixture)"
+  skip "but the author still shows — a drop from Dad is the point (no fixture)"
+fi
 
 VCODE="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $VIEW" "$CONN$T/trip/export")"
 [ "$VCODE" = "403" ] && ok "a view link cannot export (403)" || bad "view export expected 403, got $VCODE"
@@ -339,6 +399,42 @@ call GET "/$SLUG"
 printf '%s' "$BODY" | grep -q 'gate-alt' && ok "the gate names signing in as a way through" \
   || bad "the gate still offers only a phrase"
 printf '%s' "$BODY" | grep -q 'href="/account"' && ok "and links to /account" || bad "no /account link on the gate"
+
+step "8e. D-091: claim-trip shares the gate limiter, and tells a stranger nothing"
+# The same secret the front door checks, so it must cost the same to guess at.
+call POST /api/account/signup "" '{"email":"claimprobe@example.com"}'
+# a real trip, a wrong phrase, and a slug that does not exist must be indistinguishable
+call POST /api/account/claim-trip "" "{\"slug\":\"$SLUG\",\"phrase\":\"not-a-real-phrase-at-all\"}"
+A="$CODE"
+call POST /api/account/claim-trip "" '{"slug":"zzzzzzz","phrase":"not-a-real-phrase-at-all"}'
+B="$CODE"
+# both should be 401 (not signed in) here — the point is they MATCH, never 404 vs 403
+[ "$A" = "$B" ] && ok "a real slug and a nonexistent one answer identically ($A)" \
+  || bad "slug existence is distinguishable: real=$A fake=$B"
+if [ -n "${MYSQL_CMD:-}" ]; then
+  # the limiter must be the trip's own gate counter, not a second one
+  $MYSQL_CMD -e "DELETE FROM gate WHERE slug='$SLUG'" 2>/dev/null
+  GATE0="$($MYSQL_CMD -N -e "SELECT COALESCE(SUM(hits),0) FROM gate WHERE slug='$SLUG'" 2>/dev/null)"
+  ok "gate counter starts at $GATE0 for this trip"
+fi
+
+step "8f. D-093: the paid chat has a per-trip turn cap"
+if [ -n "${MYSQL_CMD:-}" ]; then
+  COL="$($MYSQL_CMD -N -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='trips' AND column_name='chat_turns'" 2>/dev/null)"
+  [ "$COL" = "1" ] && ok "trips.chat_turns exists" || bad "chat_turns column missing"
+  # burn the allowance without spending a single token, then confirm the endpoint refuses
+  $MYSQL_CMD -e "UPDATE trips SET chat_turns=40 WHERE slug='$SLUG'" 2>/dev/null
+  call POST "$T/trip/chat" "$EDIT" '{"messages":[{"role":"user","content":"add a stop"}]}'
+  [ "$CODE" = "429" ] && ok "an exhausted trip -> 429 before any outbound call" \
+    || bad "expected 429 at the cap, got $CODE ($BODY)"
+  printf '%s' "$BODY" | grep -q "40" && ok "and the refusal names the allowance" || bad "refusal does not name the cap"
+  # the counter must not move once the cap is refusing — the guard is before the increment
+  N1="$($MYSQL_CMD -N -e "SELECT chat_turns FROM trips WHERE slug='$SLUG'" 2>/dev/null)"
+  call POST "$T/trip/chat" "$EDIT" '{"messages":[{"role":"user","content":"again"}]}'
+  N2="$($MYSQL_CMD -N -e "SELECT chat_turns FROM trips WHERE slug='$SLUG'" 2>/dev/null)"
+  [ "$N1" = "$N2" ] && ok "a refused request does not burn a turn ($N1)" || bad "counter moved on a refusal: $N1 -> $N2"
+  $MYSQL_CMD -e "UPDATE trips SET chat_turns=0 WHERE slug='$SLUG'" 2>/dev/null
+fi
 
 step "9. D-088: photos from \$5 up, video only at \$10"
 call POST "$T/trip/media?ext=jpg" "$EDIT" "fakejpegbytes" "image/jpeg"
@@ -357,6 +453,7 @@ if [ -n "$KSLUG" ]; then
   printf '%s' "$BODY" | grep -q '\$10' && ok "and the refusal names the tier that takes video" || bad "refusal does not name the \$10 tier: $BODY"
   # the photo must NOT be refused for tier reasons — anything but 402 means the gate let it through
   call POST "/$KSLUG/api/trip/media?ext=jpg" "$KEDIT" "fakejpegbytes" "image/jpeg"
+  KURL="$(jget "$BODY" url)"
   [ "$CODE" != "402" ] && ok "photo on the \$5 keep tier is allowed (got $CODE, not a tier refusal)" \
     || bad "photo on keep was refused as a tier problem: $BODY"
   # state must advertise both allowances separately
@@ -365,11 +462,42 @@ if [ -n "$KSLUG" ]; then
   [ "$(jget "$BODY" video)" = "false" ] && ok "state says video=false on keep" || bad "state video should be false"
 fi
 
+step "9b. D-094: the aggregate media cap, counted from bytes actually written"
+if [ -n "${MYSQL_CMD:-}" ] && [ -n "$KSLUG" ]; then
+  # step 9 already put one 13-byte photo on this trip
+  B1="$($MYSQL_CMD -N -e "SELECT media_bytes FROM trips WHERE slug='$KSLUG'" 2>/dev/null)"
+  [ "$B1" = "13" ] && ok "the write was counted, in bytes actually written ($B1)" \
+    || bad "expected media_bytes=13 after one 13-byte photo, got '$B1'"
+
+  # a full trip refuses, and refuses before writing anything
+  BEFORE="$(ls "${PHOTOS_DIR:-photos}/$KSLUG" 2>/dev/null | wc -l | tr -d ' ')"
+  $MYSQL_CMD -e "UPDATE trips SET media_bytes=2147483648 WHERE slug='$KSLUG'" 2>/dev/null
+  call POST "/$KSLUG/api/trip/media?ext=jpg" "$KEDIT" "morebytes" "image/jpeg"
+  [ "$CODE" = "413" ] && ok "a full trip -> 413" || bad "expected 413 when full, got $CODE ($BODY)"
+  printf '%s' "$BODY" | grep -q "2 GB" && ok "and the refusal names the allowance" || bad "refusal does not name the cap: $BODY"
+  AFTER="$(ls "${PHOTOS_DIR:-photos}/$KSLUG" 2>/dev/null | wc -l | tr -d ' ')"
+  [ "$BEFORE" = "$AFTER" ] && ok "and no file was written ($AFTER)" || bad "a refused upload still wrote a file: $BEFORE -> $AFTER"
+
+  # deleting media gives the space back, or "remove something first" is advice nobody can act on
+  $MYSQL_CMD -e "UPDATE trips SET media_bytes=13 WHERE slug='$KSLUG'" 2>/dev/null
+  call POST "/$KSLUG/api/trip/pins" "$KEDIT" "{\"kind\":\"post\",\"lat\":1,\"lng\":1,\"photo\":\"$KURL\"}"
+  MPID="$(jget "$BODY" id)"          # the server assigns the id; it does not take the one you send
+  call DELETE "/$KSLUG/api/trip/pins/$MPID" "$KEDIT"
+  B2="$($MYSQL_CMD -N -e "SELECT media_bytes FROM trips WHERE slug='$KSLUG'" 2>/dev/null)"
+  [ "$B2" = "0" ] && ok "deleting the photo returned its bytes ($B2)" || bad "expected media_bytes=0 after delete, got '$B2'"
+
+  # and the counter can never go negative — a second delete, or a pre-D-094 file, must not underflow
+  $MYSQL_CMD -e "UPDATE trips SET media_bytes=0 WHERE slug='$KSLUG'" 2>/dev/null
+  B3="$($MYSQL_CMD -N -e "SELECT media_bytes >= 0 FROM trips WHERE slug='$KSLUG'" 2>/dev/null)"
+  [ "$B3" = "1" ] && ok "the counter is floored at zero" || bad "media_bytes went negative"
+fi
+
 step "10. DELETE /{slug}/api/trip -> 200; any further call -> 401"
 call DELETE "$T/trip" "$EDIT"
 { [ "$CODE" = 200 ] && [ "$(jget "$BODY" gone)" = true ]; } && ok "delete trip -> 200 gone:true" || bad "delete trip expected 200/gone, got $CODE ($BODY)"
 call GET "$T/trip/state?since=0" "$EDIT"
 [ "$CODE" = 401 ] && ok "post-delete call -> 401" || bad "post-delete expected 401, got $CODE ($BODY)"
 
-printf '\n──────────────\n%s passed, %s failed\n' "$(grn "$PASS")" "$( [ "$FAIL" -gt 0 ] && red "$FAIL" || printf '%s' 0 )"
+printf '\n──────────────\n%s passed, %s failed%s\n' "$(grn "$PASS")" "$( [ "$FAIL" -gt 0 ] && red "$FAIL" || printf '%s' 0 )" \
+  "$( [ "$SKIP" -gt 0 ] && printf ', %s skipped — NOT covered' "$(ylw "$SKIP")" || printf '' )"
 [ "$FAIL" -eq 0 ]

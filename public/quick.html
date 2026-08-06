@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/tokens.css?v=2">
+<link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/dark.css?v=2">
 <style>
@@ -32,7 +32,7 @@
  */
 :root{
   --disp:"Barlow Condensed",sans-serif; --body:"Barlow",system-ui,sans-serif;
-  --pine:var(--color-brand-teal,#035A83); --pine-deep:#024260;
+  --pine:var(--color-brand-teal,#035A83); --pine-deep:var(--color-brand-teal-deep,#024260);
   --accent:var(--color-brand-orange,#F7B304); --accent-deep:#C38D00;
   --ink:#141414; --soft:#5f6b70; --card:#fff; --line:#E4E1D8; --sheet:#FCFBF8;
 }
@@ -58,9 +58,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   border-radius:8px;white-space:nowrap}
 #menu a:hover{background:var(--ground);color:var(--link)}
 #menu a[aria-current="page"]{background:var(--ground)}
-.sign{min-height:44px;display:inline-flex;align-items:center;background:var(--pine);color:#fff;border:2px solid #ECECEC;outline:2px solid var(--pine-deep);
-  border-radius:9px;padding:5px 10px;text-decoration:none;font-family:var(--disp);font-weight:700;
-  font-size:13px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+/* One mark (2026-08-02). NOTE this class used to style a "cards →" BUTTON, not a logo — this
+   page was the only builder with no mark at all, and the brand slot was doing navigation. The
+   sign takes the slot; the card-builder link moved to the top of the menu, because the bar was
+   measured full at 375px and losing the only route to /new was not an option. */
+.sign{min-height:44px;display:inline-flex;align-items:center;padding:0;background:none;border:0;
+  outline:0;box-shadow:none;text-decoration:none;flex:0 0 auto}
+.sign img{display:block;height:34px;width:auto}
 #name{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;background:var(--card);border:2px solid var(--ink);border-radius:9px;
   padding:8px 11px;font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.04em;
   text-transform:uppercase;outline:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -71,46 +75,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   background:var(--card);border:2px solid var(--ink);border-radius:50%;font-size:17px}
 
 /* ── the ring ─────────────────────────────────────────────────────────────────────────── */
-#veil{position:fixed;inset:0;z-index:30;display:none}
-#veil.on{display:block}
-#ring{position:fixed;z-index:40;opacity:0;pointer-events:none;
-  transition:opacity .15s ease,transform .15s ease;transform:scale(.88)}
-#ring.show{opacity:1;transform:scale(1);pointer-events:auto}
-@media (prefers-reduced-motion:reduce){ #ring{transition:none} }
-#ring svg{display:block;overflow:visible;filter:drop-shadow(0 10px 26px rgba(0,0,0,.3))}
+/* The ring, the veil and the ask card now live in /ring.js, which injects its own CSS scoped
+   under .ttbr / .ttbr-veil / .ttbr-ask (§2e). Nothing about how it draws is here any more —
+   the two builders differ in what they DO with it, not in how it looks.
+
+   This one rule stays, because it is OURS: it hides the "you are here" marker while a ring is
+   open, and that is this page's marker and this page's decision. ring.js sets `ringing` on
+   <body> as the contract and leaves the rule to whoever owns the thing being hidden. */
 body.ringing .leaflet-marker-icon.is-here{opacity:0}
-
-.seg{cursor:pointer}
-.seg .wedge{fill:var(--card);stroke:var(--ink);stroke-width:2;transition:fill .1s}
-.seg:hover .wedge,.seg:focus-visible .wedge{fill:var(--accent)}
-.seg:focus-visible{outline:none}
-.seg:focus-visible .wedge{stroke-width:3.5}
-.seg .lbl{font-family:var(--disp);font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-  fill:var(--ink);pointer-events:none;text-anchor:middle;dominant-baseline:middle}
-.seg .gly{fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;
-  pointer-events:none}
-.hub{fill:var(--pine);stroke:#fff;stroke-width:3}
-.hub-t{font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.12em;
-  text-transform:uppercase;fill:rgba(255,255,255,.66);text-anchor:middle}
-.hub-p{font-family:var(--disp);font-weight:700;fill:#fff;text-anchor:middle}
-.hub-back{cursor:pointer}
-.hub-back:hover .hub{fill:var(--pine-deep)}
-
-/* Typing gets a card. A ring cannot hold a keyboard. */
-#ask{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:45;
-  width:min(320px,calc(100vw - 28px));background:var(--card);border:2px solid var(--ink);
-  border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.3);padding:16px;display:none}
-#ask.on{display:block}
-#ask h2{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.03em;
-  text-transform:uppercase;margin:0 0 3px}
-#ask p{margin:0 0 11px;font-size:13px;color:var(--soft);line-height:1.45}
-#ask input{width:100%;min-height:46px;padding:11px 13px;border:2px solid var(--line);
-  border-radius:11px;background:var(--sheet);color:var(--ink);font-size:16px;font-family:var(--body)}
-#ask input:focus{outline:0;border-color:var(--pine)}
-#ask .row{display:flex;gap:8px;margin-top:11px}
-#ask button{flex:1;min-height:46px;border-radius:11px;font-family:var(--disp);font-weight:700;
-  font-size:14px;letter-spacing:.05em;text-transform:uppercase;border:2px solid var(--line)}
-#ask button.go{background:var(--accent);border-color:var(--accent);color:#141414}
 
 /* ── nodes + bar ──────────────────────────────────────────────────────────────────────── */
 .node{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;
@@ -157,29 +129,24 @@ body.ringing .leaflet-marker-icon.is-here{opacity:0}
    so a one-class rule loses on specificity. Measured after deploying the naive version
    and finding it still 30px: match their selector or the override is decoration. */
 .leaflet-touch .leaflet-bar a,
-.leaflet-touch .leaflet-control-zoom a{width:44px;height:44px;line-height:44px;font-size:20px}
+.leaflet-touch .leaflet-control-zoom a{width:44px;height:44px;line-height:44px;font-size:20px;font-family:var(--disp);font-weight:700}
 </style>
 
 <div id="map"></div>
 <div id="top">
-  <a class="sign" href="/new" id="toCards">cards &rarr;</a>
+  <a class="sign" href="/"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
   <div id="name" contenteditable="true" role="textbox" aria-label="Name this trip"></div>
   <button class="ico" id="undo" title="Undo" aria-label="Undo the last thing">&#8630;</button>
   <button class="ico" id="themeBtn" title="Night drive" aria-label="Theme. Tap to change.">☾</button>
-  <button class="ico" id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
+  <button class="ico" id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 </div>
 <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/account">Account</a>
+  <a href="/new" id="toCards">Build with cards</a><a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 
-<div id="veil"></div>
-<div id="ring" role="menu" aria-label="Choose"></div>
-
-<div id="ask" role="dialog" aria-modal="true" aria-labelledby="askT">
-  <h2 id="askT"></h2><p id="askP"></p>
-  <input id="askI"><div class="row">
-    <button id="askSkip">Skip</button><button class="go" id="askGo">Next</button></div>
-</div>
+<!-- The veil, the ring and the ask card are created by /ring.js and appended to <body>. There is
+     no markup for them here on purpose: a host page that has to remember to paste three divs is
+     a host page that will one day forget one. -->
 
 <div id="bar">
   <p id="tally">Tap the map where the trip starts.</p>
@@ -190,7 +157,8 @@ body.ringing .leaflet-marker-icon.is-here{opacity:0}
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
-<script src="/places.js?v=2"></script>
+<script src="/places.js?v=4"></script>
+<script src="/ring.js?v=3"></script>
 <script>
 /* Same tree as /quicktree so the comparison is about the control, not the content.
    `next` is what makes a subtype functional rather than decorative: the branch decides what
@@ -256,123 +224,41 @@ function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); s
 
 let origin=null, legs=[], pending=null, draft=null, layers=[], step=null;
 
-/* ── geometry ─────────────────────────────────────────────────────────────────────────── */
-const polar = (cx,cy,r,a) => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
-function wedgePath(cx,cy,r0,r1,a0,a1){
-  const [x0,y0]=polar(cx,cy,r1,a0), [x1,y1]=polar(cx,cy,r1,a1);
-  const [x2,y2]=polar(cx,cy,r0,a1), [x3,y3]=polar(cx,cy,r0,a0);
-  const big=(a1-a0)>Math.PI?1:0;
-  return `M${x0} ${y0}A${r1} ${r1} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${big} 0 ${x3} ${y3}Z`;
-}
-/* Sized from the viewport. A fixed ring covers the map on a small phone and looks lost on a
-   desktop, and this control is meant to sit ON the thing it is about. */
-function dims(n){
-  const v = Math.min(innerWidth, innerHeight);
-  const r1 = Math.max(96, Math.min(150, v*0.29));
-  const r0 = Math.max(54, r1*(n > 5 ? 0.50 : 0.54));
-  return {r0, r1, pad:22, fs: v < 380 ? 11 : 12.5};
-}
-
 /* ── the ring ─────────────────────────────────────────────────────────────────────────── */
-function openRing(at, title, sub, items, onPick, onBack){
-/* W5: "Tomorrow" overran its wedge. `fs` comes from dims(n) — the NUMBER of wedges — and never
-   from the length of the word in one, so a long label simply spilled past the segment.
+/* Geometry, the wedge SVG, the anchoring pan and the ask card all moved to /ring.js (§2e).
+   What stays here is the one thing that was never the ring's business: what CANCELLING means
+   on this page. The module closes itself and calls back; clearing pending, draft, step,
+   editing, insertAt and armed is this builder's own state machine.
 
-   The wedge gives a real bound: at radius rm the chord across an angle of stepA is
-   2·rm·sin(stepA/2). Estimate the label at ~0.52em per glyph for the condensed display face,
-   and when it does not fit, hand SVG the width and let it compress the glyphs. Only shrinks the
-   labels that need it, so nothing else on the ring changes. */
-function fit(label, fs, rm, stepA){
-  const avail = 2 * rm * Math.sin(stepA / 2) * 0.86;      // 0.86 leaves the wedge edges alone
-  const est   = String(label).length * fs * 0.63;   // uppercase WITH .05em tracking — 0.52 (mixed case, no tracking) under-read by a fifth
-  return est <= avail ? "" : ` textLength="${avail.toFixed(1)}" lengthAdjust="spacingAndGlyphs"`;
-}
-
-  const n=items.length, {r0,r1,pad,fs}=dims(n), c=r1+pad, size=c*2;
-  const stepA=(Math.PI*2)/n, start=-Math.PI/2-stepA/2;
-  let svg=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
-  items.forEach((it,i)=>{
-    const a0=start+i*stepA, a1=a0+stepA*0.96, mid=(a0+a1)/2, rm=(r0+r1)/2;
-    const [lx,ly]=polar(c,c,rm,mid);
-    svg+=`<g class="seg" role="menuitem" tabindex="0" data-i="${i}" aria-label="${esc(it.label)}">
-      <path class="wedge" d="${wedgePath(c,c,r0,r1,a0,a1)}"/>
-      ${it.gly?`<g class="gly" transform="translate(${lx-11} ${ly-23}) scale(.9)">${it.gly}</g>`:""}
-      <text class="lbl" style="font-size:${fs}px"${fit(it.label,fs,rm,stepA)} x="${lx}" y="${it.gly?ly+13:ly}">${esc(it.label)}</text></g>`;
-  });
-  svg+=`<g class="hub-back" role="menuitem" tabindex="0" aria-label="${onBack?"Back":"Cancel"}">
-    <circle class="hub" cx="${c}" cy="${c}" r="${r0-7}"/>
-    <text class="hub-t" x="${c}" y="${c-11}">${esc(title)}</text>
-    <text class="hub-p" style="font-size:${fs+3}px" x="${c}" y="${c+9}">${esc(sub)}</text></g></svg>`;
-
-  const ring=$("ring");
-  ring.innerHTML=svg;
-  place(ring, at, size);
-  ring.classList.add("show"); $("veil").classList.add("on");
-  document.body.classList.add("ringing");
-  ring.querySelectorAll(".seg").forEach(g=>{
-    const i=+g.dataset.i, go=e=>{ e.preventDefault(); e.stopPropagation(); onPick(items[i],i); };
-    g.addEventListener("click",go);
-    g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") go(e); });
-  });
-  const hub=ring.querySelector(".hub-back");
-  const back=e=>{ e.preventDefault(); e.stopPropagation(); onBack?onBack():cancel(); };
-  hub.addEventListener("click",back);
-  hub.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") back(e); });
-  requestAnimationFrame(()=>{ const f=ring.querySelector(".seg"); if(f) f.focus(); });
-}
-
-/* Anchor the ring ON the point. Pan only if it would fall off an edge, and only by as much as
-   it takes — panning every time is what made the first pass feel like the map was fighting you. */
-function place(ring, latlng, size){
-  const p = map.latLngToContainerPoint(latlng);
-  const half = size/2, m = 8, barH = 74, topH = 62;
-  let dx=0, dy=0;
-  if(p.x-half < m)                 dx = (p.x-half) - m;
-  else if(p.x+half > innerWidth-m) dx = (p.x+half) - (innerWidth-m);
-  if(p.y-half < topH)              dy = (p.y-half) - topH;
-  else if(p.y+half > innerHeight-barH) dy = (p.y+half) - (innerHeight-barH);
-  if(dx || dy) map.panBy([dx,dy],{animate:true,duration:.25});
-  const q = {x:p.x-dx, y:p.y-dy};
-  ring.style.left = (q.x-half)+"px";
-  ring.style.top  = (q.y-half)+"px";
-}
-function closeRing(){
-  $("ring").classList.remove("show"); $("ring").innerHTML="";
-  $("veil").classList.remove("on"); document.body.classList.remove("ringing");
-}
-function cancel(){ closeRing(); pending=null; draft=null; step=null; editing=null; insertAt=null; armed=null; render(); }
-$("veil").addEventListener("click", cancel);
-
-/* ── the card, for the two places a keyboard is genuinely needed ──────────────────────── */
-function openAsk(title, hint, placeholder, onDone){
-  $("askT").textContent=title; $("askP").textContent=hint;
-  $("askI").value=""; $("askI").placeholder=placeholder;
-  $("ask").classList.add("on"); closeRing();
-  requestAnimationFrame(()=>$("askI").focus());
-  const done=v=>{ $("ask").classList.remove("on"); onDone(v); };
-  $("askGo").onclick=()=>done($("askI").value.trim());
-  $("askSkip").onclick=()=>done("");
-  $("askI").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); done($("askI").value.trim()); } };
-}
+   `cancel` is a function DECLARATION, so it hoists and can be handed to the factory above its
+   own definition. A `const` arrow here would throw on the line below and kill the entire
+   inline script — a documented sharp edge in this repo, and the reason this note exists. */
+const RING = createRing({ map: map, onCancel: () => cancel() });
+function cancel(){ RING.close(); pending=null; draft=null; step=null; editing=null; insertAt=null; armed=null; render(); }
 
 /* Typing a place takes the SAME path as tapping one — it calls the map's own click handler —
    so leg chaining, naming and saving can only behave one way. The radial could only be tapped
    until now, which is fine for a place you can find by sight and useless for a town you know
    by name. */
+/* This drives ring.js's ask card a SECOND way — search, not prompt. The module lends the
+   furniture (RING.el.askInput and friends) rather than growing an option for every host that
+   wants a text field: here Enter picks a suggestion instead of submitting, and Skip reads
+   "Cancel". Both differences are ours, so both live here. */
 let suggest = null;
 function openSearch(){
   if(step) cancel();
-  $("askT").textContent = origin ? "Where next?" : "Where does it start?";
-  $("askP").textContent = "Pick one and it drops on the map, exactly as a tap would.";
-  $("askI").value=""; $("askI").placeholder="Type a place…";
-  $("askSkip").textContent = "Cancel";
-  $("ask").classList.add("on");
-  requestAnimationFrame(()=>$("askI").focus());
+  const A = RING.el;
+  A.askTitle.textContent = origin ? "Where next?" : "Where does it start?";
+  A.askHint.textContent = "Pick one and it drops on the map, exactly as a tap would.";
+  A.askInput.value=""; A.askInput.placeholder="Type a place…";
+  A.askSkip.textContent = "Cancel";
+  RING.askShow();
+  requestAnimationFrame(()=>A.askInput.focus());
   if(!suggest && typeof attachSuggest === "function"){
-    suggest = attachSuggest($("askI"), {
+    suggest = attachSuggest(A.askInput, {
       near: ()=>{ try{ const c=map.getCenter(); return {lat:c.lat, lng:c.lng}; }catch(e){ return null; } },
       onPick: p => {
-        $("ask").classList.remove("on");
+        RING.askHide();
         map.setView([p.lat,p.lng], 9);
         // Fire the map's own handler so there is exactly one way a point joins the trip.
         map.fire("click", {latlng: L.latLng(p.lat, p.lng)});
@@ -382,9 +268,9 @@ function openSearch(){
       }
     });
   }
-  const close = ()=>{ $("ask").classList.remove("on"); $("askSkip").textContent="Skip"; };
-  $("askSkip").onclick = close;
-  $("askGo").onclick = close;      // Enter picks a suggestion; the button is just a way out
+  const close = ()=>{ RING.askHide(); A.askSkip.textContent="Skip"; };
+  A.askSkip.onclick = close;
+  A.askGo.onclick = close;      // Enter picks a suggestion; the button is just a way out
 }
 $("findBtn").onclick = openSearch;
 
@@ -470,7 +356,7 @@ function askMode(){
     : editing !== null
       ? (editing === 0 ? origin : legs[editing-1].to)          // F14: unchanged by an edit
       : legs.length ? legs[legs.length-1].to : origin;
-  openRing(pending, "from " + short(from.name||coordName(from), 11), short(pending.name,14)||"there",
+  RING.open(pending, "from " + short(from.name||coordName(from), 11), short(pending.name,14)||"there",
     Object.keys(TREE).map(k=>({key:k,label:TREE[k].label,gly:TREE[k].gly})),
     it=>{ draft={to:pending, mode:it.key, subtype:null, date:"", who:[], path:null, stay:null, note:""};
           askKind(); },
@@ -479,11 +365,11 @@ function askMode(){
 function askKind(){
   step="kind"; reopen=askKind; render();
   const m=TREE[draft.mode];
-  openRing(pending, m.label, "what kind?", m.subs.map(s=>({...s})),
+  RING.open(pending, m.label, "what kind?", m.subs.map(s=>({...s})),
     s=>{ draft.subtype=s.id; if(s.craft) draft.craft=s.craft;
-         if(s.next==="flight") return openAsk("Flight number?","Optional. With it, Ask can fill in real times once the trip is yours.","e.g. AA1902",
+         if(s.next==="flight") return RING.ask("Flight number?","Optional. With it, Ask can fill in real times once the trip is yours.","e.g. AA1902",
             v=>{ if(v) draft.flight=v.toUpperCase(); askWhen(s); });
-         if(s.next==="pickup") return openAsk("Rental picked up where?","A rental has to go back somewhere — worth noting now.","here, or somewhere else",
+         if(s.next==="pickup") return RING.ask("Rental picked up where?","A rental has to go back somewhere — worth noting now.","here, or somewhere else",
             v=>{ if(v) draft.note="Rental: "+v; askWhen(s); });
          askWhen(s); },
     ()=>askMode());
@@ -491,12 +377,12 @@ function askKind(){
 function askWhen(s){
   step="when"; reopen=()=>askWhen(s); render();
   const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  openRing(pending, short(TREE[draft.mode].label+" · "+s.label, 18), "when?", [
+  RING.open(pending, short(TREE[draft.mode].label+" · "+s.label, 18), "when?", [
       {label:"Today", v:iso(new Date())},
       {label:"Tomorrow", v:iso(new Date(Date.now()+86400000))},
       {label:"Pick…", v:"?"},
       {label:"Skip", v:""}],
-    it=>{ if(it.v==="?") return openAsk("Which day?","","YYYY-MM-DD", v=>commit(s, /^\d{4}-\d{2}-\d{2}$/.test(v)?v:""));
+    it=>{ if(it.v==="?") return RING.ask("Which day?","","YYYY-MM-DD", v=>commit(s, /^\d{4}-\d{2}-\d{2}$/.test(v)?v:""));
           commit(s, it.v); },
     ()=>askKind());
 }
@@ -509,7 +395,7 @@ function commit(s, date){
   else                        legs.push(draft);
   const craft=draft.craft;
   draft=null; pending=null; step=null; editing=null; insertAt=null; armed=null;
-  closeRing(); save(); render();
+  RING.close(); save(); render();
   toast(wasEditing ? "Leg updated"
       : craft ? `Added — the ${craft.toLowerCase()} gets its own vehicle in the trip`
               : "Leg added — tap the map for the next");
@@ -610,7 +496,7 @@ $("undo").onclick=()=>{ if(step) return cancel();
   toast("Nothing to undo"); };
 $("name").addEventListener("input", save);
 $("name").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); } });
-addEventListener("keydown", e=>{ if(e.key==="Escape"){ if($("ask").classList.contains("on")) $("ask").classList.remove("on"); else cancel(); } });
+addEventListener("keydown", e=>{ if(e.key==="Escape"){ if(RING.askOpen()) RING.askHide(); else cancel(); } });
 addEventListener("resize", ()=>{ if(step) reopen(); });
 
 $("keep").onclick=()=>{
@@ -656,6 +542,6 @@ function locateFirst(){
 
 restore(); render(); locateFirst();
 </script>
-<script src="/pages.js?v=1"></script>
-<script src="/maptheme.js?v=1"></script>
+<script src="/pages.js?v=2"></script>
+<script src="/maptheme.js?v=4"></script>
 </html>

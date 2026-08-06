@@ -6,7 +6,16 @@ help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n",$$1,$$2}'
 
-check: check-js check-php check-secrets check-stripe check-copy check-delete test-tools test-mcp ## All static checks (what CI runs)
+check: check-js check-php check-secrets check-stripe check-copy check-delete check-sitemap check-tokens check-mcp-version test-tools test-mcp ## All static checks (what CI runs)
+
+check-mcp-version: ## Fail if the MCP version disagrees across package.json, serverInfo and server.json
+	@node test/mcp-version.mjs
+
+check-tokens: ## Fail if tokens.css or the Figma primitives drift from design/tokens.json
+	@node test/token-drift.mjs
+
+check-sitemap: ## Fail if a sitemap <lastmod> no longer matches the file's commit date
+	@php scripts/sitemap-lastmod.php --check
 
 check-js: ## Syntax-check inline <script> in public/*.html
 	@./scripts/check-inline-js.sh
@@ -81,16 +90,83 @@ check-copy: ## Fail if a retired claim is shipped to customers or to agents
 	@#     after buying" were both retired by D-076 the day it shipped; a "sign-in link"
 	@#     has never existed — account/reset-request + account/reset require SETTING a
 	@#     password, which CLAUDE.md warns is not a magic link. No scope makes these true.
-	@DIRS="public/"; [ -d mcp ] && DIRS="$$DIRS mcp/"; \
+	@# 2026-08-02 (D-095): the ACCOUNT claim is PROMOTED out of the advisory list and now
+	@#     GATES. CLAUDE.md had said it did for two days while it did not — verified by
+	@#     putting "No account required" in the hero and watching the target exit 0.
+	@#     WHAT MADE THE PROMOTION SAFE was not a better regex, it was fixing five lines of
+	@#     copy. The old exclusion demanded the scope ATTACHED ("no account to build"), and
+	@#     honest copy overwhelmingly puts scope FIRST ("Building a trip is free — no
+	@#     account, no card, no email"), so gating it as written would have failed the build
+	@#     on thirteen true sentences. The new exclusion accepts a scope word ANYWHERE on the
+	@#     line; the five lines that had none — two on for-agents, one on what-you-get, one
+	@#     in llms.txt, one comment in new.html — were reworded to name their path, which is
+	@#     what D-086 asks for anyway. Deliberately looser than the claim: a bare "No account
+	@#     required." on a line that also says "open" survives. That is the right error for a
+	@#     GATE, where a false positive blocks honest copy and a false negative leaves us no
+	@#     worse than the advisory list we had.
+	@# 2026-08-02 (D-096): PERMANENCE promoted the same way, and CLAUDE.md was wrong about it
+	@#     identically — it said the build failed on "permanent" while the claim only printed.
+	@#     This one needed NO copy fixes: the tree was already clean, which is the ideal
+	@#     moment to install a gate. What it needed instead was WIDER matching, because
+	@#     D-059's claim is not the word "permanent" — it is the promise that a trip outlives
+	@#     its term, and that promise says "yours forever", "never expires", "for life",
+	@#     "keep it forever", "lasts forever" too. Every one of those has no true form: every
+	@#     tier ends, at one year, five or ten.
+	@#     THE FALSE POSITIVES ARE THE CORRECTIONS THEMSELVES. "Nothing is sold as permanent
+	@#     — a one-person shop cannot honestly promise forever" is the right copy and says
+	@#     both words; faq.html's whole paragraph explains why we stopped. So the exclusion
+	@#     matches the RETRACTION verbs, not the words. Naively widening to bare "forever" /
+	@#     "for good" was tried and rejected: it hit four JS comments, a delete-button promise
+	@#     ("removes the trip and every photo, for good" — the OPPOSITE claim) and both
+	@#     corrections. Verified eight claim phrasings caught, five true lines passed.
+	@# 2026-08-02 (D-097): the never-ask / never-collect claims (D-036/D-067) promoted last.
+	@#     TENSE is their test rather than scope, and the regex does it almost for free: \b on
+	@#     a present-tense verb cannot match its own past. `\bask\b` passes "we never ASKED
+	@#     who you are", which what-you-get.html:74 says truthfully about the pre-purchase
+	@#     draft and which an earlier version of this rule failed on.
+	@#     FOUR LINES HAD TO CHANGE, and two of them were live false claims, not phrasing:
+	@#     privacy.html's Stripe row said "Stripe knows the buyer; we genuinely don't" ELEVEN
+	@#     LINES BELOW the paragraph saying we make an account from the email Stripe collected.
+	@#     Checked against api.php: we read customer_details.email and nothing else, so the row
+	@#     now says we receive the address and never see the card, billing address or name.
+	@#     faq.html said "the only personal thing we hold is the email you paid with", which
+	@#     D-076 made incomplete the day open signup shipped — an account no longer implies a
+	@#     purchase. The other two were source comments about the mailto share, true of that
+	@#     feature and unreadable as such on one line; both now name it.
+	@#     NOTHING IS ADVISORY ANY MORE. All three claim families gate.
+	@# design/ joined the scan 2026-08-05. The design system is the REFERENCE other work is
+	@# built from, and it was carrying five retired claims — "permanent" x3 and "forever" x2
+	@# on the tier table, plus an unscoped "no account needed" — long after D-059/D-095/D-096
+	@# retired them and while the live pages said one year, five and ten. A guard that skips
+	@# the document people copy FROM lets the wrong copy back in through the front door.
+	@DIRS="public/"; [ -d mcp ] && DIRS="$$DIRS mcp/"; [ -d design ] && DIRS="$$DIRS design/"; \
 	  INC="--include=*.html --include=*.txt --include=*.md"; \
-	  SCOPED=$$(grep -rniE '(is|are|its|a|an) permanent|permanently yours|permanent address|no ?accounts?\b|no sign-?ups?\b|nothing to sign up|without signing up|(never|do ?n.t)( even)? ask who you are|(do ?n.t|never)( even)? (collect|store|keep|hold)[^.]{0,24}emails?\b' \
+	  ACCT=$$(grep -rniE 'no ?accounts?\b|no sign-?ups?\b|nothing to sign up|without signing up' \
 	     $$DIRS $$INC \
-	     | grep -viE '(no ?accounts?|no sign-?ups?|nothing to sign up) to (build|start|open|install|join)|nothing is sold as|signing up for something'); \
+	     | grep -viE 'build|start|open|view|look|shar|send|join|sign up for something|no accounts? yet'); \
+	  PERM=$$(grep -rniE '(is|are|it.s|its) permanent|permanently yours|permanent (address|trip|link)|yours forever|keeps? it forever|keep it forever|lasts? forever|last forever|never expires?|no expiry date|for life\b|one payment,? forever' \
+	     $$DIRS $$INC \
+	     | grep -viE 'nothing is sold as|stopped selling|cannot honestly|promise it c|promising to host|no longer sold|never sold as'); \
+	  PRIV=$$(grep -rniE '(never|do ?n.t|does ?n.t)( even)? (ask|asks|know|knows)\b[^.]{0,24}(who you are|your name)|(never|do ?n.t|does ?n.t)( even)? (see|sees|collect|collects|store|stores|keep|keeps|hold|holds)\b[^.]{0,30}(e-?mails?|addresse?s?|names?)' \
+	     $$DIRS $$INC \
+	     | grep -viE 'building|to build|before you (pay|buy)|draft|never make an account|card number|billing|own mail client'); \
 	  HARD=$$(grep -rniE 'no signup step|no sign-?up step|only possible after buying|sign-?in link|magic ?link' \
 	     $$DIRS $$INC); \
-	  if [ -n "$$SCOPED" ]; then \
-	    echo "note: unscoped account/permanence claim — read it, it may be fine:"; \
-	    printf '%s\n' "$$SCOPED"; \
+	  if [ -n "$$PRIV" ]; then \
+	    echo "FAIL: present-tense never-ask / never-collect claim (D-036/D-067) — buying makes"; \
+	    echo "      an account from your email and D-076 lets anyone make one. Past tense about"; \
+	    echo "      the pre-purchase draft is true and passes; a standing promise is not:"; \
+	    printf '%s\n' "$$PRIV"; exit 1; \
+	  fi; \
+	  if [ -n "$$PERM" ]; then \
+	    echo "FAIL: permanence claim with no true form (D-059) — every tier ends, at one year,"; \
+	    echo "      five or ten. Say the term, or say nothing is sold as permanent:"; \
+	    printf '%s\n' "$$PERM"; exit 1; \
+	  fi; \
+	  if [ -n "$$ACCT" ]; then \
+	    echo "FAIL: account claim with no path named (D-086) — say which path it is true for,"; \
+	    echo "      e.g. \"no account to build one\" / \"no account to open it\":"; \
+	    printf '%s\n' "$$ACCT"; exit 1; \
 	  fi; \
 	  if [ -n "$$HARD" ]; then \
 	    echo "FAIL: claim with no true form (D-076, or a sign-in link that does not exist):"; \
@@ -127,6 +203,20 @@ test-tools: ## Unit-test the chat-agent tool adapter (no DB, no network)
 	@php test/structured-test.php
 	@php test/mail-header-test.php
 	@node test/replay-tz-test.mjs
+	@node test/pickplace-test.mjs
+	@# TZ is load-bearing: the bug this guards against only appears west of Greenwich.
+	@TZ=America/Los_Angeles node test/dochead-test.mjs
+	@php test/tutorial-code-test.php
+	@node test/import-export-test.mjs
+	@node test/paste-test.mjs
+	@TZ=America/Los_Angeles node test/ics-test.mjs
+	@node test/geo-import-test.mjs
+	@node test/places-iata-test.mjs
+	@node test/skill-parity.mjs
+	@node test/ring-test.mjs
+	@node test/route-poly-test.mjs
+	@php test/export-read-parity.php
+	@php test/export-map-test.php
 
 test: ## Run the smoke tests against local PHP+MySQL
 	@bash test/smoke.sh

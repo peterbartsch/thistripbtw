@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two tutorials — this trip, btw</title>
+<meta name="description" content="Everything about your trip in one shareable link — a private map anyone can open, with no account to build one and no account to open it. Two ways to make one from your own agent, in about fifteen minutes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://thistripbtw.us/tutorials">
+<meta property="og:title" content="Two tutorials — this trip, btw">
+<meta property="og:description" content="Everything about your trip in one shareable link — a private map anyone can open, with no account to build one and no account to open it. Two ways to make one from your own agent, in about fifteen minutes.">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=6">
+<link rel="stylesheet" href="/sky.css?v=11">
+<link rel="stylesheet" href="/pages.css?v=36">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  pre{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:14px;
+    overflow-x:auto;font-size:13px;line-height:1.55;margin:0 0 16px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.93em}
+  p code,li code{background:var(--ground);padding:1px 5px;border-radius:5px}
+  ul,ol{margin:0 0 14px;padding-left:22px;line-height:1.7}
+  li{margin-bottom:7px}
+  h3{font-family:var(--font-family-display);font-weight:700;font-size:20px;letter-spacing:.03em;
+    text-transform:uppercase;margin:22px 0 8px}
+  .mins{display:inline-block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--soft);
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:0 0 10px}
+  .checkit{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:0 0 16px}
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
+  <h1>Two tutorials</h1>
+  <p class="lede">Everything about your trip in one shareable link &mdash; a private map anyone
+  can open, with no account to build one and no account to open it.</p>
+  <p class="lede">Here is how to make one from your own agent. Pick whichever fits: the first
+  needs no code, the second needs about twenty lines.</p>
+</header>
+
+<main class="pagebody sheet">
+
+  <section>
+    <h2>1 &middot; Connect it to your assistant</h2>
+    <p class="mins">about five minutes &middot; no code</p>
+    <p>If your assistant speaks MCP &mdash; Claude Code, Claude Desktop, and most other clients
+    do &mdash; this is the whole setup. There is no key to get and no account to build one,
+    because the server asks for neither.</p>
+
+    <h3>Step 1 &mdash; add the server</h3>
+    <p>A URL, if your client takes one:</p>
+<pre><code>https://thistripbtw.us/mcp</code></pre>
+    <p>Or run it locally from npm. Node 18 or newer, no dependencies:</p>
+<pre><code>claude mcp add thistripbtw -- npx -y thistripbtw-mcp</code></pre>
+    <p>Both are the same single tool and produce byte-identical links. A parity test runs on
+    every build, so the hosted one and the local one cannot drift apart.</p>
+
+    <h3>Step 2 &mdash; check it before you trust it</h3>
+    <p>This touches no network and needs no configuration:</p>
+<pre><code>npx -y thistripbtw-mcp --selftest</code></pre>
+
+    <h3>Step 3 &mdash; ask for a trip</h3>
+    <p>Say it the way you would say it to a person. The one thing to be firm about is
+    coordinates:</p>
+<pre><code>Build a this-trip-btw link: Chicago to Omaha on 4 September,
+then Omaha to Denver on the 6th, both driving.
+Look the coordinates up first — do not guess them.</code></pre>
+    <p>You get a URL back. Open it and the trip is already drawn on a real map, with the legs
+    in date order and the drive routed along real roads.</p>
+
+    <div class="checkit">
+      <p><strong>How you know it worked:</strong> the page opens on a map with your stops on
+      it, not on an empty one. If a stop lands in the wrong country, the assistant guessed a
+      coordinate instead of looking it up &mdash; geocoders really do rank Reno, Germany above
+      Reno, Nevada.</p>
+    </div>
+
+    <h3>What to do with the link</h3>
+    <ul>
+      <li><strong>Give it to the person.</strong> Don't open it for them. It is their trip.</li>
+      <li><strong>Keep personal details out of it.</strong> Passport numbers, home addresses,
+      phone numbers &mdash; URLs get pasted into chats, tickets and logs.</li>
+      <li><strong>Never invent a departure time.</strong> If the flight was not looked up, leave
+      it out.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2 &middot; Build the link yourself</h2>
+    <p class="mins">about fifteen minutes &middot; ~20 lines</p>
+    <p>If your agent is not an MCP client &mdash; a script, a backend, a framework with its own
+    tool protocol &mdash; you do not need our server at all. The link <em>is</em> the format.
+    Nothing is installed and nothing is called.</p>
+
+    <h3>The shape</h3>
+    <p>Base64url a small JSON object and put it in the URL <strong>fragment</strong>:</p>
+<pre><code>https://thistripbtw.us/new#d=&lt;base64url(JSON)&gt;</code></pre>
+    <p>The object is three keys. <code>o</code> is where they start, <code>l</code> is the legs
+    in order, <code>n</code> is an optional name.</p>
+<pre><code>{
+  "o": { "name": "Chicago, IL", "lat": 41.8781, "lng": -87.6298 },
+  "l": [
+    { "to": { "name": "Omaha, NE",  "lat": 41.2565, "lng": -95.9345 },
+      "mode": "drive", "date": "2026-09-04" },
+    { "to": { "name": "Denver, CO", "lat": 39.7392, "lng": -104.9903 },
+      "mode": "drive", "date": "2026-09-06" }
+  ],
+  "n": "Chicago to Denver"
+}</code></pre>
+    <p>Only <code>o</code> and one leg with a <code>to</code> are required. Everything else is
+    optional and worth sending when you know it &mdash; <code>note</code>, <code>who</code>
+    (up to 8 names), <code>flight</code>, <code>lodging</code>, <code>craft</code>. The full
+    field table is on <a href="/for-agents">/for-agents</a>.</p>
+
+    <h3>JavaScript</h3>
+<pre><code>const trip = {
+  o: { name: "Chicago, IL", lat: 41.8781, lng: -87.6298 },
+  l: [
+    { to: { name: "Omaha, NE",  lat: 41.2565, lng: -95.9345 },  mode: "drive", date: "2026-09-04" },
+    { to: { name: "Denver, CO", lat: 39.7392, lng: -104.9903 }, mode: "drive", date: "2026-09-06" }
+  ],
+  n: "Chicago to Denver"
+};
+
+const b64 = Buffer.from(JSON.stringify(trip), "utf8").toString("base64url");
+console.log("https://thistripbtw.us/new#d=" + b64);</code></pre>
+
+    <h3>Python</h3>
+<pre><code>import base64, json
+
+trip = {
+  "o": {"name": "Chicago, IL", "lat": 41.8781, "lng": -87.6298},
+  "l": [
+    {"to": {"name": "Omaha, NE",  "lat": 41.2565, "lng": -95.9345},  "mode": "drive", "date": "2026-09-04"},
+    {"to": {"name": "Denver, CO", "lat": 39.7392, "lng": -104.9903}, "mode": "drive", "date": "2026-09-06"},
+  ],
+  "n": "Chicago to Denver",
+}
+
+raw = json.dumps(trip, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+print("https://thistripbtw.us/new#d=" + base64.urlsafe_b64encode(raw).decode().rstrip("="))</code></pre>
+
+    <div class="checkit">
+      <p><strong>How you know it worked:</strong> both snippets print the <em>same</em> string,
+      and it is the same string our own MCP server produces for the same input. If yours differs,
+      the usual cause is a JSON encoder inserting spaces &mdash; hence
+      <code>separators=(",", ":")</code> in Python. Paste the URL in a browser: the trip should
+      be on the map before you have touched anything.</p>
+    </div>
+
+    <h3>Four things that will bite</h3>
+    <ul>
+      <li><strong>Coordinates are required and we will not guess.</strong> A wrong guess puts
+      someone's trip in the wrong country and reads as our mistake. Resolve place names first.</li>
+      <li><strong>Strip the <code>=</code> padding</strong> and use the URL-safe alphabet
+      (<code>-</code> and <code>_</code>, not <code>+</code> and <code>/</code>).</li>
+      <li><strong>Dates are <code>YYYY-MM-DD</code></strong>, no time and no zone. An undated
+      leg keeps its place in the order rather than sorting to the end.</li>
+      <li><strong>It goes in the fragment, after the <code>#</code>.</strong> Put it in a query
+      string and you have just sent someone's itinerary to a server. See below.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What you are not sending</h2>
+    <p>Nothing. Browsers never transmit the part of a URL after the <code>#</code>, so the trip
+    does not reach us even when the person opens the link. The local server makes no network
+    request at all; the hosted one encodes what you passed it and hands the string back.</p>
+    <p>The person can then keep the trip if they want to &mdash; a one-time payment from $2.50
+    gives it its own address, two share links and a term: one year, five or ten by tier. Nothing
+    is sold as permanent, and every trip states its end date. That is their decision, not the
+    assistant's. Mention it if they ask; don't sell it.</p>
+  </section>
+
+  <section>
+    <p><a class="btn" href="/new?via=agents">Try it yourself &rarr;</a>
+       <a class="btn btn-quiet" href="/for-agents">The full field table &rarr;</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
+<script src="/pages.js?v=2"></script>
+<script src="/theme.js?v=4"></script>
+</html>

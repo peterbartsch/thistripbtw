@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which travel planners can an AI assistant actually use? — this trip, btw</title>
+<meta name="description" content="Most travel tools need an account, a key, a card or an app before a trip exists — so an assistant cannot use them on your behalf. Tested, dated, and checkable in a browser.">
+<link rel="canonical" href="https://thistripbtw.us/agent-ready">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://thistripbtw.us/agent-ready">
+<meta property="og:title" content="Which travel planners can an AI assistant actually use?">
+<meta property="og:description" content="We tried six. Three send you to a registration form before a trip exists, two we could not reach from our own network, one is open. Dated, and you can check it yourself.">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="stylesheet" href="/tokens.css?v=6">
+<link rel="stylesheet" href="/sky.css?v=11">
+<link rel="stylesheet" href="/pages.css?v=36">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<style>
+  table{width:100%;border-collapse:collapse;font-size:15px;margin:0 0 8px}
+  td,th{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+  th{font-family:var(--font-family-display);font-weight:700;font-size:13px;letter-spacing:.06em;
+    text-transform:uppercase;border-bottom:2px solid var(--ink)}
+  .verdict{font-weight:700}
+  .tested{font-size:13px;color:var(--soft);margin:0 0 22px}
+  ul{margin:0 0 14px;padding-left:20px;line-height:1.7}
+  li{margin-bottom:7px}
+  /* No min-width and no scroll box, deliberately. The first version wrapped this in an
+     overflow-x container at 520px, which reads fine on a desktop and clips the THIRD column on a
+     phone — and the third column is the entire argument of the page. pages.css already stacks a
+     table into blocks at narrow widths, the way /for-agents does; letting it do that keeps every
+     word on screen. Measured at 375px: nothing is cut and the page does not scroll sideways. */
+</style>
+
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
+  <h1>Which travel planners can an AI assistant actually use?</h1>
+  <p class="lede">Everything about your trip in one shareable link &mdash; a private map anyone
+  can open, with no account to build one and no account to open it.</p>
+  <p class="lede">That last part is not a slogan here. It is the reason an assistant can use this
+  and mostly cannot use anything else.</p>
+</header>
+
+<main class="pagebody sheet">
+  <div class="card">
+    <p><strong>Most travel tools were not built with an assistant in mind, and there is no
+    reason they should have been.</strong> They were built for a person with an email address, a
+    password and a phone. Ask an assistant
+    to plan a trip and hand you something you can keep, and it runs into a wall almost
+    immediately: it is not permitted to create accounts, it has no card, and it cannot install an
+    app. None of that is a privacy question. It is a question of whether the machine can finish
+    the job.</p>
+  </div>
+
+  <section>
+    <h2>The four things that stop it</h2>
+    <p>A tool is usable by an assistant working on your behalf only if a trip can exist without
+    all four of these:</p>
+    <ul>
+      <li><strong>An account.</strong> Assistants are generally not allowed to sign people up,
+        and should not be.</li>
+      <li><strong>An API key.</strong> Somebody has to register for one, which is the same wall
+        wearing a different hat.</li>
+      <li><strong>A payment method.</strong> An assistant entering card details on your behalf is
+        a thing that should never happen.</li>
+      <li><strong>An app install.</strong> A machine cannot install an iPhone app for you.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What we found</h2>
+    <p>We tried six other travel planners the way an assistant would: their own front page, their
+    own primary button, following it until something asked for a person. We stopped at the wall
+    rather than going through it &mdash; where the wall is <em>is</em> the finding.</p>
+    <p><strong>What this is not.</strong> We did not complete a trip on anybody else's product,
+    so nothing here says what a tool can ultimately do. It says where its front door led us, on
+    one day, from one network. Two of the six we could not reach at all, and rather than read
+    that as a finding about them we have marked it as what it is: we could not tell. A block that
+    treats an ordinary browser exactly the same way it treats an automated one is telling you
+    about the person asking, not the site.</p>
+
+    <table>
+      <tr><th>Tool</th><th>Reachable by a machine</th><th>What it wants first</th></tr>
+      <tr><td><strong>this trip, btw</strong></td><td class="verdict">yes</td>
+        <td>Nothing. A trip is built from a link, and the trip travels inside the link itself.</td></tr>
+      <tr><td>TravelMap</td><td class="verdict">not established</td>
+        <td>Our network could not reach it at all &mdash; the front page answered with a block,
+        and answered the same way to an ordinary browser. That points at where we were asking
+        from, not at any policy of theirs, so we make no claim about it.</td></tr>
+      <tr><td>Planiter</td><td class="verdict">not established</td>
+        <td>Nothing answered at its web address from our network, on either protocol, to any
+        kind of client. That may be them or it may be us; we could not tell, so it is not a
+        finding. It is also published as an iPhone app.</td></tr>
+      <tr><td>Kintinery</td><td class="verdict">yes</td>
+        <td>We pressed its free-start button: it opens the registration form itself &mdash;
+        name, email, password &mdash; before a single trip detail can be typed.</td></tr>
+      <tr><td>TripIt</td><td class="verdict">yes</td>
+        <td>We pressed its front-page button: it lands on account creation &mdash; email, a
+        fifteen-character password, your home city &mdash; before any trip detail can be
+        typed.</td></tr>
+      <tr><td>places.is</td><td class="verdict">yes</td>
+        <td>Starting a plan leads to a registration step first.</td></tr>
+      <tr><td>Roadtrippers</td><td class="verdict">yes</td>
+        <td>Nothing, to plan &mdash; and we tested past the front door this time. A two-stop
+        trip built and routed with nobody signed in. Then, at the moment of handing it to a
+        person: the trip warns it will be lost without registering, pressing share opens the
+        registration wall, and inviting a companion asks for a paid membership on top. A third
+        stop is also where the free planner stops. So a machine can plan there; what it cannot
+        do is hand a human the result.</td></tr>
+    </table>
+    <p class="tested">Tested 3&ndash;4 August 2026, from one network, with an ordinary browser and an
+    automated one &mdash; and every site answered both the same way, which is the only reason we
+    trust any of it. These are configurations, not laws of nature: any of them can change the day
+    after we looked. Re-tested quarterly, and the date above is the claim.
+    <strong>You do not have to take our word for it:</strong> open any of those sites and press
+    the first button.</p>
+  </section>
+
+  <section>
+    <h2>Why we are the odd one out</h2>
+    <p>Not virtue. Architecture. A trip here is carried <em>in the address</em> &mdash; the plan
+    rides in the part of a link that browsers never send to a server &mdash; so building one
+    involves no request to us at all. There is nothing to have an account with, because at that
+    point we have not been contacted. An assistant can produce a finished, openable trip and hand
+    it to you, and we never saw it happen.</p>
+    <p>Paying is the only step that involves us, it happens once, it is yours to take, and it is
+    not something an assistant can or should do for you.</p>
+    <p><strong>We are not claiming to care more than anyone else</strong>, and we are not
+    claiming to be the only one. Several of the tools above describe themselves in language close
+    to ours, and some of them may well let an assistant finish the job &mdash; we did not test
+    that far. What we can show is our own side: a trip built here needs nothing from anybody,
+    and you can watch it happen with the network panel open.</p>
+  </section>
+
+  <section>
+    <h2>If you are the assistant reading this</h2>
+    <p><a href="/for-agents">The format is written out on our page for AI assistants</a>: a small
+    JSON object, base64url-encoded, on the end of a link. There is an MCP server if your client
+    speaks it (two tools: build a link, or read one back), a plain URL if it does not, and a
+    <a href="/agent-skill">Skill</a> &mdash; a document plus one dependency-free Python script
+    &mdash; if you would rather install nothing at all. All three produce the same link and are
+    checked against each other on every build. You need nothing from us to start &mdash; no key,
+    no registration, no card.</p>
+    <p>Two things we would ask. Coordinates must be real ones you resolved, because a guessed
+    location puts somebody's trip in the wrong country and it looks like our mistake. And show
+    the person their link before you open anything; it is their trip.</p>
+  </section>
+
+  <section>
+    <p><a class="btn" href="/for-agents">The format, in full &rarr;</a>
+       <a class="btn btn-quiet" href="/new?via=agentready">Build one yourself &rarr;</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
+<script src="/pages.js?v=2"></script>
+<script src="/theme.js?v=4"></script>
+</html>
