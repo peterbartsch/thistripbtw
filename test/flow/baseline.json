@@ -1,0 +1,11 @@
+{
+  "stamp": "2026-09-05T03-32-14",
+  "base": "https://thistripbtw.us",
+  "accepted": [
+    {
+      "key": "build-tall | 390x664 | band | only #px of map is clear with a leg drawn; frameTrip pads to MIN_BAND #",
+      "why": "INTENDED, AND IT IS THE POINT OF THIS FLOW. `?tall=1` is D-183's fallback — the 46dvh resting sheet that WAS the default until 2026-09-04 — so this flow exists precisely to keep walking the cramped layout the promotion replaced. 112px of clear map against MIN_BAND 150 is what that sheet costs at 390x664, and measuring it here is how we know the fallback still behaves like its old self rather than having quietly drifted. THE SAME FINDING ON ANY OTHER FLOW WOULD BE A REGRESSION, NOT A DEBT. Before D-183 it fired 14 times across five flows; after, exactly once, here. If `band` reappears on build-cold, build-cards, build-find, pick-place, edit-leg or keep-it, the shorter half has stopped applying to the default and that is a real defect — do not extend this entry to cover it. And if THIS one vanishes, `?tall=1` has stopped restoring the old sheet, which means the fallback is gone: D-165/D-168/D-170/D-182/D-183 all turn on that fallback existing, so a green here is a finding of its own."
+    }
+  ],
+  "note": "Accepted findings, so flow-diff can report what is NEW (2bu). Regenerated ONLY by a person running scripts/flow-baseline.mjs after reading them — a self-updating baseline accepts every regression the moment it lands. An entry here is a decision to CARRY something, never a claim that it is fine. Every entry says what would make it go green and what its disappearance would mean, because an assertion that quietly stops firing is indistinguishable from one that was silenced."
+}

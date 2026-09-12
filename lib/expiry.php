@@ -39,7 +39,7 @@ const EXPIRY_ATTACH_MAX = 4194304;   // 4 MB
 /** Trips lapsing within the window, with a buyer to tell, that we have not told yet. */
 function expiry_due(int $now): array {
     return q_all(
-        'SELECT t.slug, t.name, t.expires, a.email
+        'SELECT t.slug, t.name, t.tier, t.expires, a.email
            FROM trips t
            JOIN account_trips at ON at.slug = t.slug AND at.role = \'owner\'
            JOIN accounts a       ON a.id = at.account_id
@@ -81,7 +81,14 @@ function expiry_message(array $row, int $now, bool $attached = false): array {
           "from us afterwards.\n\n") .
       "If you have lost the phrases, sign in at https://" . APEX . "/account with this address — " .
       "the trip is on your account.\n\n" .
-      "There is no renew button, and this is the only email you will get about it.\n";
+      /* D-188 supersedes the "no renew button" line that stood here. The renewal is the ordinary
+         payment link carrying renew_<slug>; the webhook extends this same trip at this same
+         address. Offered once, in the one email, in plain words — still not a campaign. */
+      (defined('PAY_LINKS') && isset(PAY_LINKS[(string)($row['tier'] ?? 'plan')])
+        ? "If you want it to stay, one payment extends it from the date above at the same address, " .
+          "nothing else changes:\n" . PAY_LINKS[(string)($row['tier'] ?? 'plan')] . "?client_reference_id=renew_$slug\n\n"
+        : '') .
+      "This is the only email you will get about it.\n";
 
     return ['subject' => $subject, 'text' => $text];
 }

@@ -1,43 +1,45 @@
-/* D-110: the encoded-polyline decoder, and the fact that there are TWO of it.
+/* D-110 + §2ae(d): the encoded-polyline decoder and the great-circle arc, now in ONE file.
  *
- * `/api/route` stopped sending coordinate arrays and started sending an encoded polyline, so the
- * decoding moved into the client — and the client is two single-file pages that cannot import
- * from each other. app.html and new.html therefore carry the same function twice, which is
- * precisely the arrangement that drifts. `mcp-parity.php` exists for the same reason and this is
- * the same defence: pin them byte-for-byte, so a fix to one that misses the other fails here
- * rather than on someone's phone halfway to Reno.
+ * This test was written when there were TWO of each — app.html and new.html cannot import from
+ * each other, so anything both needed was copied, and copies drift. It pinned the two decoders
+ * byte-for-byte so that a fix to one that missed the other failed here rather than on somebody's
+ * phone halfway to Reno.
  *
- * The decoder itself is checked against Google's own published test vector rather than against
- * output I generated, because a decoder tested with its own encoder agrees with itself about
- * being wrong.
+ * That defence was the smoke, not the fire. On 2026-08-07 `arcPoints` — the OTHER duplicated
+ * function, which had no such pin — was found drawing flight paths 36° off a Los Angeles → Tokyo
+ * great circle, and had to be fixed twice because there were two of it. Both now live in
+ * `public/legs.js`, the way `ring.js` and `places.js` already did, so the test changes shape: it
+ * no longer compares two copies, it asserts there is only one and checks it.
+ *
+ * The decoder is checked against Google's own published test vector rather than against output I
+ * generated, because a decoder tested with its own encoder agrees with itself about being wrong.
+ * The arc is checked against a geodesic written fresh here, for the same reason.
  *
  * Run: node test/route-poly-test.mjs
  */
 import { readFileSync } from "node:fs";
 
 const root = new URL("..", import.meta.url).pathname;
-const app = readFileSync(root + "public/app.html", "utf8");
-const nw  = readFileSync(root + "public/new.html", "utf8");
+const app  = readFileSync(root + "public/app.html", "utf8");
+const nw   = readFileSync(root + "public/new.html", "utf8");
+const legs = readFileSync(root + "public/legs.js",  "utf8");
 
 let pass = 0, fail = 0;
 const ok = (w, c) => { if (c) { pass++; console.log("  ok   " + w); }
                        else { fail++; console.log("  FAIL " + w); } };
 
-/* ── the two copies must be the same copy ───────────────────────────────────────────── */
-function cut(src, where) {
-  const i = src.indexOf("function decodePoly(s){");
-  if (i < 0) throw new Error("decodePoly not found in " + where);
-  const j = src.indexOf("\n}", i);
-  if (j < 0) throw new Error("decodePoly has no closing brace in " + where);
-  return src.slice(i, j + 2);
+/* ── there must be exactly ONE of each, and both pages must load it ─────────────────── */
+for (const [name, src] of [["app.html", app], ["new.html", nw]]) {
+  ok(`${name} does not carry its own decodePoly`, !/function\s+decodePoly\s*\(/.test(src));
+  ok(`${name} does not carry its own arcPoints`,  !/function\s+arcPoints\s*\(/.test(src));
+  ok(`${name} loads legs.js`, /src="\/legs\.js/.test(src));
 }
-const aSrc = cut(app, "app.html"), nSrc = cut(nw, "new.html");
-ok("app.html and new.html carry byte-identical decoders", aSrc === nSrc);
-if (aSrc !== nSrc) {
-  console.log("      app.html: " + aSrc.length + " bytes\n      new.html: " + nSrc.length + " bytes");
-}
+ok("legs.js defines both", /function\s+decodePoly\s*\(/.test(legs) && /function\s+arcPoints\s*\(/.test(legs));
 
-const decodePoly = new Function(aSrc + "\nreturn decodePoly;")();
+const mod = {};
+new Function("window", legs + "\n")(mod);
+const { decodePoly, arcPoints } = mod;
+ok("and exports them on window", typeof decodePoly === "function" && typeof arcPoints === "function");
 
 /* ── Google's published test vector ─────────────────────────────────────────────────── */
 const VECTOR = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
@@ -121,6 +123,52 @@ ok("both clients agree on the order", !!appReq && !!newReq);
    rather than degrading into a dashed line nobody reads as a defect. */
 ok("the server range-checks latitude, which is what made the flip silent",
    /\$lat < -90 \|\| \$lat > 90/.test(php));
+
+/* ── the arc is a GREAT CIRCLE (§2ae c) ─────────────────────────────────────────────────
+   The bug this pins: arcPoints was a quadratic Bezier in raw lat/lng with a fixed perpendicular
+   offset. It looks like a flight path on a short domestic leg and is wildly wrong on a long one,
+   and it bowed the WRONG WAY — the control point for Chicago→London sat SOUTH of both ends while
+   the true route runs north over Greenland. A reference geodesic is written here rather than
+   reused from the source, so the test cannot agree with the source about being wrong. */
+function geodesic(a, b, steps = 40) {
+  const R = Math.PI / 180;
+  const [la1, lo1, la2, lo2] = [a[0]*R, a[1]*R, b[0]*R, b[1]*R];
+  const d = 2 * Math.asin(Math.sqrt(Math.sin((la2-la1)/2)**2 +
+            Math.cos(la1)*Math.cos(la2)*Math.sin((lo2-lo1)/2)**2));
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const f = i/steps, A = Math.sin((1-f)*d)/Math.sin(d), B = Math.sin(f*d)/Math.sin(d);
+    const x = A*Math.cos(la1)*Math.cos(lo1) + B*Math.cos(la2)*Math.cos(lo2);
+    const y = A*Math.cos(la1)*Math.sin(lo1) + B*Math.cos(la2)*Math.sin(lo2);
+    const z = A*Math.sin(la1) + B*Math.sin(la2);
+    out.push([Math.atan2(z, Math.hypot(x,y))/R, Math.atan2(y,x)/R]);
+  }
+  return out;
+}
+const ROUTES = [
+  ["Chicago→London", [41.88,-87.63], [51.51,-0.13]],
+  ["LA→Tokyo",       [34.05,-118.24], [35.68,139.65]],
+  ["Chicago→Reno",   [41.97,-87.90], [39.50,-119.77]],
+];
+for (const [name, a, b] of ROUTES) {
+  const got = arcPoints(a, b), want = geodesic(a, b);
+  const err = Math.max(...got.map((p, i) => Math.abs(p[0] - want[i][0])));
+  ok(`${name} follows the great circle (max latitude error ${err.toExponential(1)}°)`, err < 1e-9);
+}
+/* Chicago→London specifically: the Bezier put the midpoint at 38.8°N, SOUTH of both endpoints.
+   A great circle puts it at 55.7°N, north of both. Pin the direction, not just the distance. */
+{
+  const mid = arcPoints([41.88,-87.63], [51.51,-0.13])[20][0];
+  ok("Chicago→London bows NORTH of both ends, as a real flight does", mid > 51.51);
+}
+/* LA→Tokyo crosses the antimeridian. Handing Leaflet a jump from +179 to -179 draws a line
+   straight back across the whole map, so longitudes must be unwrapped and continuous. */
+{
+  const lngs = arcPoints([34.05,-118.24], [35.68,139.65]).map(p => p[1]);
+  const jump = Math.max(...lngs.slice(1).map((v, i) => Math.abs(v - lngs[i])));
+  ok(`LA→Tokyo longitudes stay continuous across the antimeridian (max step ${jump.toFixed(1)}°)`, jump < 20);
+}
+ok("two identical points do not divide by zero", arcPoints([10,10],[10,10]).length === 2);
 
 console.log("\n" + (fail ? fail + " failed, " : "") + pass + " passed");
 process.exit(fail ? 1 : 0);

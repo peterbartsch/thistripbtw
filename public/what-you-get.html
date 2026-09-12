@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=36">
+<link rel="stylesheet" href="/pages.css?v=37">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0}
@@ -50,7 +50,7 @@
   }
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
   <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
@@ -73,15 +73,17 @@
   <section>
     <h2>Before you pay anything</h2>
     <ul>
-      <li><strong>Build the whole trip.</strong> Add stops, set dates, chain the legs, watch the route draw along real roads.</li>
+      <li><strong>Build as much as you like.</strong> Unlimited stops, unlimited legs, as many crews
+        and as many versions of the same trip as you feel like sketching. Set dates, chain the legs,
+        watch the route draw along real roads. It all keeps while you work.</li>
       <li><strong>No account to build one, no card, no email.</strong> Not asked for, not optional-but-nagged. Not collected.</li>
       <li><strong>Ask can start it for you.</strong> Type &ldquo;drive from Denver to Moab on the 4th&rdquo; and it builds the legs — two turns per draft before you buy.</li>
       <li><strong>Open the demo</strong> and click around a finished trip, no strings.</li>
     </ul>
-    <p><strong>The catch, stated plainly:</strong> until you buy, the draft lives in your browser
-    and nowhere else. Clear your data, use private browsing, or pick up a different phone, and
-    it's gone. There is no copy on our side, because we never asked who you are. Buying is what
-    moves it somewhere it can survive.</p>
+    <p><strong>One limit, and it is about WHERE the trip lives rather than how much you can build:</strong>
+    until you buy, the draft is in this browser only. Open it on a second phone and you start again;
+    clear your data and it is gone. We hold no copy, because we never asked who you are. Buying moves
+    it somewhere it survives &mdash; and everything you already built comes with it.</p>
   </section>
 
   <section>
@@ -96,16 +98,22 @@
         <td data-l="After">The trip gets its own address &mdash; <strong>thistripbtw.us/xvsbe4r</strong> &mdash; that nobody can guess.</td>
       </tr>
       <tr>
-        <td data-l="Before">Only you, on this device.</td>
+        <td data-l="Before">Yours alone, on this device.</td>
         <td data-l="After">Two word-phrase links: one that lets people <strong>edit</strong>, one that only lets them <strong>look</strong>. Anyone you send them to needs no account.</td>
       </tr>
       <tr>
-        <td data-l="Before">Gone when the browser forgets.</td>
+        <td data-l="Before">Yours to build on for as long as this browser keeps it.</td>
         <td data-l="After">A life span you chose &mdash; <strong>one year</strong> on $2.50, <strong>five</strong> on $5, <strong>ten</strong> on $10. Roughly a dollar a year, paid once.</td>
       </tr>
       <tr>
-        <td data-l="Before">Stops, notes and the map.</td>
-        <td data-l="After">Photos and video pinned to the map, on <strong>$10</strong>.</td>
+        <td data-l="Before">Stops, notes and the map &mdash; as many as you like.</td>
+        <!-- D-088 moved photos to $5 and left video alone at $10 — "every tier has exactly one
+             concrete thing the tier below lacks" — and this row was never updated, so the
+             pricing page understated what $5 buys for five weeks. `TIERS` in api.php is the
+             source of truth: keep => photo true/video false, works => both. Found 2026-09-10
+             while building the tier sheet; you cannot write an honest chooser from a page that
+             disagrees with the code. -->
+        <td data-l="After">Photos pinned to the map, on <strong>$5</strong>. Video too, on <strong>$10</strong>.</td>
       </tr>
       <tr>
         <td data-l="Before">Ask does two turns per draft, and won't look up flights.</td>
@@ -114,6 +122,18 @@
     </table>
     <p>Flight lookups are the one genuinely scarce thing here &mdash; they're a metered service we
     pay for per call, which is why they sit behind the purchase rather than in front of it.</p>
+  </section>
+
+  <section>
+    <h2>What happens at the end</h2>
+    <p>Fourteen days before a trip reaches its end date, the address that bought it gets the whole
+    thing by email as a zip &mdash; the itinerary as a page that opens with no internet, the data
+    behind it, and the map files. The full download with your photos stays available until the
+    last day. One payment from that email extends the trip at the same address; nothing else
+    changes.</p>
+    <p><strong>And if this service ever shuts down, every live trip is sent to its buyer the same
+    way, first, before anything is switched off.</strong> That's a script we keep ready, not a
+    sentiment &mdash; a trip you paid for shouldn't depend on us still being here.</p>
   </section>
 
   <section>
@@ -132,7 +152,7 @@
     receipt, so your trips are findable later. Setting a password is optional: without one,
     we'll email you a link to set one whenever you need it. Your trip links keep working either
     way &mdash; they never needed an account.</p>
-    <p>An account holds three things: your email, a one-way hash of your password, and the list
+    <p>An account holds three things: your email, your password scrambled one way so nobody can read it back, and the list
     of your trips. That's it &mdash; no name, no profile, nothing about what you did.</p>
     <p><strong>Worth knowing either way:</strong> opening a trip still asks for its phrase, and
     we only ever stored a one-way hash of that. So an account remembers <em>which</em> trips are

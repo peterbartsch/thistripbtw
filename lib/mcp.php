@@ -31,6 +31,13 @@
  */
 if (!defined('SECURE_ACCESS')) { http_response_code(403); exit('forbidden'); }
 
+/* read_kept_trip (D-172) reads the database directly rather than calling our own API over
+   loopback, and it shares ONE implementation of the phrase check and the sealing rule with
+   api.php — see lib/trip.php's header for why that mattered more than convenience. */
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/trip.php';
+
 const MCP_MODES = ['drive','fly','train','ferry','water','bike','walk'];
 const MCP_SUBTYPES = ['own','rental','rideshare','taxi','bus','rv','commercial','private','heli',
                       'intercity','commuter','subway','tram','passenger','carferry','sail','motor',
@@ -61,9 +68,28 @@ function mcp_point($o, string $where): array {
 }
 
 /** Mirrors `buildLink()`. Returns ['url' => ..., 'legs' => n]. */
+/* Mirrors legsOf() in the .mjs: legs sent as a STRING are read as JSON, and legs that are present
+   but not a list get told so — instead of falling through to "needs at least one leg", which
+   sent a model off to re-plan a trip that was fine (its own report, 2026-09-10). */
+function mcp_legs_of(array $input): array {
+    $legs = $input['legs'] ?? null;
+    if (is_string($legs)) {
+        $d = json_decode($legs, true);
+        if (json_last_error() !== JSON_ERROR_NONE)
+            throw new RuntimeException('legs arrived as text that is not valid JSON (' . json_last_error_msg() . ') — this usually means a quote is unbalanced or the array was encoded twice. Send legs as a JSON array, not a string');
+        $legs = $d;
+    }
+    if ($legs === null) return [];
+    if (!is_array($legs) || ($legs !== [] && array_keys($legs) !== range(0, count($legs) - 1)))
+        throw new RuntimeException('legs must be an array — got ' . gettype($legs) . '. Each leg is an object with a "to" place');
+    foreach ($legs as $i => $l)
+        if (!is_array($l) || ($l !== [] && array_keys($l) === range(0, count($l) - 1)))
+            throw new RuntimeException('leg ' . ($i + 1) . ' is ' . ($l === null ? 'null' : (is_array($l) ? 'an array' : 'a ' . gettype($l))) . ', not an object with a "to" place');
+    return $legs;
+}
 function mcp_build_link(array $input): array {
     $origin = mcp_point($input['origin'] ?? null, 'origin');
-    $legsIn = isset($input['legs']) && is_array($input['legs']) ? array_values($input['legs']) : [];
+    $legsIn = mcp_legs_of($input);
     if (!$legsIn) throw new RuntimeException('a trip needs at least one leg — where are they going?');
     if (count($legsIn) > MCP_MAX_LEGS)
         throw new RuntimeException(count($legsIn) . ' legs is more than the ' . MCP_MAX_LEGS . ' a link can carry');
@@ -105,6 +131,28 @@ function mcp_build_link(array $input): array {
     $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     $b64  = rtrim(strtr(base64_encode($json), '+/', '-_'), '=');
     return ['url' => 'https://' . APEX . '/new#d=' . $b64, 'legs' => count($legs)];
+}
+
+/** The ceiling nobody here can enforce — see longLinkNote() in the .mjs for the full reasoning.
+ *  The short of it: the whole trip rides in the fragment, a twelve-leg trip is about 3,000
+ *  characters, and many chat clients cut a pasted URL near 2,000. `/new` has refused over its
+ *  own decoder limit since it shipped; this server had no ceiling at all, so it handed back
+ *  links that break in the channel they exist to travel through.
+ *
+ *  A NOTE, not an error: the link is valid and most trips are nowhere near it. The point is
+ *  that the failure lands on the RECIPIENT, who gets a truncated fragment and no route back to
+ *  whoever built it, so the builder has to hear it while they can still act.
+ *
+ *  This text is byte-identical to longLinkNote() in mcp/thistripbtw-mcp.mjs (D-081), and
+ *  test/mcp-parity.php asserts that against both real servers — including that a trip under the
+ *  ceiling gets no note at all. Change one side and the suite fails; change both.
+ */
+const MCP_LINK_SOFT_MAX = 2000;
+function mcp_long_link_note(string $url): string {
+    if (strlen($url) <= MCP_LINK_SOFT_MAX) return '';
+    return "\n\nHeads-up: this link is " . number_format(strlen($url)) . " characters, and many "
+         . "chat apps cut a link near " . number_format(MCP_LINK_SOFT_MAX) . ". If it has to travel "
+         . "through one, say so — keeping the trip turns it into a short link that cannot be cut.";
 }
 
 /** The inverse of mcp_build_link — see readLink() in the .mjs for why it exists and why a
@@ -179,6 +227,210 @@ function mcp_tool(): array {
     }
     return $t;
 }
+function mcp_schema_file(string $f): array {
+    $raw = @file_get_contents(dirname(__DIR__) . '/mcp/' . $f);
+    return $raw ? (json_decode($raw, true) ?: []) : [];
+}
+function mcp_find_tool(): array  { static $t = null; return $t ??= mcp_schema_file('tool-schema-find.json'); }
+function mcp_amend_tool(): array { static $t = null; return $t ??= mcp_schema_file('tool-schema-amend.json'); }
+function mcp_add_tool(): array   { static $t = null; return $t ??= mcp_schema_file('tool-schema-add.json'); }
+function mcp_kept_tool(): array {
+    static $t = null;
+    if ($t === null) {
+        $raw = @file_get_contents(dirname(__DIR__) . '/mcp/tool-schema-kept.json');
+        $t = $raw ? (json_decode($raw, true) ?: []) : [];
+    }
+    return $t;
+}
+
+/* ── read_kept_trip, the hosted half (D-172) ────────────────────────────────────────────────
+   The .mjs reaches this data over HTTPS because it runs on somebody's laptop. This copy runs ON
+   the origin, so it reads the database directly — no loopback request, no second network hop.
+
+   IT SHARES THE AUTH AND THE SEALING RATHER THAN RESTATING THEM. `access_level()` and
+   `seal_pin()` come from lib/trip.php, which is where they moved so that this file would not need
+   its own copy of the auth choke point. That is the whole reason that file exists: two
+   implementations of a link builder drifting is a bug, and two implementations of the phrase check
+   drifting is a breach.
+
+   The projection below IS duplicated — the field allowlist and the summary wording exist in both
+   servers — and test/mcp-parity.php compares the two outputs on the same trip, which is the same
+   defence D-081 already applies to the link builder. */
+
+const MCP_KEPT_STOP_FIELDS = ['kind','track','seq','date','title','lat','lng','mode','craft',
+                              'fly','lodging','notes','spotify','author','path'];
+
+/** Pull the slug and the phrase out of a kept-trip link. Mirrors keptParts() in the .mjs. */
+function mcp_kept_parts(string $raw): array {
+    $raw = trim($raw);
+    if ($raw === '') throw new RuntimeException('no link given');
+    if (str_contains($raw, '#d='))
+        throw new RuntimeException('that is a DRAFT link — it carries the trip inside it, so use read_trip_link, which needs no network and no password');
+    $hash = strpos($raw, '#k=');
+    if ($hash === false)
+        throw new RuntimeException("that link has no #k= phrase. A kept trip's link looks like https://" . APEX . "/abc1234#k=four-word-phrase — the part after #k= is its password, and without it there is nothing to ask for");
+    $phrase = strtolower(trim((string)preg_split('/[?&\s#]/', substr($raw, $hash + 3))[0]));
+    if ($phrase === '') throw new RuntimeException('the #k= fragment is empty');
+    // strip a query string before reading the slug: /efevnwm?pmdiag=1&cb=3#k=… is a real link
+    $before = rtrim(explode('?', substr($raw, 0, $hash))[0], '/');
+    $parts  = array_values(array_filter(explode('/', $before), fn($s) => $s !== ''));
+    $slug   = $parts ? end($parts) : '';
+    if (!preg_match('/^[A-Za-z0-9_-]{4,40}$/', $slug))
+        throw new RuntimeException('could not find the trip\'s address in that link — got "' . ($slug !== '' ? $slug : 'nothing') . '" before the #k=');
+    return [$slug, $phrase];
+}
+
+function mcp_read_kept(array $args): array {
+    [$slug, $phrase] = mcp_kept_parts((string)($args['link'] ?? ''));
+    require_once __DIR__ . '/tally.php'; tally('kept_read');    // D-187 — the hosted half of the same count
+
+    $acc = access_level($slug, $phrase);          // the SHARED choke point, phrase supplied
+    $level = $acc['level'] ?? null;
+    if (!$level && !empty($acc['expired']))
+        throw new RuntimeException('that trip reached its end date and was deleted. Every tier has one, so this is the product working rather than a fault');
+    if (!$level)
+        throw new RuntimeException("not it — that phrase is not accepted for this trip. Check with whoever sent you the link. This counted as one guess against the trip's hourly limit, so it was not retried");
+
+    $trip = $acc['trip'];
+    $who  = trim((string)($acc['member'] ?? ''));   // D-047: identity from the token, never a name
+
+    $rows  = q_all('SELECT * FROM pins  WHERE slug=? ORDER BY updated ASC, id ASC', [$slug]);
+    $notes = q_all('SELECT * FROM notes WHERE slug=? ORDER BY ord ASC, id ASC', [$slug]);
+
+    $stops = [];
+    foreach ($rows as $r) {
+        $p = seal_pin(normalize_pin($r), $who);     // the one line that keeps a drop sealed
+        if (!empty($p['deleted'])) continue;        // a deletion is a row, not an absence
+        $out = [];
+        foreach (MCP_KEPT_STOP_FIELDS as $k)
+            if (isset($p[$k]) && $p[$k] !== null && $p[$k] !== '') $out[$k] = $p[$k];
+        $stops[] = $out;
+    }
+    $noteTexts = [];
+    foreach ($notes as $n) {
+        if (!empty($n['deleted'])) continue;
+        $t = (string)($n['body'] ?? '');
+        if ($t !== '') $noteTexts[] = $t;
+    }
+
+    $expires = $trip['expires'] !== null ? gmdate('Y-m-d', intdiv((int)$trip['expires'], 1000)) : null;
+    $out = [
+        'address' => 'https://' . APEX . '/' . $slug,
+        'name'    => (string)$trip['name'],
+        'access'  => $level,
+        'tier'    => (string)$trip['tier'],
+        'expires' => $expires,
+        'tracks'  => json_decode((string)$trip['labels_json'], true),
+        'stops'   => $stops,
+        'notes'   => $noteTexts,
+    ];
+
+    $dates = array_values(array_filter(array_map(fn($s) => $s['date'] ?? null, $stops)));
+    sort($dates);
+    $n = count($stops);
+    $lines = [];
+    foreach ($stops as $i => $s) {
+        $bits = array_values(array_filter([
+            $s['date'] ?? null,
+            isset($s['track']) ? 'track ' . $s['track'] : null,
+            $s['mode'] ?? null,
+            isset($s['lodging']) ? 'stay: ' . $s['lodging'] : null,
+        ]));
+        $lines[] = ($i + 1) . '. ' . (($s['title'] ?? '') !== '' ? $s['title'] : 'an unnamed place')
+                 . implode('', array_map(fn($b) => '  —  ' . $b, $bits));
+    }
+    $summary = ($out['name'] !== '' ? $out['name'] : 'Untitled trip')
+        . " — $n stop" . ($n === 1 ? '' : 's')
+        . ($dates ? ', ' . $dates[0] . ' to ' . $dates[count($dates) - 1] : ', no dates set')
+        . "\nYou are reading it with " . ($level === 'edit' ? 'an EDIT phrase' : 'a VIEW phrase')
+        . ($expires !== null ? ", and it ends $expires" : '') . ".\n"
+        . ($lines ? implode("\n", $lines) : 'Nothing has been added to it yet.')
+        . "\n\nAnything left sealed for somebody else comes back with empty text: it was never "
+        . "readable by this phrase and is not readable here.";
+
+    return ['trip' => $out, 'summary' => $summary, 'stops' => $n];
+}
+
+/* ── amend_trip_link (hosted): read → merge → build, no network, mirrors amendLink() ──────── */
+function mcp_amend_link(array $input): array {
+    $r = mcp_read_link(['link' => (string)($input['link'] ?? '')]);
+    $trip = $r['trip'];
+    $next = ['name' => $trip['name'] ?? '', 'origin' => $trip['origin'], 'legs' => $trip['legs']];
+    $changed = ['name' => false, 'origin' => false, 'replaced' => false, 'added' => 0, 'removed' => false];
+    if (array_key_exists('name', $input))   { $next['name']   = $input['name'];   $changed['name'] = true; }
+    if (array_key_exists('origin', $input)) { $next['origin'] = $input['origin']; $changed['origin'] = true; }
+    if (array_key_exists('legs', $input))   { $next['legs']   = mcp_legs_of(['legs' => $input['legs']]); $changed['replaced'] = true; }
+    $add = mcp_legs_of(['legs' => $input['add'] ?? null]);
+    if ($add) { $next['legs'] = array_merge($next['legs'], $add); $changed['added'] = count($add); }
+    if (array_key_exists('remove', $input)) {
+        $idx = $input['remove']; $n = count($next['legs']);
+        if (!is_int($idx) || $idx < 1 || $idx > $n) throw new RuntimeException("remove must be a leg number from 1 to $n");
+        array_splice($next['legs'], $idx - 1, 1); $changed['removed'] = true;
+    }
+    $built = mcp_build_link($next);
+    return $built + ['changed' => $changed];
+}
+
+/* ── find_place (hosted): the geocoder, directly — no loopback ─────────────────────────── */
+function mcp_find_place(array $input): array {
+    $q = trim((string)($input['query'] ?? ''));
+    if ($q === '') throw new RuntimeException('no place given — send a name like "Moab, UT" or an airport code');
+    if (mb_strlen($q) > 120) throw new RuntimeException('that query is longer than a place name');
+    require_once __DIR__ . '/geocode.php';
+    $results = [];
+    foreach (array_slice(geo_search($q), 0, 6) as $r)
+        $results[] = ['name' => $r['name'], 'where' => $r['full'], 'lat' => $r['lat'], 'lng' => $r['lon']];
+    if (!$results) throw new RuntimeException("nothing found for \"$q\" — try adding the state or country, or an airport's IATA code");
+    $lines = [];
+    foreach ($results as $i => $r) $lines[] = ($i + 1) . ". {$r['name']} — {$r['lat']}, {$r['lng']}\n   {$r['where']}";
+    $n = count($results);
+    $summary = "$n match" . ($n === 1 ? '' : 'es') . " for \"$q\":\n" . implode("\n", $lines)
+             . ($n > 1 ? "\n\nPick the one in the right region; the first is not always it." : '');
+    return ['results' => $results, 'summary' => $summary];
+}
+
+/* ── add_to_kept_trip (hosted): the write half of D-172 ────────────────────────────────────
+   Same choke point as reading — access_level() with the phrase supplied — and the SAME insert
+   the browser uses, insert_pin() in lib/trip.php, moved there for exactly this. A view phrase
+   reads and is told it cannot write; an edit or member phrase writes one stop. */
+function mcp_add_to_kept(array $args): array {
+    [$slug, $phrase] = mcp_kept_parts((string)($args['link'] ?? ''));
+    $acc = access_level($slug, $phrase);
+    $level = $acc['level'] ?? null;
+    if (!$level && !empty($acc['expired'])) throw new RuntimeException('that trip reached its end date and was deleted');
+    if (!$level) throw new RuntimeException("not it — that phrase is not accepted for this trip. This counted as one guess against the trip's hourly limit");
+    if ($level !== 'edit') throw new RuntimeException('that is a VIEW phrase — it can read this trip but not add to it. Ask the person for the edit link');
+    $st = is_array($args['stop'] ?? null) ? $args['stop'] : [];
+    $pt = mcp_point($st, 'the stop');
+    $date = (string)($st['date'] ?? '');
+    if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new RuntimeException('date must be YYYY-MM-DD');
+    $mode = (string)($st['mode'] ?? 'drive');
+    $p = ['kind' => 'stop', 'title' => $pt['name'], 'lat' => $pt['lat'], 'lng' => $pt['lng'],
+          'date' => $date !== '' ? $date : null, 'mode' => in_array($mode, MCP_MODES, true) ? $mode : 'drive',
+          'notes' => mcp_clamp($st['note'] ?? '', 4000), 'track' => ($st['track'] ?? null) ?: null,
+          'author' => trim((string)($acc['member'] ?? ''))];
+    $id = insert_pin($slug, $p, now_ms());
+    $read = mcp_read_kept($args);
+    $n = $read['stops'];
+    return ['id' => $id, 'stops' => $n,
+            'summary' => 'Added "' . $pt['name'] . '" to ' . ($read['trip']['name'] !== '' ? $read['trip']['name'] : 'the trip') . ". It now has $n stop" . ($n === 1 ? '' : 's') . '.'];
+}
+
+/** The version, READ from mcp/package.json rather than retyped — same rule as the schema above.
+ *  It was a literal until 2026-08-11 and had sat at 1.0.0 since 1.1.0, so the hosted endpoint
+ *  told every client it predated `read_trip_link` while serving it. That is the exact bug
+ *  test/mcp-version.mjs was written to stop, and it missed this copy because the guard checks
+ *  files it knows about and nobody added this one. Deriving it means there is nothing to miss.
+ *  The fallback only matters if mcp/ is absent, and mcp-parity.php fails loudly if it is. */
+function mcp_version(): string {
+    static $v = null;
+    if ($v === null) {
+        $raw = @file_get_contents(dirname(__DIR__) . '/mcp/package.json');
+        $pkg = $raw ? (json_decode($raw, true) ?: []) : [];
+        $v = (string)($pkg['version'] ?? '0.0.0');
+    }
+    return $v;
+}
 
 function mcp_ok($id, array $result): array {
     return ['jsonrpc' => '2.0', 'id' => $id, 'result' => $result];
@@ -206,11 +458,11 @@ function mcp_handle(array $msg): ?array {
         return mcp_ok($id, [
             'protocolVersion' => $ver !== '' ? $ver : MCP_PROTOCOL,
             'capabilities'    => ['tools' => new stdClass()],
-            'serverInfo'      => ['name' => 'thistripbtw', 'version' => '1.0.0'],
+            'serverInfo'      => ['name' => 'thistripbtw', 'version' => mcp_version()],
         ]);
     }
     if ($method === 'ping')       return mcp_ok($id, new stdClass());
-    if ($method === 'tools/list') return mcp_ok($id, ['tools' => [mcp_tool(), mcp_read_tool()]]);
+    if ($method === 'tools/list') return mcp_ok($id, ['tools' => [mcp_tool(), mcp_find_tool(), mcp_amend_tool(), mcp_read_tool(), mcp_kept_tool(), mcp_add_tool()]]);
     /* We declare only `tools`, so a client that follows the spec never asks for resources or
        prompts — and -32601 is the correct answer when it does. But scanners ask anyway: Smithery's
        2026-08-03 scan logged "Failed to list resources" and "Failed to list prompts" as WARNINGS
@@ -233,13 +485,43 @@ function mcp_handle(array $msg): ?array {
                 return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not read that: ' . $e->getMessage()]], 'isError' => true]);
             }
         }
+        $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+        if ($name === 'find_place') {
+            try { $r = mcp_find_place($args);
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary'] . "\n\nAs data:\n```json\n" . json_encode($r['results'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+            } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not find that: ' . $e->getMessage()]], 'isError' => true]); }
+        }
+        if ($name === 'amend_trip_link') {
+            try { $r = mcp_amend_link($args); $c = $r['changed'];
+                $what = implode(', ', array_filter([$c['added'] ? "added {$c['added']}" : null, $c['removed'] ? 'removed one' : null,
+                    $c['replaced'] ? 'replaced the legs' : null, $c['name'] ? 'renamed' : null, $c['origin'] ? 'moved the start' : null])) ?: 'no change';
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => "Trip link ({$r['legs']} " . ($r['legs'] === 1 ? 'leg' : 'legs') . ", $what):\n{$r['url']}\n\nThis replaces the earlier link — give the person this one." . mcp_long_link_note($r['url'])]]]);
+            } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not amend that: ' . $e->getMessage()]], 'isError' => true]); }
+        }
+        if ($name === 'add_to_kept_trip') {
+            try { $r = mcp_add_to_kept($args);
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary']]]]);
+            } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not add that: ' . $e->getMessage()]], 'isError' => true]); }
+        }
+        if ($name === 'read_kept_trip') {
+            $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+            try {
+                $r = mcp_read_kept($args);
+                return mcp_ok($id, ['content' => [['type' => 'text',
+                    'text' => $r['summary'] . "\n\nThe trip as data:\n"
+                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+            } catch (\Throwable $e) {
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not read that: ' . $e->getMessage()]], 'isError' => true]);
+            }
+        }
         if ($name !== 'build_trip_link') return mcp_err($id, -32602, "no tool called \"$name\"");
         $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
         try {
             $r = mcp_build_link($args);
             $text = "Trip link ({$r['legs']} " . ($r['legs'] === 1 ? 'leg' : 'legs') . "):\n{$r['url']}\n\n"
                   . "Give this to the person rather than opening it yourself. It costs nothing and "
-                  . "asks for nothing; if they want it to last, they can keep it from that page.";
+                  . "asks for nothing; if they want it to last, they can keep it from that page."
+                  . mcp_long_link_note($r['url']);
             return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $text]]]);
         } catch (\Throwable $e) {
             /* A tool error is a RESULT with isError, not a JSON-RPC error. The model reads it,

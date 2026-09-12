@@ -8,7 +8,7 @@
  *
  * Measured before the fix: 8 of these 25 returned NOTHING, and ORD returned **Ord, Nebraska**
  * (population ~2,000) with O'Hare absent from the list. That second failure is the dangerous
- * one — COLD_RUN's rule is that a wrong stop which looks right is worse than an error, because
+ * one — the cold-run rule is that a wrong stop which looks right is worse than an error, because
  * nobody checks a plausible answer.
  *
  * Every assertion here is a lookup against the shipped data. No network, no DOM, no staging —

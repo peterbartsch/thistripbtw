@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=36">
+<link rel="stylesheet" href="/pages.css?v=37">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   table{width:100%;border-collapse:collapse;font-size:15px;margin:0 0 8px}
@@ -36,7 +36,7 @@
      word on screen. Measured at 375px: nothing is cut and the page does not scroll sideways. */
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
   <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
@@ -146,7 +146,7 @@
     <h2>If you are the assistant reading this</h2>
     <p><a href="/for-agents">The format is written out on our page for AI assistants</a>: a small
     JSON object, base64url-encoded, on the end of a link. There is an MCP server if your client
-    speaks it (two tools: build a link, or read one back), a plain URL if it does not, and a
+    speaks it (three tools: build a link, read one back, or read a trip somebody bought), a plain URL if it does not, and a
     <a href="/agent-skill">Skill</a> &mdash; a document plus one dependency-free Python script
     &mdash; if you would rather install nothing at all. All three produce the same link and are
     checked against each other on every build. You need nothing from us to start &mdash; no key,

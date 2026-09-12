@@ -168,6 +168,70 @@ function acct_trips(string $accountId): array {
           ORDER BY at.added DESC', [$accountId]);
 }
 
+/**
+ * A trip's own SHAPE, for drawing it small (§2bk).
+ *
+ * `go.remap.earth` draws each route as a ~60px silhouette of its real geometry, so you tell rides
+ * apart before reading a word. A trip already HAS a shape and nothing drew it — the account list
+ * was text links, and every trip's `og:image` is one static file.
+ *
+ * WHAT THIS DOES AND DOES NOT EXPOSE. It returns at most 24 points, normalised into a unit box and
+ * rounded to whole units of 1/1000 — so it carries the trip's SHAPE and not its position: the
+ * bounding box is discarded, and a route in Utah and the same route in Spain produce identical
+ * output. That matters because this rides on `account/me`, and an account already has full access
+ * to every trip in the list (D-071) — but "already allowed" is not a reason to send more than the
+ * job needs.
+ *
+ * `cos(latitude)` OR NORTH-SOUTH TRIPS COME OUT SQUASHED. A degree of longitude is narrower than a
+ * degree of latitude everywhere but the equator, so fitting raw degrees into a square stretches
+ * the east-west axis. Same term `milesBetween()` and `wayArrows()` already carry.
+ *
+ * ONE QUERY, not one per trip: an account with twenty trips would otherwise make twenty round
+ * trips to draw twenty thumbnails.
+ */
+function acct_trip_shapes(array $slugs): array {
+    $slugs = array_values(array_unique(array_filter($slugs, 'strlen')));
+    if (!$slugs) return [];
+    $in   = implode(',', array_fill(0, count($slugs), '?'));
+    $rows = q_all(
+        "SELECT slug, lat, lng FROM pins
+          WHERE kind = 'stop' AND slug IN ($in)
+          ORDER BY slug, COALESCE(date,''), seq, id", $slugs);
+
+    $by = [];
+    foreach ($rows as $r) $by[$r['slug']][] = [(float)$r['lat'], (float)$r['lng']];
+
+    $out = [];
+    foreach ($by as $slug => $pts) {
+        if (count($pts) < 2) continue;              // a single stop has no shape to draw
+        // thin to at most 24, keeping the first and last
+        $max = 24;
+        if (count($pts) > $max) {
+            $step = (count($pts) - 1) / ($max - 1);
+            $thin = [];
+            for ($i = 0; $i < $max; $i++) $thin[] = $pts[(int)round($i * $step)];
+            $pts = $thin;
+        }
+        $lats = array_column($pts, 0);
+        $k    = cos(deg2rad((min($lats) + max($lats)) / 2));
+        $xs   = array_map(fn($p) => $p[1] * $k, $pts);
+        $ys   = array_map(fn($p) => -$p[0], $pts);      // screen y is inverted: north is up
+        $x0 = min($xs); $x1 = max($xs); $y0 = min($ys); $y1 = max($ys);
+        $span = max($x1 - $x0, $y1 - $y0);
+        if ($span <= 0) continue;                       // every stop on one coordinate
+        // centre the shorter axis so the silhouette is not shoved into a corner
+        $padX = ($span - ($x1 - $x0)) / 2;
+        $padY = ($span - ($y1 - $y0)) / 2;
+        $shape = [];
+        foreach ($pts as $i => $_) {
+            $shape[] = [(int)round((($xs[$i] - $x0 + $padX) / $span) * 1000),
+                        (int)round((($ys[$i] - $y0 + $padY) / $span) * 1000)];
+        }
+        $out[$slug] = $shape;
+    }
+    return $out;
+}
+
 /** The session cookie. HttpOnly so script cannot read it; SameSite=Lax so a cross-site POST cannot use it. */
 function acct_cookie_set(string $token): void {
     setcookie('ttb_s', $token, [

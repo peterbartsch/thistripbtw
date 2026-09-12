@@ -436,6 +436,63 @@ if [ -n "${MYSQL_CMD:-}" ]; then
   $MYSQL_CMD -e "UPDATE trips SET chat_turns=0 WHERE slug='$SLUG'" 2>/dev/null
 fi
 
+step "8e. D-172: read_kept_trip — a kept trip read through the MCP server itself"
+# Drives the REAL stdio server against this local app (TTB_SITE), rather than reimplementing what
+# it does. Both halves of the tool that can leak are checked here, because neither is visible to
+# make check: sealing comes from lib/trip.php's seal_pin(), and the deleted filter is mine.
+if ! command -v node >/dev/null 2>&1; then
+  skip "read_kept_trip's happy path (no node on this machine)"
+else
+  kept_call(){   # $1 = link -> echoes the tool's text
+    printf '%s\n' "$(php -r 'echo json_encode(["jsonrpc"=>"2.0","id"=>1,"method"=>"tools/call",
+      "params"=>["name"=>"read_kept_trip","arguments"=>["link"=>$argv[1]]]]);' "$1")" \
+    | TTB_SITE="$CONN" node mcp/thistripbtw-mcp.mjs \
+    | php -r '$j=json_decode(stream_get_contents(STDIN),true);echo $j["result"]["content"][0]["text"]??"(no reply)";'
+  }
+  KEPT="$(kept_call "$CONN/$SLUG#k=$EDIT")"
+  printf '%s' "$KEPT" | grep -q "Could not read that" \
+    && bad "read_kept_trip could not read a trip it just made: $(printf '%s' "$KEPT" | head -c 160)" \
+    || ok "read_kept_trip reads a kept trip with the edit phrase"
+  printf '%s' "$KEPT" | grep -q '"access": "edit"' \
+    && ok "and reports the access level it was granted" || bad "no access level in the payload"
+  # The two keys that are NOT itinerary and must never reach an agent: the offline-basemap token
+  # (a map of where somebody is going) and the roster ids, which are what revoke takes.
+  printf '%s' "$KEPT" | grep -qE '"tiles"|"roster"' \
+    && bad "THE RAW STATE LEAKED — tiles or roster is in the tool's output" \
+    || ok "neither the tiles token nor the roster rides out"
+
+  # A wrong phrase must be refused, and must not be retried into somebody's guess budget.
+  printf '%s' "$(kept_call "$CONN/$SLUG#k=not-the-phrase-at-all")" | grep -q "not it" \
+    && ok "a wrong phrase is refused in the product's own voice" || bad "a wrong phrase was not refused cleanly"
+
+  if [ "$SEALED_FIXTURE" = "1" ]; then
+    printf '%s' "$KEPT" | grep -q "SEALEDTITLEXYZ" \
+      && bad "A SEALED DROP TITLE CAME OUT OF read_kept_trip" || ok "the sealed title is NOT in the tool's output"
+    printf '%s' "$KEPT" | grep -q "OPENEDBYXYZ" \
+      && bad "THE SEALED DROP'S GUEST LIST CAME OUT OF read_kept_trip" || ok "nor is its guest list"
+  else
+    skip "the sealed title is NOT in read_kept_trip's output (no fixture to withhold)"
+    skip "nor is its guest list (no fixture to withhold)"
+  fi
+
+  # The deleted filter. `trip/state` returns deletions as rows with deleted=1 so the polling client
+  # can learn about them, and the first version of this tool listed them as real stops — the live
+  # test passed anyway because that trip happened to have none. Same fixture discipline as 8c: an
+  # absence proves nothing unless the row was there to be dropped.
+  if [ -n "${MYSQL_CMD:-}" ]; then
+    DEL_ERR="$($MYSQL_CMD -e "INSERT INTO pins (id,slug,kind,lat,lng,title,seq,updated,deleted) VALUES ('pdel$$','$SLUG','stop',41.5,-88.2,'DELETEDTITLEXYZ',11,1,1)" 2>&1)"
+    if [ -z "$DEL_ERR" ]; then
+      ok "fixture: a deleted pin is in the database"
+      printf '%s' "$(kept_call "$CONN/$SLUG#k=$EDIT")" | grep -q "DELETEDTITLEXYZ" \
+        && bad "A DELETED STOP IS IN THE ITINERARY" || ok "a deleted stop is NOT in read_kept_trip's output"
+    else
+      bad "deleted-pin fixture FAILED, so the assertion below would have passed vacuously: $DEL_ERR"
+    fi
+  else
+    skip "a deleted stop is NOT in read_kept_trip's output (no MYSQL_CMD, no fixture)"
+  fi
+fi
+
 step "9. D-088: photos from \$5 up, video only at \$10"
 call POST "$T/trip/media?ext=jpg" "$EDIT" "fakejpegbytes" "image/jpeg"
 [ "$CODE" = 402 ] && ok "photo on the \$2.50 plan tier -> 402" || bad "photo expected 402, got $CODE ($BODY)"

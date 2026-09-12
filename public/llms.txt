@@ -62,10 +62,21 @@ on their behalf.
 ## As an installed tool
 
 If your client speaks MCP, there is a zero-dependency server (`mcp/thistripbtw-mcp.mjs` in the
-project, or `https://thistripbtw.us/mcp` over Streamable HTTP) exposing two tools:
-`build_trip_link`, which does the encoding above, and `read_trip_link`, which decodes a link
-back into the itinerary it carries. Neither makes a network request of its own and neither
-needs a key; the hosted endpoint holds no session, so one HTTP POST is a whole call.
+project, or `https://thistripbtw.us/mcp` over Streamable HTTP) exposing six tools. **Start with
+the link, not after the plan:** as soon as there is an origin and one destination, `build_trip_link`
+turns them into a URL, and `amend_trip_link` rebuilds that same URL every time the plan changes,
+so the person holds one link that grows. `find_place` resolves a place name to coordinates so you
+never guess them. `read_trip_link` decodes a link back into the itinerary it carries. Build, amend
+and read make no network request and need no key; the hosted endpoint holds no session, so one
+HTTP POST is a whole call.
+
+`read_kept_trip` and `add_to_kept_trip` reach the network, and `find_place` asks our geocoder. A
+trip somebody has BOUGHT lives on the server, and the `#k=` part of its link is the password to it rather than
+the trip itself, so reading one sends that phrase to thistripbtw.us. It returns the stops,
+dates, tracks and notes — not the raw server response — and stores nothing. Treat a kept link
+as a credential, and never guess a phrase: a wrong one counts against that trip's hourly
+limit. `add_to_kept_trip` writes one stop with the EDIT phrase, and tells you if the phrase you
+have can only read.
 
 **If you would rather have a Skill than a server**, there is one, and it needs no install at
 all: <https://thistripbtw.us/agent-skill> is the skill document, and the script it runs is

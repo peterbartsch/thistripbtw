@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=36">
+<link rel="stylesheet" href="/pages.css?v=37">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   pre{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:14px;
@@ -32,7 +32,7 @@
   li{margin-bottom:7px}
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
   <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
@@ -150,14 +150,26 @@
   <section>
     <h2>Or install it as a tool</h2>
     <p>If your client speaks <strong>MCP</strong>, there is a server that does the encoding for
-    you: two tools, zero dependencies, one readable file, and no network call of its own. Point
-    your client at it and ask for a trip. <code>build_trip_link</code> turns legs into a link;
+    you: six tools, zero dependencies, one readable file. Point
+    your client at it and ask for a trip. <strong>Start with the link, not after the plan.</strong> As soon as there is an origin and
+    one destination, <code>build_trip_link</code> turns them into a link; <code>amend_trip_link</code>
+    rebuilds that link every time the plan changes, so the person holds one that grows;
+    <code>find_place</code> resolves a place name to coordinates so you never guess them; and
     <code>read_trip_link</code> turns a link back into the legs, so you can summarise a trip
-    someone sent you, change one stop and rebuild it, or convert it to something else.</p>
+    someone hands you or pick up last week's plan without re-deriving it. None of those four
+    touch the network except <code>find_place</code>, which asks our geocoder a place name.</p>
+    <p><code>read_kept_trip</code> and <code>add_to_kept_trip</code> are the ones that reach a trip on our server, and it is worth knowing why. A trip
+    somebody has bought lives on our server, and the <code>#k=</code> part of its link is the
+    password to it rather than the trip itself &mdash; so reading one means sending that phrase to
+    us. It returns the stops, the dates, which vehicle each belongs to and the notes; it does not
+    hand back the raw server response, so the per-trip basemap token and the member roster stay
+    where they are. Nothing is stored, and it needs no key. Treat a kept link as a
+    credential, and do not guess at a phrase: a wrong one counts against that trip's hourly
+    limit.</p>
     <p>If your client takes a <strong>URL</strong> &mdash; most connectors do &mdash; point it
     at this and skip the download entirely:</p>
     <pre>https://thistripbtw.us/mcp</pre>
-    <p>Nothing to install, nothing to keep updated. It is the same two tools, and it still does
+    <p>Nothing to install, nothing to keep updated. It is the same six tools, and it still does
     the encoding in the open: the trip rides in the link&rsquo;s fragment, which browsers never
     send to a server, so it does not reach us even when someone opens it.</p>
     <p><strong>One thing worth knowing about gateways.</strong> Some directories and connector
@@ -166,7 +178,7 @@
     But a proxy sees what passes through it, so a trip routed that way is read by whoever runs
     the gateway before it reaches us. We do not engage them and we cannot speak for what they
     keep. If that matters for what you are building, use the URL directly or run the file
-    yourself &mdash; the local server makes no network call at all.</p>
+    yourself &mdash; building a link locally makes no network call at all.</p>
     <p>Prefer to run it yourself? The server is one file with no dependencies:</p>
     <pre>claude mcp add thistripbtw -- npx -y thistripbtw-mcp</pre>
     <p>Or fetch the file and run it yourself, if you would rather read it before you trust it:</p>
@@ -175,7 +187,7 @@ claude mcp add thistripbtw -- node ./thistripbtw-mcp.mjs</pre>
     <p>One file, no dependencies, MIT, and short enough to read before you run it &mdash;
     <a href="/mcp/thistripbtw-mcp.mjs">the source is right there</a>, under three hundred lines,
     and <code>node ./thistripbtw-mcp.mjs --selftest</code> checks it works without touching the
-    network. There is a <a href="/mcp/readme">README</a> as well. It is the same two tools as
+    network. There is a <a href="/mcp/readme">README</a> as well. It is the same six tools as
     the URL above, so pick whichever you would rather trust.</p>
   </section>
 

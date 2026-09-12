@@ -9,9 +9,13 @@ if (!defined('APEX')) define('APEX', 'thistripbtw.us');
 require __DIR__ . '/../lib/mcp.php';
 
 $pass = 0; $fail = 0;
-function ok(string $what, bool $cond) {
+/* $detail prints ONLY on failure, and it is the reason this signature exists: four call sites were
+   already passing a third argument that PHP silently discarded, so a parity failure named the
+   assertion and hid the two values that disagreed — the one thing you need to fix it. */
+function ok(string $what, bool $cond, string $detail = '') {
     global $pass, $fail;
-    if ($cond) { $pass++; echo "  ✓ $what\n"; } else { $fail++; echo "  ✗ $what\n"; }
+    if ($cond) { $pass++; echo "  ✓ $what\n"; }
+    else { $fail++; echo "  ✗ $what" . ($detail !== '' ? "\n      $detail" : '') . "\n"; }
 }
 
 /* Ask the real server, over its real transport, rather than reimplementing its extraction. */
@@ -89,6 +93,14 @@ ok('committed tool-schema.json still matches the .mjs',
    HTTP, which is the exact class of divergence this file exists to catch. */
 ok('committed tool-schema-read.json still matches the .mjs',
    isset($byName['read_trip_link']) && $byName['read_trip_link'] == mcp_read_tool());
+/* 1.3.0 added three: the same rule, three more files. A tool added to one server and not the
+   other is a client that works over npx and fails over HTTP. */
+ok('committed tool-schema-find.json still matches the .mjs',
+   isset($byName['find_place']) && $byName['find_place'] == mcp_find_tool());
+ok('committed tool-schema-amend.json still matches the .mjs',
+   isset($byName['amend_trip_link']) && $byName['amend_trip_link'] == mcp_amend_tool());
+ok('committed tool-schema-add.json still matches the .mjs',
+   isset($byName['add_to_kept_trip']) && $byName['add_to_kept_trip'] == mcp_add_tool());
 $phpList = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/list']);
 $phpNames = array_column($phpList['result']['tools'] ?? [], 'name');
 sort($phpNames); $jsNames = array_keys($byName); sort($jsNames);
@@ -100,6 +112,15 @@ $sample = mcp_build_link(['name'=>'Round trip','origin'=>['name'=>'Chicago, IL',
   'legs'=>[['to'=>['name'=>'Moab, UT','lat'=>38.5733,'lng'=>-109.5498],'mode'=>'drive','date'=>'2026-09-04',
             'who'=>['Mel','Sam'],'lodging'=>'Hotel Maverick','stayNote'=>'late check-in']]]);
 $phpRead = mcp_read_link(['link'=>$sample['url']]);
+/* amend must produce the SAME link from the same change on both servers — it is build + read
+   composed, so a drift in either shows here first. */
+$amended = mcp_amend_link(['link' => $sample['url'], 'add' => [['to' => ['name'=>'Denver, CO','lat'=>39.7392,'lng'=>-104.9903]]], 'name' => 'Longer']);
+$jsAmend = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+    'params'=>['name'=>'amend_trip_link','arguments'=>['link'=>$sample['url'],'add'=>[['to'=>['name'=>'Denver, CO','lat'=>39.7392,'lng'=>-104.9903]]],'name'=>'Longer']]]))
+  . ' | node ' . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null') ?: '{}', true);
+$jsAmendUrl = preg_match('~(https://\S+#d=\S+)~', $jsAmend['result']['content'][0]['text'] ?? '', $mm) ? $mm[1] : '';
+ok('amend_trip_link builds the identical link on both servers', $jsAmendUrl !== '' && $jsAmendUrl === $amended['url'], substr($jsAmendUrl,0,60) . ' vs ' . substr($amended['url'],0,60));
+
 $jsRead = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
     'params'=>['name'=>'read_trip_link','arguments'=>['link'=>$sample['url']]]]))
   . ' | node ' . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null') ?: '{}', true);
@@ -129,6 +150,98 @@ foreach (['resources/list' => 'resources', 'prompts/list' => 'prompts'] as $meth
 }
 ok('neither has quietly started declaring a capability it does not have',
    !str_contains($mjs, "resources: {") && !str_contains($php, "'resources' => new stdClass"));
+
+ok('committed tool-schema-kept.json still matches the .mjs',
+   isset($byName['read_kept_trip']) && $byName['read_kept_trip'] == mcp_kept_tool());
+
+/* read_kept_trip's LINK PARSER is the one part of it that exists twice — the auth and the sealing
+   are shared through lib/trip.php, but each server picks the slug and phrase out of the link
+   itself. So compare the parser, which is pure and needs no database: every one of these refuses
+   before anything is read, and the MESSAGE is what a model acts on, so a drift in the wording is a
+   drift in behaviour. The happy path needs MySQL and is covered in test/run-local.sh. */
+$keptCases = [
+  'a draft link is sent to the other tool' => 'https://' . APEX . '/new#d=eyJvIjp7fX0',
+  'a link with no phrase says so'          => 'https://' . APEX . '/abc1234',
+  'an empty #k= is named'                  => 'https://' . APEX . '/abc1234#k=',
+  'a slug that cannot be one is quoted'    => 'https://' . APEX . '/!!#k=a-b-c-d',
+  'nothing at all'                         => '',
+];
+foreach ($keptCases as $what => $link) {
+  $jsOut = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(
+      ['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+       'params'=>['name'=>'read_kept_trip','arguments'=>['link'=>$link]]]))
+    . ' | node ' . escapeshellarg("$root/mcp/thistripbtw-mcp.mjs") . ' 2>/dev/null') ?: '{}', true);
+  $jsText = $jsOut['result']['content'][0]['text'] ?? '(no reply)';
+  $phpOut = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+                        'params'=>['name'=>'read_kept_trip','arguments'=>['link'=>$link]]]);
+  $phpText = $phpOut['result']['content'][0]['text'] ?? '(no reply)';
+  ok("read_kept_trip refuses identically in both servers — $what", $jsText === $phpText,
+     "js:  $jsText\n      php: $phpText");
+}
+
+/* Both servers must report the SAME version, and this asks the real initialize handlers rather
+   than matching literals. Added 2026-08-11: the PHP said 1.0.0 while the .mjs said 1.1.1, so the
+   HOSTED endpoint told clients it predated read_trip_link while serving it — the same bug
+   test/mcp-version.mjs exists to prevent, in the one copy that guard does not read. It checks
+   files it knows the names of; this checks what a client is actually told. */
+$jsInit = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(
+    ['jsonrpc'=>'2.0','id'=>1,'method'=>'initialize','params'=>['protocolVersion'=>MCP_PROTOCOL]]))
+  . ' | node ' . escapeshellarg("$root/mcp/thistripbtw-mcp.mjs") . ' 2>/dev/null') ?: '{}', true);
+$jsVer  = $jsInit['result']['serverInfo']['version'] ?? '(none)';
+$phpVer = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'initialize',
+                      'params'=>['protocolVersion'=>MCP_PROTOCOL]])['result']['serverInfo']['version'] ?? '(none)';
+ok('both servers report the same serverInfo version', $jsVer === $phpVer, "js: $jsVer  php: $phpVer");
+ok('and it is the version in mcp/package.json',
+   $phpVer === (json_decode(file_get_contents("$root/mcp/package.json"), true)['version'] ?? '?'),
+   "reported: $phpVer");
+
+/* The long-link note must be byte-identical in both servers, and it is the one piece of build
+   output the URL-extracting helpers above cannot see — they match `https://\S+` and the note
+   comes after it. A comment saying "keep these in sync" is not a guard, so this is one.
+
+   Both halves matter. A trip under the ceiling must get NO note (a warning on every link is a
+   warning on nothing), and a trip over it must get the SAME note from either server, down to
+   the thousands separator — number_format() and toLocaleString("en-US") agree on "3,009" and
+   that agreement is an assumption worth failing on rather than trusting. */
+$noteOf = function (array $args, bool $js) use ($root) {
+    if ($js) {
+        $msg = json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+                            'params'=>['name'=>'build_trip_link','arguments'=>$args]]);
+        $out = shell_exec('printf %s ' . escapeshellarg($msg . "\n")
+             . ' | node ' . escapeshellarg("$root/mcp/thistripbtw-mcp.mjs") . ' 2>/dev/null');
+        $j = json_decode(trim(explode("\n", trim((string)$out))[0]), true);
+        $text = $j['result']['content'][0]['text'] ?? '';
+    } else {
+        $r = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+                         'params'=>['name'=>'build_trip_link','arguments'=>$args]]);
+        $text = $r['result']['content'][0]['text'] ?? '';
+    }
+    $at = strpos($text, 'Heads-up:');
+    return $at === false ? '' : substr($text, $at);
+};
+
+$shortTrip = ['origin'=>$P('Denver',39.7392,-104.9903),
+              'legs'=>[['to'=>$P('Moab',38.5733,-109.5498)]]];
+ok('a short link carries no long-link note (js)',  $noteOf($shortTrip, true)  === '');
+ok('a short link carries no long-link note (php)', $noteOf($shortTrip, false) === '');
+
+/* Twelve legs with notes and crews — the shape that measured 3,009 characters in the
+   2026-09-10 UX audit, which is what put this guard here. */
+$longLegs = [];
+for ($i = 0; $i < 12; $i++) {
+    $longLegs[] = ['to'=>$P("Waypoint number $i on the long road", 39.0 + $i / 10, -109.0 - $i / 10),
+                   'mode'=>'drive', 'date'=>'2026-08-' . str_pad((string)($i + 1), 2, '0', STR_PAD_LEFT),
+                   'note'=>"a note long enough to matter on leg $i, written the way a person writes one",
+                   'who'=>['Mel','Sam','Alex','Jo'], 'lodging'=>"Somewhere to sleep in waypoint $i"];
+}
+$longTrip = ['name'=>'The long one','origin'=>$P('Denver International Airport',39.8561,-104.6737),
+             'legs'=>$longLegs];
+$jsNote  = $noteOf($longTrip, true);
+$phpNote = $noteOf($longTrip, false);
+ok('a link over the ceiling gets a long-link note at all', $jsNote !== '' && $phpNote !== '',
+   "js: '" . substr($jsNote, 0, 40) . "'  php: '" . substr($phpNote, 0, 40) . "'");
+ok('and both servers word it identically', $jsNote === $phpNote,
+   "js:  $jsNote\n      php: $phpNote");
 
 echo "\n" . ($fail ? "\033[31m$fail failed\033[0m, " : '') . "\033[32m$pass\033[0m passed\n";
 exit($fail ? 1 : 0);

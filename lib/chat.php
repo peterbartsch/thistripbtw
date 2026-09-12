@@ -106,22 +106,74 @@ function chat_client_ip() {
  * can answer "has this caller had 12 goes today" and nothing else. That keeps a necessary
  * abuse control from quietly becoming the visitor log D-016 forbids.
  */
+/* ONE FILE PER CALLER, not one big JSON — D-110's lesson, which this counter never got.
+ *
+ * It used to be `var/chat-rate.json`: every hashed IP for the day in one file, decoded, mutated
+ * and re-encoded under LOCK_EX on EVERY request. D-091 was right that the read and the write must
+ * share a lock, and that is kept — what was wrong is that the lock was GLOBAL and the work under
+ * it grew with the day's traffic. Measured, mean var_update against a day's file:
+ *
+ *     100 IPs   2 KB     0.18 ms
+ *   1,000 IPs  21 KB     0.43 ms
+ *  10,000 IPs 205 KB     2.78 ms
+ *  50,000 IPs   1 MB    14.25 ms      <- serialized, so ~70 req/s for the whole endpoint
+ *
+ * Serialized is the part that bites: extra PHP workers buy nothing, and it degrades through the
+ * day as the file grows, then resets at midnight. routing.php:36 says the same thing about the
+ * route cache and fixed it there — "works fine for one person testing and falls over the moment
+ * two people plan trips at once, which is the worst possible time to find out."
+ *
+ * Per-caller, contention is now only between requests from the SAME address, which is exactly the
+ * set the limiter is meant to serialize. Everyone else proceeds in parallel. Cost is flat.
+ *
+ * PRIVACY IS UNCHANGED, and the path is why it needed thought: the filename is the same daily
+ * salted hash the JSON key already was, so nothing new about a person is written down. The day is
+ * a DIRECTORY rather than part of the key, so "yesterday is forgotten" is a directory removed
+ * rather than a rewrite — and forgetting stays cheap, which is what keeps it happening.
+ */
+/* The path is overridable so a test never touches the REAL store. That is not a nicety: this
+   directory IS the live rate-limiter, and a test that wipes it on the server would reset every
+   caller's daily count. Defaults to the real location, so production needs no config. */
+function chat_rate_dir(): string {
+    $o = (string)env('CHAT_RATE_DIR', '');
+    return $o !== '' ? rtrim($o, '/') : dirname(__DIR__) . '/var/chat-rate';
+}
+
+/** Drop every day but today. Bounded by construction: two globs and a fixed depth, and it only
+ *  ever removes directories whose name IS a date, so it cannot walk out of chat-rate/. */
+function chat_rate_sweep(string $today): void {
+    foreach (glob(chat_rate_dir() . '/*', GLOB_ONLYDIR) ?: [] as $d) {
+        $day = basename($d);
+        if ($day === $today || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) continue;
+        foreach (glob($d . '/*/*') ?: [] as $f) @unlink($f);
+        foreach (glob($d . '/*', GLOB_ONLYDIR) ?: [] as $s) @rmdir($s);
+        @rmdir($d);
+    }
+}
+
 function chat_rate_ok($ip) {
     if ($ip === '') return true;                       // never lock out on a missing header
     $day  = date('Y-m-d');
     $salt = env('RATE_SALT', '') !== '' ? env('RATE_SALT') : ($day . '|' . env('APEX', 'thistripbtw.us'));
     $key  = substr(hash('sha256', $ip . '|' . $salt), 0, 16);
 
-    /* D-091: the check and the increment happen under ONE lock. They used to be a read, a
-       comparison and a separate write — so parallel requests all read the same count and all
-       passed, which is precisely how an abuser would hit an unauthenticated endpoint that
-       spends tokens. The decision is returned from inside the lock it was made in. */
-    return var_update(dirname(__DIR__) . '/var/chat-rate.json', function (array $j) use ($day, $key) {
-        foreach (array_keys($j) as $d) if ($d !== $day) unset($j[$d]);   // yesterday is forgotten
-        $n = (int)($j[$day][$key] ?? 0);
+    /* Fanned two levels so a busy day is 256 directories rather than one with 50,000 entries in
+       it — readdir on a single huge directory is the next thing that gets slow, and it would get
+       slow in the same silent way. */
+    $path = chat_rate_dir() . '/' . $day . '/' . substr($key, 0, 2) . '/' . $key;
+
+    /* Sweep rarely and off to the side — same trick and the same odds as rt_cache_trim(). It must
+       never be the caller's problem: a request that happens to draw the short straw does a little
+       extra directory work, and one that does not pays nothing. */
+    try { if (random_int(1, 200) === 1) chat_rate_sweep($day); } catch (\Throwable $e) {}
+
+    /* D-091 still holds and is the whole point: the check and the increment happen under ONE
+       lock, and the decision is returned from inside the lock it was made in. Only the SCOPE of
+       that lock changed — it covers one caller now instead of every caller at once. */
+    return var_update($path, function (array $j) {
+        $n = (int)($j['n'] ?? 0);
         if ($n >= CHAT_DRAFT_PER_IP) return [$j, false];
-        $j[$day][$key] = $n + 1;
-        return [$j, true];
+        return [['n' => $n + 1], true];
     });
 }
 
@@ -178,7 +230,10 @@ function chat_call_model(array $messages, array $tools, string $system): array
     ]);
     $raw  = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    /* no curl_close(): a no-op since PHP 8.0 and deprecated in 8.5, and leaving it in lets a
+       Deprecated warning into the response body wherever display_errors is on. api.php's
+       stripe_get_session() dropped it for that reason; these four were missed. The VPS is on
+       8.2 today, so this was latent rather than live — it goes noisy the day DreamHost moves. */
 
     if ($raw === false || $code >= 500) throw new RuntimeException('the assistant is unavailable right now');
     $d = json_decode((string)$raw, true);

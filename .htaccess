@@ -11,7 +11,20 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
 # 2. Never serve dotfiles (.env, .git, ...) or internal directories.
 RewriteRule (^|/)\.(?!well-known/) - [F,L]
-RewriteRule ^(lib|_agents|scripts|test|reference|_media|node_modules|\.wrangler)(/|$) - [F,L]
+# `var` added 2026-08-07, and it was NOT a hypothetical. The runtime state directory sat outside
+# this list while rule 4 serves any real file directly, so it was world-readable by exact name:
+#   /var/geocode.json    200, 25,629 bytes — 140 cached lookups, coordinates AND place names
+#   /var/chat-rate.json  200 — hashed caller addresses with per-day counts
+#   /var/chat-tokens.json 200 — monthly token spend
+#   /var/routes-last     200 — the upstream pacing marker
+# Where people looked is the one thing this product exists not to leak, and it was a plain GET on
+# a guessable filename. The hashed-name caches (var/routes, var/places) needed no listing either:
+# the key is a predictable string, so anyone could sha1 a candidate coordinate and ask whether
+# that place is in our cache.
+# Same lesson as the .env backups in CLAUDE.md — those 404'd because the ROUTER refused an
+# unknown extension, not because a rule denied them. Routing is not a security boundary. `.json`
+# is a perfectly ordinary extension and Apache was happy to serve it.
+RewriteRule ^(lib|_agents|scripts|test|reference|_media|node_modules|var|\.wrangler)(/|$) - [F,L]
 
 # 3. Never serve source / governance / secret file types.
 <FilesMatch "\.(env|sql|md|toml|sh|dist|example|lock)$">
@@ -47,6 +60,23 @@ RewriteRule ^ index.php [L]
 </IfModule>
 <IfModule mod_headers.c>
   Header unset Expires
+</IfModule>
+
+# The basemap archives are IMMUTABLE and must be cached hard, or self-hosting trades a third
+# party's CDN for our own origin on every map view. Measured before this rule: /maps/*.pmtiles
+# came back with NO Cache-Control at all and cf-cache-status DYNAMIC, so Cloudflare cached
+# nothing and every range request walked back to the VPS.
+# The filename carries the version (world-z8, and a per-trip archive is named by HMAC), so a
+# rebuild is a NEW name and a year is safe — §5.3's "treat tiles as immutable and cache them for
+# a very long time" is what keeps this flat.
+# Every directive and section tag on its OWN LINE: a one-line <IfModule> throws out the whole
+# file and 500s every request in the directory, which is what photos/.htaccess did for as long
+# as it existed (CLAUDE.md).
+<IfModule mod_headers.c>
+  <FilesMatch "\.pmtiles\.bin$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+    Header unset Expires
+  </FilesMatch>
 </IfModule>
 
 # Sensible defaults

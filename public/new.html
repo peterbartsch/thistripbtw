@@ -72,9 +72,47 @@
      a pale blue sky and an orange one. That is arithmetic, not taste. DESIGN.md's answer is
      the board, and it is the same move the sign itself makes: an opaque plate makes the sky
      irrelevant, so a single colour pair works everywhere. */
-  .reassure{display:inline-block;margin-top:16px;background:var(--color-brand-board);
-    color:var(--color-brand-ink);border-radius:999px;padding:6px 14px;
-    font-size:13px;font-weight:var(--font-weight-semibold)}
+  /* AN AUTOBAHN DIRECTION SIGN. Peter, 2026-08-11, with a photo of a German gantry: the first
+     attempt "reads strange", and the reference says why — **a real exit sign has no EXIT tab.**
+     The exit-ness is carried entirely by a SOLID DIAGONAL ARROW inside the panel. On that gantry
+     the straight-ahead sign and the exit sign are identical but for the arrow's direction; that is
+     the whole vocabulary, and a tab bolted on top was an invention.
+     So: one solid panel, a thick white border, the legend stacked in white, and a 45-degree arrow
+     on its own bottom row.
+     HOW IT STAYS DIFFERENT FROM THE MARK, which is the constraint that made the first attempt go
+     wrong: the logo is a two-panel SHIELD — teal over gold, arrows on the gold band, place name
+     above. This is a one-panel WEGWEISER: legend, then a ramp. In real signage those are different
+     sign classes that share a road, which is exactly the relationship asked for. */
+  .reassure{display:block;margin:20px auto 0;background:var(--color-brand-teal);
+    color:#fff;border:3px solid #fff;border-radius:4px;
+    padding:10px 14px 8px;max-width:min(292px,86vw);
+    font-family:var(--disp,"Barlow Condensed","Arial Narrow",sans-serif);
+    font-size:16px;font-weight:600;letter-spacing:.01em;line-height:1.32;text-align:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.22)}
+  .reassure span{display:block}
+  /* The arrow row: its own line under the legend, arrow to the LEFT, as on the reference where the
+     ramp arrow leads and the route shield follows it. Nothing follows ours — we are not a road. */
+  /* TWO ARROWS, because a two-lane exit gets two — Peter, 2026-08-11. It is also the reference's
+     own grammar: the straight-ahead sign on that gantry carries TWO vertical arrows for its two
+     lanes, so arrow COUNT is lanes and arrow DIRECTION is where they go. One of each would have
+     said a one-lane ramp, which is a smaller road than this is.
+     Identical geometry twice at a 26px pitch, not one arrow scaled wider: on a real sign the lane
+     arrows are the same arrow repeated, and stretching one would read as a different sign. */
+  /* CENTRED, AND THE VIEWBOX IS WHAT CENTRES IT. `margin:auto` only centres the BOX — if the two
+     arrows do not sit evenly inside their own viewBox, a centred box still looks off, which is what
+     it did: 17px of inset on the left against 172 on the right. So the second arrow is the first
+     one TRANSLATED by a fixed pitch, and the viewBox is sized to leave the same ~3 units of margin
+     on each side. One arrow definition, drawn twice, spaced by arithmetic rather than by eye. */
+  /* PITCH 48, NOT 30. An arrow is ~20 units wide, so a 30-unit pitch left a 10-unit gap — half an
+     arrow, which reads as one wide arrow rather than two lanes. 48 leaves 28, comfortably wider
+     than the arrows themselves, which is roughly what a real gantry gives two lane arrows.
+     The viewBox grows with the pitch (74 = 48 + 23 + ~3 margin) so the pair stays centred without
+     touching the CSS — the arithmetic lives in one place. */
+  .reassure .rs-ramp{display:block;width:80px;height:30px;margin:10px auto 1px;overflow:visible}
+  /* Drawn, not typed (DESIGN.md §2b) — and drawn as a REAL arrow: a shaft on the diagonal with a
+     solid triangular head, not a chevron. A chevron is what the first attempt used and it is why
+     that one read as a UI affordance rather than as signage. */
+  .reassure .rs-ramp path:first-child{stroke-linecap:butt}
   .reassure b{color:var(--color-brand-teal)}
   /* F6 (audit 2026-07-29): the chat had exactly one entry point site-wide — a 46px button
      labelled "Ask", fourth in a stack of icons — and body.pre hid even that on a cold visit,
@@ -104,6 +142,13 @@
   /* On its own board too (D-090) — it failed the same three skies at the same numbers. The
      underline goes with the sky-teal that needed it: on a board the plate is the affordance,
      and an underline under a pill reads as a mistake. */
+  /* The two secondary routes share one row and one margin. `margin-top` stays on .demo-link
+     rather than moving to the row, so a WRAP at a narrow width still spaces the second line —
+     a row-level margin would collapse the gap the moment they stopped sharing a line, which is
+     exactly what happens on the narrowest phones. `border:0` because one of the two is a
+     <button> now and would otherwise carry the UA border inside a pill. */
+  .hero-more{display:flex;flex-wrap:wrap;justify-content:center;gap:0 10px}
+  .hero-more .demo-link{border:0;cursor:pointer;font-family:inherit}
   .demo-link{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;
     background:var(--color-brand-board);color:var(--color-brand-teal);
     border-radius:999px;padding:0 18px;text-decoration:underline;text-underline-offset:3px;
@@ -178,6 +223,164 @@
   body.flowsheet .psearch{display:none;margin:8px auto 0;max-width:340px}
   body.flowsheet.seeking .psearch{display:flex}
 
+  /* ─── ?find=1 — TWO OF THE THREE SHUT EXITS (prototype, 2026-09-01, §2br) ──────────────────
+     Three cold runs: they hesitated, searched, scrolled, got frustrated, and stalled in
+     DIFFERENT places — which is what happens when there is no single wall. The build-cold
+     screenshots showed three at once. This opens the two that are ours.
+     (A) IS NOT HERE AND IS PETER'S: the map opens at zoom 4, so "tap where you're starting" is
+     not a performable instruction — one tap is tens of miles wide. Opening somewhere useful
+     means knowing roughly where they are, and §2z(b) says that needs a DECISIONS entry before
+     any code. `?snap=1` and `?out=1` already exist against it and are unpromoted.
+
+     (B) THE INSTRUCTION COVERED THE ZOOM-IN BUTTON. `.leaflet-top.leaflet-left` sits at
+     --bar-h + 8 and the flowsheet prompt at --bar-h + 6, so they share one band and the pill
+     hid the `+`. The control that rescues a too-coarse map was behind the sentence demanding
+     the tap. STACKED rather than nudged: --prompt-h is already MEASURED by syncLayout for the
+     bottom-anchored case, so the zoom rides below whatever the prompt actually is — including
+     once (C) makes it taller, and at any wrap. Attribution is bottom-right (F-6), so this
+     container holds the zoom buttons only and nothing else moves.
+
+     (C) THE PLACE SEARCH WAS HIDDEN BEHIND THE INSTRUCTION ITSELF. `body.calm` hides `.psearch`
+     and flowsheet re-hides it behind `seeking`, revealed by TAPPING THE PROMPT — a pill that
+     reads as a label and is secretly a button. Its own comment names who it is for: "useless
+     for a town you know by name and not by sight." That is the person who just failed three
+     times, so it is on screen from the start here. The pill still toggles; this removes only
+     the requirement to GUESS that it does. */
+  body.find.flowsheet .leaflet-top.leaflet-left{
+    top:calc(var(--bar-h,64px) + 8px + var(--prompt-h,0px) + 8px)}
+  body.find.flowsheet .psearch{display:flex}
+  /* ...but NOT the describe button, which shares that div. `.psearch` holds the place input AND
+     `.pask`, and "describe it" is one of the four ways in that `calm` deliberately demoted — so
+     revealing the whole div would quietly undo the fix the FIRST cold run bought. The input is
+     not a competing route, it is the TOOL FOR PERFORMING THE INSTRUCTION already on screen:
+     "tap where you're starting" and "…or type a place" are one thought. Describe stays where
+     calm put it, behind "or start another way". */
+  body.find.flowsheet .psearch .pask{display:none}
+  /* §2bt: THE TEACHING RECEDES ONCE IT HAS BEEN OBEYED. Peter's bar is Mario 1-1 — you learn the
+     moves in the first minutes — and 1-1 does not keep the first sign on screen for the rest of
+     the level. Measured on production with one leg down: the prompt is 180px of a 664 screen, and
+     58 of it is "or start another way" plus 34 the subtitle.
+     "Or start another way" is teaching for the START, and they have started; the subtitle's job
+     was confirming the FIRST tap, and that tap is now a leg on the map. Both go once `hasleg` is
+     set, taking the prompt 180 -> 88 and giving the map back 92px at the exact moment there is a
+     route to look at. Neither is DELETED — before the first leg both are on screen, which is the
+     moment they teach. */
+  body.find.flowsheet.hasleg .prompt #pSub{display:none}
+  body.find.hasleg .calm-more{display:none}
+
+  /* ─── ?low=1 — A SHORTER HALF, NOT A SHUT DRAWER (prototype, 2026-09-01, §2bu) ─────────────
+     Once the prompt receded to 88px the band went 92 -> 120 and STOPPED, because what limits it
+     moved: at 390x664 the bottom takes 392 of 664, which is .sh-half at 46dvh (305) plus the
+     keepbar (83). The sheet is now what eats the map.
+     THE ONE THING THIS MUST NOT DO IS UNDO §2aw. That row opened the sheet on the first leg
+     BECAUSE A COLD RUN FOUND the reward for two taps was "a map and a closed drawer" — so this
+     does not shut it, it makes half shorter. The reward stays on screen; it just stops taking
+     three-fifths of the phone. 30dvh is 199 at 664, sized to hold the grab, the heading and both
+     leg rows — the add-route tile falls inside the sheet's own scroll, which is where a
+     third-priority control belongs. Separate flag from ?find=1 on purpose: this is a TRADE
+     against a finding from a person, so it has to be A/B-able rather than folded in. */
+  /* body.low.flowsheet, not body.low: there is a SECOND rule further down —
+     `body.flowsheet .railwrap.sh-half{height:46dvh}` — with identical specificity (0,3,1), and on
+     a tie the later one wins. Measured, not guessed: the class was on the body, no inline height
+     was set, and the rail still came back 388 at 844. Winning on specificity rather than on order
+     so that moving either rule cannot silently undo this. */
+  body.low.flowsheet .railwrap.sh-half{height:30dvh}
+  /* D-183 PROMOTED THIS AND `?tall=1` IS THE WAY BACK — same rule as D-165/D-168/D-170/D-182: the
+     promotion that deletes its own fallback needs it within the week. The class is applied by
+     default now, so the rule above IS the product and this one is the escape hatch; it has to
+     out-specify `body.low.flowsheet` (0,4,1), hence `body.tall.flowsheet .railwrap.sh-half.sh-half`
+     — a repeated class, which is the cheapest legal way to win by one without an !important that
+     nothing could later override. */
+  body.tall.flowsheet .railwrap.sh-half.sh-half{height:46dvh}
+  /* THE FAB SITS ON THE SHEET, so the row's right-aligned label goes under it — visible in the
+     ?low=1 screenshot as "Dr…" where "Drive" should be. The FAB's corner is settled (§2y: "lower
+     right, always"), so the row makes room rather than the control moving. 60px = the 44px button
+     plus its 12px inset and a hair. Applies whenever the sheet is open, not just under a flag:
+     this is a clipped label, not a trade. */
+  body.flowsheet .railwrap:not(.sh-shut) .dl-row{padding-right:60px}
+
+  /* ─── TYPING IS THE MOVE — THE DEFAULT SINCE 2026-09-04 (D-182), was ?type=1 ───────────────
+     Peter chose this over three other directions: "grandma would be lost, but she can text."
+     Texting is one input, always in the same place, no spatial reasoning, and the result appears
+     where you are already looking. This product's first act was a tap on a continent.
+     So the field stops being "…or type a place" and becomes the thing you do: bigger, first, and
+     FOCUSED on entering build so the keyboard is already up — which is what opening a message
+     does. Tapping still works and still makes a leg; it is the second way in rather than the
+     only one. That is a reversal of D-029's promotion and it is PETER'S CALL.
+     **`?tap=1` IS THE WAY BACK AND IT STAYS** — same rule as D-165/D-168/D-170: the promotion
+     that deletes its own fallback needs it within the week. `?type=1` still works and now
+     changes nothing, so links already sent keep behaving.
+
+     🔴 THE PROMOTION CARRIES TWO RULES THAT USED TO LIVE UNDER ?find=1, AND IT IS BROKEN
+     WITHOUT THEM. Measured before promoting rather than after: `body.flowsheet .psearch` is
+     `display:none` and only `.seeking` (a tap on the prompt pill) or `body.find` ever showed it.
+     So `?type=1` ALONE said "Where are you starting? Type a town" over a screen with NO FIELD ON
+     IT, and `enterBuild`'s focus landed on a hidden input — a caret nobody can see and no
+     keyboard. It read as working in every screenshot because the two flags were always tested
+     together. An instruction naming an input the page does not show is worse than the tap-first
+     it replaces, so the field comes with it. */
+  body.type.flowsheet .psearch{display:flex;margin-top:10px}
+  /* ...but NOT `.pask`, which shares that div. Revealing the whole thing would quietly restore
+     "describe it" as a competing fourth way in — the exact thing D-170's calm hero demoted. The
+     input is not a competing route; it is the tool for performing the instruction on screen. */
+  body.type.flowsheet .psearch .pask{display:none}
+  /* 🔴 THE THIRD RULE ?find=1 HAD AND TYPE NEEDED. Measured on production the same afternoon
+     the promotion shipped: zoom-out at [12,128,44,44], the field at [37,147,316,52], and
+     `elementFromPoint` at the button's centre returned `.psearch` — the field was sitting ON the
+     control that rescues a too-coarse map. §2br(B) fixed exactly this under `find` by stacking
+     the zoom below the measured prompt; the promotion carried the field and not the rule that
+     makes room for it. Same shape as the describe deletion two commits back: a flag tested only
+     in combination hides the rules its partner was supplying. */
+  body.type.flowsheet .leaflet-top.leaflet-left{
+    top:calc(var(--bar-h,64px) + 8px + var(--prompt-h,0px) + 8px)}
+  body.type.flowsheet .psearch input{min-height:52px;font-size:17px;
+    border-width:2.5px;box-shadow:0 4px 16px rgba(0,0,0,.22)}
+  /* The subtitle is the ALTERNATIVE now, so it stays quiet — and quiet is SIZE, NEVER CONTRAST
+     (§2ax). **It needs its own plate and this rule did not carry one**: it said "it keeps its
+     plate" while the only plate in the file sat under `body.find`, so promoting type on its own
+     would have put a 12.5px line of bare ink on the night sky — §2ax's exact recorded failure,
+     shipped by a comment that described a neighbour's rule as if it were this one. */
+  body.type.flowsheet .prompt #pSub{display:inline-block;font-size:12.5px;line-height:17px;
+    margin-top:6px;padding:4px 10px;border-radius:999px;
+    background:var(--color-brand-ink);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.28)}
+  /* §2bt: THE TEACHING RECEDES ONCE IT HAS BEEN OBEYED — Mario 1-1 does not keep the first sign
+     up for the rest of the level. The subtitle's job is naming the alternative before the first
+     leg; once there is a route to look at, it is chrome over the thing they made. */
+  body.type.flowsheet.hasleg .prompt #pSub{display:none}
+  /* §2bw(B4): AND IT GOES WHILE THEY ARE TYPING, because that is when the room is needed.
+     Arithmetic at 390x664: an iOS keyboard leaves a visual viewport near 364px, the field
+     bottom sits at 199, so 165px remains for suggestions. The subtitle is the ALTERNATIVE —
+     "or tap the map" — and it is the one thing on screen that is certainly not what they are
+     doing, so it buys ~31px back at the only moment it is dead weight. The title stays: it is
+     the question being answered. `:focus-within` rather than a class, so nothing has to
+     remember to clear it. */
+  body.type.flowsheet .prompt:focus-within #pSub{display:none}
+  /* AND "or start another way" GOES. Two reasons and the second is the one that matters: it was
+     showing THROUGH the suggestion list (visible in the first ?type=1 screenshot as a grey blob
+     over "Evansville"), and it is a third option competing with a field that is already the move.
+     The subtitle already says tapping the map works, which is the alternative worth keeping. */
+  /* 🔴 `.calm-more.p`, NOT `.calm-more`. The flag hid BOTH and that shipped as a regression the
+     moment this became the default: `.calm-more.h` is the HERO's "other ways to start", and it is
+     the only door to **describe it, open a file, and the demo** (D-170's calm hero put all three
+     behind it). Hiding it did not demote the second way in, it DELETED it — `.pask` is hidden
+     here too, so between them there was no route to describe at all. `make flow` caught it as
+     `describe | missing` at both heights within minutes of the deploy, which is the one thing
+     that check exists for. The prompt's line is the one that had to go: it competed with a field
+     that is already the move, and it was showing THROUGH the suggestion list — the grey blob over
+     "Evansville" in the first ?type=1 screenshot. That is a stacking problem in the PROMPT and
+     the hero has no suggestion list to bleed through. */
+  body.type .calm-more.p{display:none}
+  /* ...and the subtitle comes back ONLY while a first tap is unanswered on screen (see
+     setPrompt): it carries the confirmation, not a second row of permanent chrome. */
+  body.find.flowsheet .prompt #pSub{display:inline-block;font-size:13px;line-height:18px;
+    margin-top:6px;padding:5px 11px;border-radius:999px;
+    background:var(--color-brand-ink);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.28)}
+  /* ON THE BOARD, NOT ON THE SKY. First written as bare ink on the gradient and it measured
+     invisible at night in the very first screenshot — the identical failure DESIGN.md records
+     for `.calm-more` in §2ax, where a quiet line resolved to grey floating on an orange dusk.
+     The board is what keeps text legible against every sky, so a second line gets a second
+     plate rather than a lighter colour. Quiet comes from SIZE, never from contrast. */
+
   /* The sheet. Explicit heights rather than translateY: a transformed ancestor is what made
      app.html's take-sheet resolve position:fixed against the wrong box, and heights are the
      thing being measured here anyway. */
@@ -215,6 +418,11 @@
     background:var(--color-steel-3,#9aa6ad)}
   #sheetGrab b{font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--color-steel-2)}
+  /* §2bw(C2): "TAP FOR MORE" sat directly above a heading already reading "YOUR TRIP · 1 leg",
+     so the sheet spent a line telling you what a grab bar is. Open, it is wordless and the bar
+     speaks for itself; SHUT it keeps its label, because shut is the state where the sheet has
+     to say there is something behind it. The aria-label carries the action either way. */
+  #sheetGrab b:empty{display:none}
   /* The head is the sheet's own label when shut, so it must not also print "your trip" twice. */
   body.flowsheet .railwrap.sh-shut .railhead{display:none}
   /* Shut shows the HANDLE and nothing else. Left to clip, the 62px box cut a leg card off
@@ -222,6 +430,21 @@
      the handle's own "3 legs — tap to open" is the affordance, and it does not need help. */
   body.flowsheet .railwrap.sh-shut #rail,
   body.flowsheet .railwrap.sh-shut #askwrap{display:none}
+  /* 🔴 THE RAIL IS THE SCROLLER INSIDE THE SHEET, AND WITHOUT THIS IT WAS A CLIPPER.
+     Found 2026-08-11 by `make flow` at 375x812 in `?cards=1`: "Add a stay" and "Remove leg" sat
+     at y834 on an 812px screen with nothing that scrolls to them. The arithmetic is the whole
+     story — `.rail` is capped at `max-height:58vh` (471px here) and carries `flex:none`, while the
+     half-open sheet is `46dvh` (374px) with `overflow:hidden`. A 471px rail inside a 374px box
+     that cannot scroll clips 97px, permanently, and the buttons that live at the bottom of a leg
+     card are what falls off. `flex:none` is right for the ORIGINAL bottom-anchored strip, which
+     grows upward off the screen edge and is never inside a fixed-height parent; it is wrong the
+     moment that parent became a sheet.
+     `min-height:0` is the load-bearing half: a flex child defaults to `min-height:auto` and will
+     not shrink below its content, so `overflow-y:auto` on it never gets the chance to fire.
+     The card's own `max-height:56vh` goes the same way for the same reason — inside the sheet the
+     RAIL scrolls, and a card that insists on 56vh just re-creates the overflow one level down. */
+  body.flowsheet #rail{flex:1 1 auto;min-height:0;max-height:none}
+  body.flowsheet:not(.carded) .card{max-height:none}
 
   /* "hide cards" clears the overlay so the whole map is visible */
   body.full .railwrap,body.full .keepbar,body.full .prompt{display:none}
@@ -273,7 +496,16 @@
   /* With the cards cleared there is no keepbar to sit above, so it drops to the corner. */
   body.full #fab{bottom:calc(12px + env(safe-area-inset-bottom))}
   /* Hidden with everything else while the ring is up — the ring IS the FAB, expanded. */
-  body.ringing #fab,body.carded #fab{display:none}
+  /* THE FAB SURVIVES AN OPEN CARD (§2bc). `body.carded` used to hide it too, so opening a leg to
+     edit it took away the ring at exactly the moment you were doing something — and the ring is
+     where File, the tiers and "what next" live. Losing your only menu because you opened a card is
+     the friction the field finding named.
+     `body.ringing` STAYS, and for a different reason: the ring is already open, so the button that
+     opens it would be a second copy of what is on screen.
+     The zoomed card is full-screen and scrolls, so the FAB floats over its lower right the same
+     way it floats over the map — nothing underneath it is unreachable, because the card scrolls
+     under it rather than being clipped by it. */
+  body.ringing #fab{display:none}
   /* the prompt IS the instruction — it always says what the next tap does */
   /* --rail-h is the rail's own height, and the rail itself sits --keep-h off the bottom
      (see .railwrap). Stacking on top of it means adding both, or the prompt lands inside
@@ -294,10 +526,82 @@
      ON the panel, its "describe it" pill straddling the panel edge while the panel it opens
      was already up. Same rule the ring and "hide cards" already use: the panel owns the map. */
   body.asking .prompt{display:none}
+  /* §2bw(C4): the panel owns the map while it is up — and `.empty` was NOT covered by that.
+     Measured on production: with the chat open the rail still read "TAP THE MAP TO START"
+     directly under the sentence being typed, so the product gave two contradictory
+     instructions on one screen. The FAB goes for the same reason it goes under `ringing`:
+     at 390x664 it sits over the panel's own send/scroll edge. */
+  body.asking .empty{display:none}
+  /* 🔴 THE PANEL WAS SHRINKING AND ITS TEXTAREA SPILLED OVER THE TRIP LIST. `.railwrap` is a flex
+     column holding `.railhead`, `#askwrap` and `#rail`. `#askwrap` had no flex sizing, so it took
+     the default `flex-shrink:1` and got squeezed once a trip had legs in it — but the textarea
+     inside does not shrink with it, so it overflowed its own parent and drew across the rows
+     below. Measured on production with one leg down and the panel open: **48px of overlap at
+     390x844 and 42px at 1440x900**, with the first list row hit-testing over the field.
+     Reported by Peter from a desktop screenshot; it is WORSE on the phone, and the harness never
+     saw it because the `describe` flow types into an EMPTY trip — the overlap needs legs.
+     `flex:0 0 auto` makes the panel keep its own height; `#rail` already carries
+     `flex:1 1 auto;min-height:0`, so it takes whatever is left and scrolls. */
+  /* SHRINK THE LOG, NOT THE INPUT AND NOT THE LIST. `flex:0 0 auto` on the panel fixed the
+     overlap and immediately traded it for a worse thing: the trip list crushed to 10px with its
+     first row clipped out of view — measured, not guessed. The panel has a part that is MEANT to
+     absorb pressure, and it is the scrollback. So the log takes the squeeze (`min-height:0` is
+     what actually lets a flex child shrink below its content), the form keeps its height, and
+     `#rail` keeps a usable floor so the trip you are describing stays on screen while you
+     describe it. */
+  /* 🔴 THE PANEL AND THE LIST CANNOT BOTH FIT IN A 30dvh SHEET, and every arrangement inside it
+     just moved the damage. Letting `#askwrap` shrink spilled its textarea 48px over the rows (a
+     flex child shrinks; the textarea inside it does not). Pinning it `flex:0 0 auto` cured that
+     and crushed `#rail` to **10px with its first row clipped out of view** — measured both times,
+     which is the only reason the second one was not shipped as a fix.
+     THE SHEET IS THE THING THAT WAS WRONG SIZE. `toggleAsk`'s own comment says the panel owns the
+     surface while it is up, so while asking the sheet goes FULL — the height `sh-full` already
+     defines — and then the panel keeps its own size, the rail takes the remainder and scrolls,
+     and nothing has to be crushed. Reverting to the sheet's own vocabulary rather than inventing
+     a fourth height. */
+  /* `.railwrap.railwrap` — a REPEATED CLASS, because `body.asking .railwrap` is (0,2,1) and loses
+     to `body.flowsheet .railwrap.sh-half` at (0,3,1), so the first version of this rule did
+     nothing at all and the rail stayed 10px. This file already records the same trap for
+     `body.low`. Winning on WEIGHT rather than on order, so moving either rule cannot silently
+     undo it, and without an `!important` nothing could later override. */
+  body.asking.flowsheet .railwrap.railwrap{
+    height:calc(100dvh - var(--bar-h,64px) - var(--keep-h,62px) - 14px)}
+  body.asking .railwrap #askwrap{flex:0 0 auto}
+  body.asking .railwrap #rail{flex:1 1 auto;min-height:0;overflow-y:auto}
+  body.asking #fab{display:none}
+  /* §2bw(B1): NAME AND THEME ARE ASKS MADE AT THE WRONG MOMENT. Ten controls are on screen
+     before the first leg exists, and two of them are about a trip there is no trip for yet —
+     naming one, and dressing it. Both come back the instant a leg lands (`hasleg`), and the sky
+     already follows the clock, so the theme default is right without being chosen.
+     THE FAB DELIBERATELY STAYS. Once the hero is gone it is the only route left to describe-it
+     and to opening a file — `.calm-more.p` and `.pask` are both hidden under the typing-first
+     default — and hiding a door because it is also clutter is the exact mistake that deleted
+     the describe route earlier today. Clutter is a reason to move a control, never to delete a
+     path that has no other way in. */
+  body.flowsheet:not(.hasleg) .bar .name-trip,
+  body.flowsheet:not(.hasleg) #themeBtn{display:none}
   /* §2w: .prompt is pointer-events:none so the HINT never eats a map tap — but nothing ever
      re-enabled this subtree, so the search field and the describe pill were UNTAPPABLE from
      the day they shipped: a tap aimed at "…or type a place" fell through to the map and
      DROPPED A PIN. Confirmed by elementFromPoint on the live renderer before fixing. */
+  /* §2v(c): the import affordance, and it lives in the PROMPT because that is the only empty
+     state the map-first shell actually shows. The previous attempt put it in #rail and D-141
+     deleted it — measured unreachable, button bottom 1007 against a sheet bottom of 812, at both
+     heights. The prompt pill is on screen in every state the shell has.
+     pointer-events:auto is load-bearing: .prompt is pointer-events:none on purpose (§2w) so its
+     hint text cannot eat a map tap — a tap aimed at "…or type a place" used to fall through and
+     DROP A PIN. A button inside it must opt back in, exactly as .psearch does. */
+  .popen{display:inline-flex;align-items:center;gap:6px;pointer-events:auto;cursor:pointer;
+    margin:9px auto 0;min-height:44px;padding:0 14px;border:2px solid var(--color-brand-ink);
+    border-radius:999px;background:var(--color-paper,#fff);color:var(--color-brand-ink);
+    font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.02em;white-space:nowrap}
+  .popen:hover{border-color:var(--color-brand-teal)}
+  .popen-h{display:block;margin-top:5px;font-size:11.5px;line-height:1.35;opacity:.72}
+  /* Once there is a leg the map is the subject and this is clutter; the FAB's File wedge keeps
+     it reachable for the whole rest of the session. */
+  body.hasleg .popenwrap,body.full .popenwrap{display:none}
+  html[data-sky="night"] .popen,html[data-sky="dusk"] .popen,html[data-sky="dawn"] .popen{
+    background:var(--n-surface);color:var(--n-ink);border-color:var(--n-line)}
   .psearch{position:relative;max-width:340px;margin:9px auto 0;padding:0 12px;pointer-events:auto}
   .psearch input{width:100%;min-height:44px;padding:10px 13px;border:2px solid var(--color-brand-ink);
     border-radius:var(--radius-md);background:#fff;color:var(--color-brand-ink);font-size:16px;
@@ -357,9 +661,21 @@
      tuned for light tiles. Once the base can go dark it measured 2.32:1 for "your trip" and
      3.14:1 for the count. Two backgrounds here, both ours, so a per-state colour is tractable
      in a way the hero's four-sky gradient was not (D-090) — same two states the tiles use. */
-  html[data-sky="night"] .railhead,html[data-sky="dusk"] .railhead{text-shadow:0 1px 3px rgba(0,0,0,.85)}
-  html[data-sky="night"] .railhead h2,html[data-sky="dusk"] .railhead h2{color:var(--color-brand-board)}
-  html[data-sky="night"] .railhead .sub,html[data-sky="dusk"] .railhead .sub{color:var(--color-steel-4)}
+  /* `:not([data-sky="day"])`, not an enumerated night+dusk — and the change is the whole point.
+     D-091 listed the two skies it had measured, but DAWN carries the same dark railwrap
+     (rgb(18,24,29); only day turns it white), so it was left failing at 3.22:1 for .sub and
+     2.38:1 for the heading while dusk and night read 9.37 and 15.14. Enumerating states means
+     every state added later starts wrong; inverting it means the light-on-dark treatment is the
+     default and only day opts out — which is how .hero-alt and the body text-shadow in this same
+     file already do it. Measured after: all three dark skies pass. */
+  html:not([data-sky="day"]) .railhead{text-shadow:0 1px 3px rgba(0,0,0,.85)}
+  html:not([data-sky="day"]) .railhead h2{color:var(--color-brand-board)}
+  html:not([data-sky="day"]) .railhead .sub{color:var(--color-steel-4)}
+  /* The SHUT handle was never in D-091's reach at all: .railhead is display:none when the sheet
+     is shut, so the sheet's own label is a different element carrying the same --color-steel-2 on
+     the same dark background — 3.22:1 in dawn, dusk and night. It is also the only text on screen
+     when the sheet is closed, which is the state a phone spends most of its time in. */
+  html:not([data-sky="day"]) #sheetGrab b{color:var(--color-steel-4)}
   .rail{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;align-items:start;
     max-height:58vh}
   .card{max-height:56vh;overflow-y:auto}
@@ -411,6 +727,18 @@
     letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-teal)}
   .lnk.del{color:var(--color-steel-2);margin-left:auto}
   .lnk.done{color:#237A42}
+  /* §2aa — the untraced-leg nudge. Same shape and words as app.html's, so the trip page and the
+     builder say the same thing about the same leg. It states what the map is doing NOW and
+     carries the fix in the same block: one control, not a warning beside a button. Amber while
+     the line is a guess, green once traced — the two-state language `.lnk.done` already used. */
+  .pathnote{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 4px;
+    padding:8px 10px;border-radius:10px;
+    background:rgba(247,179,4,.12);border:1px solid rgba(247,179,4,.45)}
+  .pathnote.done{background:rgba(35,122,66,.09);border-color:rgba(35,122,66,.35)}
+  .pn-txt{font-size:12.5px;line-height:1.35;color:var(--color-brand-ink);flex:1 1 160px;min-width:0}
+  .pathnote.done .pn-txt{opacity:.85}
+  html[data-sky="night"] .pn-txt,html[data-sky="dusk"] .pn-txt,
+  html[data-sky="dawn"] .pn-txt{color:var(--n-ink)}
   .lnk:focus-visible{outline:2px solid var(--color-brand-orange);outline-offset:2px}
   .moretog{margin-top:12px;width:100%;min-height:44px;background:none;cursor:pointer;
     border:1.5px dashed var(--color-steel-3);border-radius:var(--radius-md);color:var(--color-brand-teal);
@@ -461,6 +789,18 @@
 
   html[data-sky="night"] .card,html[data-sky="dusk"] .card,html[data-sky="dawn"] .card{
     background:var(--n-surface);color:var(--n-ink);border-color:var(--n-line)}
+  /* THE SHELF ITSELF — Peter, 2026-08-06: "shelf back should be dark in night mode." The sheet
+     was pinned to `var(--color-paper,#fff)` with no night rule at all, so on a night map every
+     card, the handle and the whole map went dark around a sheet that stayed white — the
+     brightest thing on the screen, and the one surface holding all the others.
+     It takes `--n-surface`, the same value the cards take, and the cards stay legible on it
+     because they already carry a complete `--n-line` border — which is the house rule anyway
+     (a card here reads as a sign). No new palette value is introduced. `--n-line` also replaces
+     the ink top edge, which was invisible against a dark map. */
+  html[data-sky="night"] body.flowsheet .railwrap,
+  html[data-sky="dusk"]  body.flowsheet .railwrap,
+  html[data-sky="dawn"]  body.flowsheet .railwrap{
+    background:var(--n-surface);border-top-color:var(--n-line)}
   html[data-sky="night"] .place,html[data-sky="dusk"] .place,html[data-sky="dawn"] .place{color:var(--n-ink)}
   html[data-sky="night"] .fld,html[data-sky="dusk"] .fld,html[data-sky="dawn"] .fld,
   html[data-sky="night"] .chip,html[data-sky="dusk"] .chip,html[data-sky="dawn"] .chip,
@@ -507,9 +847,9 @@
     letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
   .addtile:hover{border-style:solid}
   .addtile .plus{font-size:16px;line-height:1}
-  /* F-11 PROTOTYPE (/new?dense=1) — see renderDense() for what this is testing and how to
-     remove it. One sign, many exits: the container keeps the card's border/plate so the
-     list still reads as signage rather than a spreadsheet. */
+  /* THE DEFAULT SINCE 2026-08-10 (D-168) — `?cards=1` is the way back. One sign, many exits: the
+     container keeps the card's border/plate so the list still reads as signage rather than a
+     spreadsheet, which is the whole reason this satisfies D-022 instead of breaking it. */
   body.dense .rail{display:block;overflow-x:hidden;overflow-y:auto}
   .denselist{background:var(--color-cool-haze);border:2px solid var(--color-brand-ink);
     border-radius:var(--radius-lg);overflow:hidden;margin-bottom:8px}
@@ -527,6 +867,53 @@
     font-weight:var(--font-weight-semibold);font-size:16px;letter-spacing:.02em;
     color:var(--color-brand-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dl-meta{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--color-steel-2)}
+  /* §2bw(C1): the row IS a button and announces itself to a screen reader — "Leg 1 to Madison,
+     WI — open to edit" — while the eye gets a line of text with no verb and no affordance. The
+     chevron is the cheapest thing that says "this opens". Origin rows do not get one: they are
+     `cursor:default` and open nothing. */
+  .dl-row:not(.dl-origin)::after{content:"";flex:none;width:7px;height:7px;margin-left:2px;
+    border-right:2.5px solid var(--color-brand-teal);border-bottom:2.5px solid var(--color-brand-teal);
+    transform:rotate(-45deg);opacity:.8}
+  /* ...and one line, once, on the first leg — because a chevron says "this opens" and not
+     "this is where how, when and who live". It retires itself the first time a leg is opened. */
+  .dl-hint{padding:7px 12px 8px;font-size:12.5px;line-height:16px;color:var(--color-steel-2);
+    border-top:1.5px solid rgba(20,20,20,.14)}
+  /* The origin row opens the crew editor under ?crew=1, so it stops looking inert and gets the
+     same chevron every other openable row carries. */
+  .dl-origin.dl-tappable{cursor:pointer}
+  .dl-origin.dl-tappable::after{content:"";flex:none;width:7px;height:7px;margin-left:2px;
+    border-right:2.5px solid var(--color-brand-teal);border-bottom:2.5px solid var(--color-brand-teal);
+    transform:rotate(-45deg);opacity:.8}
+  .dl-origin.dl-tappable:active{background:rgba(255,255,255,.7)}
+  .crewnote{margin:10px 2px 0;font-size:12.5px;line-height:17px;color:var(--color-steel-2)}
+  /* ?keep=1 — guide-sign plates, not wedges. A complete border, the legend stacked, the price as
+     the loud thing and what it ADDS underneath in words, because that is the half the ring could
+     not hold. 44px is the floor; these are taller, because this is the decision screen. */
+  .keeptiers{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .keeptier{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;
+    padding:12px 14px;min-height:44px;cursor:pointer;
+    background:var(--color-cool-haze);border:2px solid var(--color-brand-ink);
+    border-radius:var(--radius-lg);font-family:var(--font-family-body)}
+  .keeptier:active{background:#fff}
+  .kt-term{font-family:var(--font-family-display);font-weight:var(--font-weight-semibold);
+    text-transform:uppercase;letter-spacing:.03em;font-size:15px;color:var(--color-brand-ink)}
+  .kt-price{grid-column:2;grid-row:1;font-family:var(--font-family-display);font-weight:700;
+    font-size:18px;color:var(--color-brand-ink)}
+  .kt-adds{grid-column:1 / -1;font-size:13px;line-height:18px;color:var(--color-steel-2)}
+  .keepnote{margin:12px 2px 0;font-size:12.5px;line-height:17px;color:var(--color-steel-2)}
+  .keepfoot{display:flex;flex-wrap:wrap;gap:14px;margin:10px 2px 0}
+  .keeplink{background:none;border:0;padding:6px 0;min-height:44px;cursor:pointer;
+    font-family:var(--font-family-body);font-size:13px;color:var(--color-brand-teal);
+    text-decoration:underline;text-underline-offset:3px}
+  /* §2bw move 4. Inside the leg card, which is already a solid board, so this needs no plate of
+     its own (2ax is about text floating on the SKY) — but it must read as a THING TO TAP rather
+     than a caption, which is what the dashed rule and the teal do. Full width so it cannot be
+     mistaken for another crew chip, and 44px because it is a control. */
+  .crewhint{display:block;width:100%;margin:8px 0 2px;padding:11px 12px;min-height:44px;
+    text-align:left;font-family:var(--font-family-body);font-size:13px;line-height:18px;
+    color:var(--color-brand-teal);background:none;cursor:pointer;
+    border:1.5px dashed var(--color-brand-teal);border-radius:var(--radius-md,10px)}
+  .crewhint:active{background:rgba(3,90,131,.08)}
   /* The empty state must stop before the map toolbar. .mapbtns carries z-index:20 but lives
      INSIDE .maprap, whose z-index:0 is load-bearing for containing Leaflet's panes — so the
      whole wrapper, toolbar included, sits under .railwrap (16). Measured at 375x812 on a fresh
@@ -564,28 +951,60 @@
   html[data-sky="night"] .keepbar,html[data-sky="dusk"] .keepbar,
   html[data-sky="dawn"] .keepbar{background:rgba(16,20,26,.62);
     border-top:1px solid rgba(255,255,255,.15)}
-  html[data-sky="night"] .kb-one,html[data-sky="dusk"] .kb-one,
-  html[data-sky="dawn"] .kb-one{color:var(--color-brand-board);
-    border-bottom-color:rgba(236,236,236,.42)}
-  html[data-sky="night"] .kb-one:hover,html[data-sky="dusk"] .kb-one:hover,
-  html[data-sky="dawn"] .kb-one:hover{color:var(--color-brand-orange);
-    border-bottom-color:var(--color-brand-orange)}
+  /* NO night override for .kb-one, on purpose. It is a gold plate with sign ink now, and D-125's
+     rule is that a gold face keeps its ink in every sky — the old rules here lightened a TEAL
+     link that no longer exists, and applying them would have turned the CTA's text near-white
+     on gold. */
   html[data-sky="night"] .kb-msg,html[data-sky="dusk"] .kb-msg,
   html[data-sky="dawn"] .kb-msg{color:var(--color-steel-4)}
   html[data-sky="night"] .kb-msg b,html[data-sky="dusk"] .kb-msg b,
   html[data-sky="dawn"] .kb-msg b{color:var(--color-brand-board)}
   .kb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-route-amber);margin-right:6px;vertical-align:middle}
-  .kb-actions{display:flex;align-items:center;gap:14px}
+  .kb-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+  /* At phone widths the bar carries a sentence AND two buttons. Measured at 375: the pair needed
+     323px of the 343 available — 20px of slack, which is what "cramped" felt like. Tightening the
+     gap and the secondary's padding buys back room without shrinking either tap target below 44,
+     and the message centres rather than ragging left against the dot. */
+  @media (max-width:560px){
+    .keepbar{gap:8px;padding:8px 12px}
+    .kb-actions{gap:8px;width:100%}
+    .kb-msg{text-align:center;font-size:13px;line-height:1.35}
+    .kb-send{padding:0 12px}
+    .kb-one{padding:0 14px;font-size:13.5px}
+  }
   .kb-btn{font-size:14px;padding:0 20px;min-height:44px;border-radius:var(--radius-md)}
   /* One link, not three buttons. Underlined rather than filled: at the moment it appears there
      is nothing to buy yet — there is a trip to keep — and a filled button on every screen for
      the whole session is what made this bar read as an advert. */
-  .kb-one{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;background:none;
-    border:0;cursor:pointer;white-space:nowrap;
+  /* THE BUY CTA IS A GOLD FACE, not an underlined link — Peter, 2026-08-06: "the CTA for buying
+     should be yellow background." It was teal text with a hairline underline, which reads as
+     one more link in a page full of them; this is the only control here that takes money and it
+     should look like the one thing you can press.
+     Gold plate + sign ink is D-125's existing rule, so this invents no colour and — the same
+     rule's other half — it DOES NOT FLIP for night. A brand accent is not a surface that forgot
+     to change, which is why the night overrides below drop out rather than restyling it. */
+  .kb-one{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;
+    border:0;cursor:pointer;white-space:nowrap;border-radius:999px;
+    background:var(--color-brand-orange);color:var(--color-brand-ink);
     font-family:var(--disp);font-weight:var(--font-weight-semibold);font-size:14px;
-    letter-spacing:.02em;color:var(--color-brand-teal);
-    border-bottom:1.5px solid rgba(3,107,131,.45)}
-  .kb-one:hover{color:var(--color-brand-orange);border-bottom-color:var(--color-brand-orange)}
+    letter-spacing:.02em;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  /* brightness(), not a second gold. There is one brand orange in tokens.css and a hover state
+     is not a reason to invent a second one that would then need a DECISIONS entry. */
+  .kb-one:hover{filter:brightness(.94)}
+  /* §2ab — the quiet sibling of the gold CTA. Teal outline, not a second filled plate: there is
+     one primary action in this bar and it is the one that takes money. Hidden until the flag is
+     on AND there is a leg, because a link to nothing is worse than no link. */
+  .kb-send{display:none}
+  body.hasleg .kb-send{display:inline-flex;align-items:center;gap:6px;min-height:44px;
+    padding:0 14px;border-radius:999px;cursor:pointer;white-space:nowrap;
+    background:none;border:1.5px solid var(--color-brand-teal);color:var(--color-brand-teal);
+    font-family:var(--disp);font-weight:var(--font-weight-semibold);font-size:14px;letter-spacing:.02em}
+  .kb-send:active{transform:translateY(1px)}
+  html[data-sky="night"] .kb-send,html[data-sky="dusk"] .kb-send,
+  html[data-sky="dawn"] .kb-send{border-color:var(--color-brand-board);color:var(--color-brand-board)}
+  @media (prefers-reduced-motion:reduce){ .kb-send:active{transform:none} }
+  .kb-one:active{transform:translateY(1px)}
+  @media (prefers-reduced-motion:reduce){ .kb-one:active{transform:none} }
   /* "At the right time" = when there is something to keep. With no legs the trip does not exist
      yet and a price is just noise over an empty map. body.hasleg is the page's own signal. */
   body:not(.hasleg) .keepbar{display:none}
@@ -617,10 +1036,15 @@
      retires that approach rather than tuning it further.
      text-shadow off with it: the hero's shadow exists for text on the sky, and on a light
      plate it only muddies 13px type. */
-  .reassure{color:var(--color-brand-ink)}
-  .reassure b{color:var(--color-brand-teal)}
+  /* WHITE ON TEAL now that this is a direction sign rather than a board plate (2026-08-11). This
+     block exists to pin brand colours OVER sky.css, so it is where the sign's legend colour has to
+     live — setting `color:#fff` on the component alone lost to the ink here and the panel shipped
+     for one deploy with ink text on a teal ground. DESIGN.md: white on teal is 7.52:1, AAA. */
+  .reassure{color:#fff}
+  .reassure b{color:#fff}
   .demo-link{color:var(--color-brand-teal)}
-  .reassure,.demo-link{text-shadow:none}
+  .calm-more{color:var(--color-brand-teal)}
+  .reassure,.demo-link,.calm-more{text-shadow:none}
   .hidden{display:none!important}
 
   /* min-height:0 on both is what lets the railwrap ceiling above actually bind: a flex item's
@@ -748,20 +1172,124 @@
       display:block;margin-top:12pt;padding-top:7pt;border-top:2px solid #000;
       font-size:9.5pt;line-height:1.5;color:#333}
   }
+
+/* ─── ?calm=1 — ONE THING AT A TIME (prototype, 2026-08-10) ────────────────────────────────
+   Peter, 2026-08-10: "things are not 'Apple' simple yet... it all still feels a little busy
+   and visually overwhelming." Measured on the shipped page rather than guessed: the empty
+   build view carries TEN interactive controls with ZERO content on screen — logo, theme,
+   menu, zoom +, zoom −, attribution, open-a-file, place input, describe, FAB — plus an
+   instruction, a subline, a four-format list and a sheet saying "no legs yet". And the
+   instruction is "tap where you're starting", immediately followed by three alternatives to
+   tapping. The hero does the same thing: one gold CTA, then three more ways in at once.
+   Nothing here is DELETED — every route still exists, one tap further away, behind a single
+   quiet line. The bet is that a first-timer needs one instruction and a second-timer will
+   look for the others. This is entirely inside body.calm, so the default page is untouched. */
+body.calm .hero > p{ display:none; }                    /* the headline already says it */
+/* NO OPACITY and no shrinking. Fading ink to .72 on a plate whose whole job is contrast was my
+   own change on 08-10 and it is what made this look washed as well as squashed. A sign is not
+   quiet by being faint; it is quiet by being small and saying one thing per line. */
+body.calm .hero .reassure{ font-size:15px; }
+body.calm .hero-alt,
+body.calm .hero-more{ display:none; }
+body.calm.calm-open .hero-alt{ display:inline-flex; }
+body.calm.calm-open .hero-more{ display:flex; }
+body.calm .popenwrap,
+body.calm .psearch{ display:none; }
+body.calm.calm-open2 .popenwrap{ display:block; }
+body.calm.calm-open2 .psearch{ display:flex; }
+/* THE ONE QUIET LINE THAT HOLDS THE OTHER ROUTES — and it was unreadable on a real phone.
+   It resolved to `var(--muted, #8fa1ad)`, and **`--muted` is not defined on this page**, so every
+   visitor got the literal fallback: steel grey, floating on the sky gradient. At dusk that lands
+   grey-on-orange and disappears (Peter's screenshot, 2026-08-11, 7:32pm).
+   DESIGN.md has the answer and it is not a colour tweak: **the board is load-bearing — it is what
+   keeps text legible on every sky.** `.demo-link` already solved this exact problem for this exact
+   kind of control, so this now matches it: board plate, teal ink, pill, 44px. Quiet is a matter of
+   size and weight, not of being hard to see. */
+.calm-more{
+  display:inline-flex; align-items:center; justify-content:center;
+  margin:14px auto 0; padding:0 18px; min-height:44px;
+  background:var(--color-brand-board); color:var(--color-brand-teal);
+  border:0; border-radius:999px; cursor:pointer;
+  font-family:inherit; font-size:13.5px; font-weight:var(--font-weight-semibold);
+  text-decoration:underline; text-underline-offset:3px;
+  text-decoration-color:rgba(3,90,131,.45); text-shadow:none;
+}
+.calm-more:hover{ text-decoration-color:var(--color-brand-teal); }
+body.calm.calm-open .calm-more.h,
+body.calm.calm-open2 .calm-more.p{ display:none; }
+
+/* A LOADED TILE MUST BE VISIBLE, EVEN IF THE FADE NEVER RAN (D-167).
+   Leaflet fades a tile in by setting inline `opacity:0` and ramping it to 1 from
+   `requestAnimationFrame`. rAF does not run in a backgrounded tab — so if the tiles finish
+   loading while the phone is on another app, or the browser throttles the page, the ramp never
+   happens and Leaflet never retries. The tiles are fully painted and permanently invisible: a
+   blank map that a pan or a zoom fixes, which is exactly how it gets reported as "the map does
+   not load" and exactly why it is so hard to reproduce on demand.
+   Measured 2026-08-10 in an automation tab, which freezes rAF the same way a background tab does:
+   48 canvases, all carrying `leaflet-tile-loaded`, all with a real painted centre pixel
+   (203,221,231,255), all at computed opacity 0. Calling `_updateOpacity()` by hand took every one
+   of them to 1 and the map appeared — Tahoe, Truckee, Reno, roads, water.
+   `!important` in a stylesheet beats a non-important inline style, which is the whole point: this
+   overrides Leaflet's inline 0. It is scoped to `.leaflet-tile-loaded`, so a tile that has NOT
+   finished still stays hidden and nothing half-painted is shown. */
+.leaflet-tile-pane canvas.leaflet-tile-loaded{ opacity:1 !important; }
 </style>
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+
+<!-- ─── If you are an AI assistant reading this page ───────────────────────────────────────
+     You were probably handed this URL by a person. You can do more with it than read the HTML:
+     this site runs an MCP server that reads a trip link and amends it. No account to build a
+     trip, no account to open one, and this server needs no API key and no card.
+
+       endpoint   https://thistripbtw.us/mcp   (streamable-http, zero install)
+       manifest   https://thistripbtw.us/.well-known/mcp.json
+       docs       https://thistripbtw.us/for-agents
+
+     Why this comment exists: a trip link travels through chats. Someone pastes it to a friend,
+     the friend pastes it to their own assistant — and until 2026-09-11 that assistant learned
+     nothing, because the only pointer to the agent path on this page was a nav link inside a
+     closed menu. Every shared link was a discovery event that discovered nothing. Plain prose
+     rather than only a <link rel>, because a model fetching this page reads the source; there
+     is no registered link relation for MCP to rely on yet. -->
+<link rel="mcp" href="/.well-known/mcp.json">
+<meta name="mcp-server" content="https://thistripbtw.us/mcp">
 </head>
 <body class="pre">
 
   <div class="hero" id="hero">
     <img class="brand-logo" src="/sign.svg?v=1" width="700" height="300"
          alt="this trip, btw" fetchpriority="high">
-    <h1>Start your trip in one tap.</h1>
-    <p>Drop the first leg on a shared map. Add the crew, build it together, live it — all from one private link.</p>
+    <h1>Start your trip by typing a place.</h1>
+    <p>Type where you're starting and it lands on a shared map. Add the crew, build it together, live it — all from one private link.</p>
     <button class="signbtn cta" onclick="enterBuild()">Start your first leg</button>
-    <div class="reassure"><b>nothing to install</b> · <b>no sign-up to build</b> · you only pay when you want to keep it</div>
+    <div class="reassure">
+      <span>nothing to install</span>
+      <span>no sign-up to build</span>
+      <span>you only pay when you want to keep it</span>
+      <svg class="rs-ramp" viewBox="0 0 74 28" aria-hidden="true" focusable="false">
+        <g fill="#fff" stroke="#fff">
+          <path d="M5.5 22.5 L17 11" stroke-width="4.6"/>
+          <path d="M23 5 L23 16.5 L11.5 5 Z" stroke="none"/>
+        </g>
+        <g fill="#fff" stroke="#fff" transform="translate(48 0)">
+          <path d="M5.5 22.5 L17 11" stroke-width="4.6"/>
+          <path d="M23 5 L23 16.5 L11.5 5 Z" stroke="none"/>
+        </g>
+      </svg>
+    </div>
     <button class="hero-alt" type="button" onclick="enterBuildAsk()"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.9 9 19.7 10.9 13.9 12.8 12 18.6 10.1 12.8 4.3 10.9 10.1 9z"/><path d="M18.6 3.4v2.8M17.2 4.8H20"/></svg> or describe it in a sentence</button>
-    <a class="demo-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener">or explore a live demo →</a>
+    <!-- §2v(c). THE HERO IS THE REAL EMPTY STATE — a fresh /new opens here (body.pre), with the
+         whole app chrome including the prompt hidden, so an import affordance that lives only in
+         the build view is not offered at the moment somebody holding a file is looking for one.
+         ON THE SAME LINE as the demo link, deliberately: measured at 375x500 before touching it,
+         the hero already had ZERO headroom and the demo link sat at 512 against a 500 fold. It is
+         reachable — the hero is overflow-y:auto and scrolls — but stacking a third block would
+         push it further for no reason. Two secondary "or" routes on one row costs no height and
+         groups them, which is what they are: the ways in that are not tapping the map. -->
+    <div class="hero-more">
+      <button class="demo-link" type="button" onclick="document.getElementById('openCopy').click()">or open a file</button>
+      <a class="demo-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener">or explore a live demo →</a>
+    </div>
   </div>
 
   <main class="app">
@@ -769,7 +1297,7 @@
     <div class="bar">
       <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
       <span class="name-trip" id="tripName" contenteditable="true" role="textbox" aria-label="Name your trip"></span>
-      <button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+      <button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
       <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
     </div>
     <nav id="menu">
@@ -784,9 +1312,19 @@
            load-bearing for Leaflet's panes, and that is precisely why three of these
            buttons were untappable under .railwrap for months. -->
       <div id="map"></div>
-      <div class="prompt"><b id="pTitle">Tap where you're starting</b><span id="pSub">Then tap where you're going — that's your first leg.</span>
+      <div class="prompt"><b id="pTitle">Tap where you're starting</b><span id="pSub">Then tap where you're going.</span>
         <!-- Typing was never an option here: you could only tap. Fine for a place you can find
              on a map, useless for a town you know by name and not by sight. -->
+        <!-- §2v(c). The moment somebody who ALREADY has an itinerary is most likely to want it in
+             is the moment the map is empty, and until now the only route was FAB → File → Open:
+             two taps into a menu, behind the word "File". The formats are named because they are
+             the point — a recorded ride and a Google Maps export are files people already have
+             and did not know this would read. No brand is named: our own .gpx round-trips and a
+             GPX track imports, but no real Strava or Wanderlog export has been round-tripped
+             here, and naming a tool we have not tested is the §2o failure. -->
+        <div class="popenwrap"><button type="button" class="popen" onclick="document.getElementById('openCopy').click()"
+          aria-label="Open a trip file you already have"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5M4 16v3.2h16V16"/></svg> Open a file you have</button>
+          <span class="popen-h">a saved trip, a calendar, or a recorded ride &middot; .ics &middot; .gpx &middot; .kml &middot; .kmz</span></div>
         <div class="psearch"><input id="pFind" type="text" placeholder="…or type a place" aria-label="Search for a place"><button type="button" class="pask" onclick="toggleAsk()" aria-label="Describe the whole trip in words"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.9 9 19.7 10.9 13.9 12.8 12 18.6 10.1 12.8 4.3 10.9 10.1 9z"/><path d="M18.6 3.4v2.8M17.2 4.8H20"/></svg> describe it</button></div></div>
       <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
       <div class="drawbar" id="drawbar">
@@ -798,7 +1336,7 @@
     </div>
 
     <div class="railwrap" id="railwrap">
-      <div class="railhead"><h2>your trip</h2><span class="sub" id="legCount">no legs yet</span></div>
+      <div class="railhead"><h2>your trip</h2><span class="sub" id="legCount">nothing here yet</span></div>
       <div class="askwrap" id="askwrap" hidden>
         <div class="chat-log" id="askLog"></div>
         <form class="chat-in" id="askForm">
@@ -806,7 +1344,7 @@
           <textarea id="askText" rows="2" placeholder="drive to portland thursday, mel flies in saturday — or paste a confirmation"></textarea>
           <button class="signbtn chat-send" type="submit">Send</button>
         </form>
-        <p class="chat-foot" id="askFoot">Two goes before you buy. Your conversation isn't stored.</p>
+        <p class="chat-foot" id="askFoot">Two free tries. Your conversation isn't stored.</p>
         <p class="chat-warn" id="pasteWarn" hidden></p>
       </div>
       <div class="rail" id="rail"></div>
@@ -816,22 +1354,31 @@
   <div class="keepbar">
     <!-- Four sentences stood in this span. The one fact that cannot wait is that the draft is
          local and nobody else can open it (D-029) — the rest is what /what-you-get is for. -->
-    <span class="kb-msg" id="kbMsg"><span class="kb-dot"></span><b>Draft</b> &mdash; this device only</span>
+    <span class="kb-msg" id="kbMsg"><span class="kb-dot"></span><b>Draft</b> &mdash; saved on this device</span>
     <div class="kb-actions">
       <!-- #openCopy stays HERE. It is a hidden file input, not chrome: the FAB ring's Open and
            the empty state's "Open a file" both dispatch a real click at it, and a browser only
            accepts a real click on a real input as intent to open a file picker. -->
-      <input type="file" id="openCopy" accept="application/json,.json,text/calendar,.ics,.gpx,.kml" class="vh" onchange="openCopyFile(this)">
+      <!-- tabindex/aria-hidden: .vh clips it to 1px but leaves it FOCUSABLE, so tabbing through
+           the page hit an unlabelled file input with nothing to announce. The real control is the
+           FAB ring's Open, which .click()s this — so this is an implementation detail and belongs
+           out of both the tab order and the accessibility tree, not given a label of its own. -->
+      <input type="file" id="openCopy" accept="application/json,.json,text/calendar,.ics,.gpx,.kml,.kmz" class="vh"
+             tabindex="-1" aria-hidden="true" onchange="openCopyFile(this)">
       <!-- Peter, 2026-08-05: "way too much space wasted — that can be one link at the rt time."
            It was three priced buttons and a paragraph, docked to every screen for the whole
            session. One link now, and it opens the three tiers in the ring — the chooser this
            page already has. Nothing is cheaper to reach; it is only quieter until asked. -->
+      <!-- §2ab ?send=1. BEFORE the gold CTA on purpose: keeping the trip stays the last and
+           primary thing in the bar, and this is the quiet alternative next to it. -->
+      <button type="button" class="kb-send" id="sendBtn">Copy link</button>
       <button type="button" class="kb-one" id="keepBtn" onclick="openKeepRing()">Keep this trip &mdash; from $2.50 &rarr;</button>
     </div>
   </div>
 
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
-<script src="/places.js?v=4"></script>
+<script src="/legs.js?v=3"></script>
+<script src="/places.js?v=7"></script>
 <!-- BODY-LEVEL on purpose. Its predecessor lived inside .maprap, whose z-index:0 is
      load-bearing for Leaflet's panes, and so the whole toolbar sat under .railwrap at 16 —
      which is why three of its seven buttons could not be tapped for months. Out here there
@@ -859,7 +1406,14 @@ try{ const n=sessionStorage.getItem("ttb_import_note");
      if(n){ sessionStorage.removeItem("ttb_import_note"); setTimeout(()=>toast(n), 400); } }catch(e){}
 
 /* ── flat icon set (no emoji — they render differently on every device) ── */
-const P={collapse:'<path d="M9.2 4v5.2H4M14.8 20v-5.2H20M14.8 4v5.2H20M9.2 20v-5.2H4"/>',
+/* §2bt: `close` WAS MISSING AND NOTHING SAID SO. `icon()` below falls back to `P[n]||''`, so
+   `icon("close",15)` returned an EMPTY <svg> and the leg card's close control shipped as a blank
+   white disc — the thing the audit could not confirm from a screenshot and which turned out to be
+   the product, not the paint layer. Of the five names this page uses (bed pencil expand close
+   arrow) it was the only one absent here. Same shape as check-decls.sh: a use with no declaration,
+   swallowed by a `||`. The path is app.html's, which has always had one. */
+const P={close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  collapse:'<path d="M9.2 4v5.2H4M14.8 20v-5.2H20M14.8 4v5.2H20M9.2 20v-5.2H4"/>',
  spark:'<path d="M12 3.2 13.9 9 19.7 10.9 13.9 12.8 12 18.6 10.1 12.8 4.3 10.9 10.1 9z"/><path d="M18.6 3.4v2.8M17.2 4.8H20"/>',
  expand:'<path d="M4 9.2V4h5.2M20 14.8V20h-5.2M20 9.2V4h-5.2M4 14.8V20h5.2"/>',
  locate:'<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.6"/><path d="M12 1.6v2.8M12 19.6v2.8M1.6 12h2.8M19.6 12h2.8"/>',
@@ -907,16 +1461,92 @@ map.attributionControl.setPosition("bottomright");
 
    setUrl on the one layer, never a second addTo — D-087 learned that a second base layer sits
    under the themed one forever. */
+/* Kept as the `?raster=1` fallback ONLY — see the note in app.html. Nothing fetches cartocdn
+   unless that flag is on. */
 const TILE_LIGHT="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 const TILE_DARK ="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+/* Default-on since 2026-08-10 (D-165). `?raster=1` is the way back, the same flag app.html reads,
+   so one query string moves both pages. */
+const PM = (()=>{ try{ return !new URLSearchParams(location.search).has("raster"); }catch(e){ return true; } })();
+/* RESTORED 2026-08-10 — these two were deleted by a range cut in `cbda85b` (the raster removal)
+   and their four USES were left behind, so `/new` had no basemap at all for days. Nothing caught
+   it: `node --check` validates syntax and a missing declaration is perfectly good syntax, and
+   because PM is true the ternary on the next line short-circuits before it ever reads
+   `baseIsDark` — so the page loaded, the script ran to the end, and only the two ASYNC callers
+   (`st.onload`, the MutationObserver) threw, at call time, into nothing. setBase was never
+   reached. Same family as PM_URL/PM_MAXZ below, which this same region has eaten three times.
+   `make check` now has a canary list so this class cannot ship again. */
 const skyIsDark=()=>{const s=document.documentElement.getAttribute("data-sky");return s==="night"||s==="dusk";};
 let baseIsDark=skyIsDark();
-const baseTiles=L.tileLayer(baseIsDark?TILE_DARK:TILE_LIGHT,
-  {maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap © CARTO"}).addTo(map);
+let baseTiles = PM ? null : L.tileLayer(baseIsDark?TILE_DARK:TILE_LIGHT,
+  {maxZoom:20,subdomains:"abcd",attribution:"© OpenStreetMap © CARTO"}).addTo(map);
+
+/* PM_URL AND PM_MAXZ LIVE HERE, DIRECTLY ABOVE THEIR ONLY CONSUMER, AND THAT PLACEMENT IS THE
+   POINT. They have now been deleted by accident THREE TIMES — each time by a range cut in this
+   region whose two markers happened to straddle them (the raster removal, then the D-163
+   rollback). Every time, setBase() threw ReferenceError on every call and `make check` passed,
+   because node --check validates syntax and never references (CLAUDE.md).
+   Keeping them adjacent to setBase means a cut that removes them removes their consumer too, so
+   the damage is visible instead of silent.
+   z7 (178 MB), not z8 (525 MB): Cloudflare will not cache a file over 512 MB, so world-z8
+   answered cf-cache-status BYPASS forever and every byte came off the VPS. Measured after the
+   rebuild — z7 goes MISS then HIT. See app.html for why that is also the prime suspect for
+   D-163's blank map on iOS. */
+const PM_URL = "/maps/world-z7.pmtiles.bin";
+const PM_MAXZ = 7;
+
+/* WHY THE URL IS NOT PASSED AS A STRING — READ BEFORE "SIMPLIFYING" THIS (D-166).
+   protomaps-leaflet picks its source class by FILE EXTENSION, in one line of the vendored build:
+
+     new URL(n.url,"http://example.com").pathname.endsWith(".pmtiles") ? new PmtilesSource(...)
+                                                                      : new ZxySource(...)
+
+   Our archives are served as `.bin` because that is the only way Cloudflare caches them
+   (§5.2 — caching is keyed on the extension, `.pmtiles` is not on the list). So the string form
+   silently selected ZxySource: no `Range` header, no `{z}/{x}/{y}` substitution, just the SAME
+   whole 178 MB URL fetched over and over. Measured on production: ten identical GETs in 5 ms,
+   `Range: NONE`, `content-range: null`, and a map that painted its background colour and nothing
+   else. It looked exactly like D-164 all over again and it is a different bug wearing the same
+   clothes — that one was the edge refusing to cache, this one is the client refusing to range.
+   Passing the PMTiles INSTANCE makes the extension irrelevant: sourceToViews takes the non-string
+   branch and uses the object as-is. Measured after: 11 requests carrying a Range, and 109 distinct
+   opaque colours on a canvas that had exactly one, fully transparent.
+   Falls back to the string if the library's internals ever move — an ugly map beats no map. */
+function pmSrc(u){
+  try{
+    const s = new protomapsL.PmtilesSource(u, true);
+    return (s && s.p && typeof s.p.getZxy === "function") ? s.p : u;
+  }catch(e){ return u; }
+}
+function setBase(dark){
+  if(!PM){ if(baseTiles && baseTiles.setUrl) baseTiles.setUrl(dark?TILE_DARK:TILE_LIGHT); return; }
+  if(!window.protomapsL || !window.ttbMapStyle) return;   // still loading; the onload calls back
+  if(baseTiles) map.removeLayer(baseTiles);               // D-087
+  baseTiles = protomapsL.leafletLayer(Object.assign({
+    url: pmSrc(PM_URL), maxDataZoom: PM_MAXZ,
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> &middot; <a href="https://protomaps.com">Protomaps</a>'
+  }, ttbMapStyle.options(dark) || {})).addTo(map);
+}
+
+/* Nothing is added to the map until BOTH scripts land. There is no raster placeholder and
+   nothing to fall back to — a page whose point is "this contacts no third party" must not fetch
+   somebody else's tile while it waits. Chained rather than parallel: ttbMapStyle.options()
+   calls protomapsL. */
+if(PM){
+  const s=document.createElement("script");
+  s.src="/vendor/protomaps-leaflet-4.1.1/protomaps-leaflet.js?v=1";
+  s.onload=()=>{ const st=document.createElement("script");
+    st.src="/mapstyle.js?v=11";
+    st.onload=()=>setBase(baseIsDark);
+    st.onerror=()=>setBase(baseIsDark);
+    document.head.appendChild(st); };
+  document.head.appendChild(s);
+}
+
 /* Observing the attribute rather than hooking theme.js: it owns data-sky, and it changes it from
    a click AND from a five-minute timer that follows the clock through dusk on `auto`. */
 new MutationObserver(()=>{const d=skyIsDark();if(d===baseIsDark)return;baseIsDark=d;
-  baseTiles.setUrl(d?TILE_DARK:TILE_LIGHT);})
+  setBase(d);})
   .observe(document.documentElement,{attributes:true,attributeFilter:["data-sky"]});
 const layer=L.layerGroup().addTo(map), drawGroup=L.layerGroup().addTo(map);
 
@@ -936,7 +1566,21 @@ let PEOPLE=[];        // real crew only — never invented placeholder names
 let uid=0, restoring=false, drawing=null, draft=[];
 const PERSON_COLORS=["#F2A900","#3E7CB1","#7E57C2","#2F8F52","#D9531F","#556B7D"];
 
-const esc=t=>{const d=document.createElement("div");d.textContent=t==null?"":t;return d.innerHTML;};
+/* ESCAPES THE QUOTES, and it must — most of the callers below interpolate into an ATTRIBUTE.
+   This used to be a textContent → innerHTML round-trip, which looks like the safe idiom and is
+   not: that serialises a TEXT node, and the HTML serialisation algorithm only escapes quotes
+   when serialising an ATTRIBUTE VALUE. `&`, `<` and `>` came back escaped, `"` came back
+   untouched, so `value="${esc(l.to.name)}"` was an attribute the caller could close.
+   That was reachable, not theoretical. A `#d=` handover link carries a place name a stranger
+   composed; fromHash() shape-checks and clamps every field but never filters characters, on the
+   correct assumption that the sink escapes. A name of
+     X" onfocus="…" autofocus data-z="
+   landed `onfocus` on the leg-card input as a live handler, and CSP allows inline handlers, so it
+   ran. localStorage is scoped to the ORIGIN, and app.html keeps trip phrases in it — so an
+   injection on this page reads the keys to trips this page never touches.
+   Keep it a pure string function: an escaper that needs the DOM cannot escape a quote, and
+   test/esc-test.mjs fails if either page grows one back. */
+const esc=t=>String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 /* F-8: this is the FALLBACK when reverse geocoding finds nothing — which happens for real,
    because a stop in empty country genuinely has no name to return. The start and the
    destination both call revName(); the audit saw a start stuck as "DROPPED PIN · 33.138,
@@ -962,7 +1606,40 @@ async function revName(lat,lng){
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2200);}
 
+/* §2bw(B4): --prompt-h is what the zoom control and frameTrip's padding are measured against,
+   and the subtitle now appears and disappears with focus — so both have to re-read it. Without
+   this the zoom sits where a taller prompt used to be: not overlapping, but wrong.
+   OBSERVING THE HEIGHT, NOT THE FOCUS. The first version listened for focus/blur on #pFind and
+   measured ZERO firings while `:focus-within` matched and the prompt really did shrink to 98 —
+   an unfocused automation pane does not deliver focus events. A ResizeObserver states the
+   actual intent: when the prompt's height changes, re-measure.
+   🔴 NEITHER VERSION IS VERIFIED, AND SAYING SO IS THE POINT. ResizeObserver delivery is tied
+   to the rendering lifecycle, which a hidden pane does not run — so this environment cannot
+   answer whether it fires, and `verify-render` rule 0 says stop rather than chase. What IS
+   established: the CSS half works (prompt 129 -> 98 on focus, measured), and the failure mode
+   is benign by construction. If the observer never fires, --prompt-h stays at the taller 129,
+   which puts the zoom control 31px LOWER than needed and makes frameTrip pad 31px MORE at the
+   top. Both are conservative; neither can overlap anything. So this is a refinement whose
+   absence costs nothing, and it needs one look at a handset rather than another probe. */
+function watchPromptHeight(){
+  const pr=document.querySelector(".prompt");
+  if(!pr || !window.ResizeObserver) return;      /* no observer = today's behaviour, not worse */
+  let last=-1;
+  new ResizeObserver(()=>{
+    const h=Math.round(pr.getBoundingClientRect().height);
+    if(h===last) return;                          /* --prompt-h feeds .prompt's own clamp, so
+                                                     guard the loop rather than trusting it */
+    last=h;
+    try{ syncLayout(); }catch(e){}
+  }).observe(pr);
+}
 function enterBuild(){document.body.classList.remove("pre");
+  /* §2bt(a): under ?type=1 the cursor goes into the place field, INSIDE the CTA's own click —
+     a browser only opens the keyboard on a real user gesture, so focusing later would show a
+     caret and no keyboard, which is worse than neither. */
+  if(document.body.classList.contains("type")){
+    const f=document.getElementById("pFind"); if(f){ try{ f.focus({preventScroll:true}); }catch(e){ f.focus(); } }
+  }
   setTimeout(()=>{map.invalidateSize();syncLayout();},380);}
 /* The hero's second path. Opens build with the chat already up, so "describe it" lands
    somewhere ready to type into rather than on a map with a hidden button. */
@@ -989,6 +1666,20 @@ function syncLayout(){
   document.documentElement.style.setProperty("--bar-h",bh+"px");
 }
 window.addEventListener("resize",()=>{map.invalidateSize();syncLayout();});
+/* 🔴 AND RE-MEASURE WHEN THE KEEP BAR ITSELF CHANGES SIZE — INCLUDING 0 → 83.
+   Found 2026-08-11 by `make flow`. The keep bar appears the moment a trip has a leg, which is
+   AFTER syncLayout last ran, so `--keep-h` stayed at the 0px it was measured at on an empty draft.
+   `body.flowsheet .railwrap` is positioned `bottom:var(--keep-h)`, so the whole sheet sat at
+   bottom:0 with an 83px bar on top of it: **zero of 44 sample points along `#sheetGrab` hit the
+   grab** — the handle that opens the trip list was completely un-tappable at 375x812 AND 375x500,
+   on the rail D-168 had just promoted. Nothing errored and it is invisible in a screenshot,
+   because the bar is supposed to be there; only a hit test finds it.
+   A ResizeObserver rather than another call site: the bar also changes height when its copy wraps
+   or the safe-area inset moves, and every one of those has the same consequence. */
+if(window.ResizeObserver){
+  const kb=document.querySelector(".keepbar");
+  if(kb) new ResizeObserver(()=>syncLayout()).observe(kb);
+}
 /* the map is already fullscreen — this clears the cards off it */
 function toggleFull(){document.body.classList.toggle("full");
   /* #fsBtn is gone with the rail; the ring reads body.full when it builds its label, so
@@ -1065,7 +1756,7 @@ function xmlText(v){
 }
 function parseGeoFile(text){
   const src = String(text||"");
-  const pts = [], skipped = {tracks:0, lines:0};
+  const pts = [], tracks = [], skipped = {tracks:0, lines:0};
   const tag = (blob, name) => {
     const m = blob.match(new RegExp("<" + name + "[^>]*>([\\s\\S]*?)</" + name + ">", "i"));
     return m ? xmlText(m[1]) : "";
@@ -1087,6 +1778,40 @@ function parseGeoFile(text){
   }
   skipped.tracks = (src.match(/<trkseg\b/gi) || []).length;
 
+  /* GPX <trk> — A RECORDED TRACK IS A LEG'S GEOMETRY, NOT A LIST OF PLACES. This is the Strava
+     import, and it is the piece D-103 left out: a ride exported from Strava has no <wpt> at all,
+     only <trk>, so until now the single most common GPX file in the world imported as NOTHING.
+     The note above about turning thousands of vertices into stops is still right — that is why
+     these become a leg's `path`, which is exactly the shape D-027's tracer already produces, and
+     the one thing on a trip nothing can rebuild (D-117).
+     NO NETWORK IS TOUCHED. The file already carries the coordinates, so a ride becomes a leg
+     with no geocoder, no API and no key — the same posture as the Claude Skill: the FILE is the
+     integration, and there is nothing to sign in to.
+     Opening tags only for the points: a trkpt is `<trkpt lat lon><ele/><time/></trkpt>` and the
+     attributes are all we need, so matching the open tag rather than the whole element keeps a
+     20,000-point ride cheap. Times are collected from the block as a whole — `<time>` inside a
+     <trk> can only be a trackpoint's, since the file's metadata time sits outside it. */
+  const trks = src.match(/<trk\b[\s\S]*?<\/trk>/gi) || [];
+  for(const b of trks){
+    const line = [];
+    for(const t of (b.match(/<trkpt\b[^>]*>/gi) || [])){
+      const la = t.match(/\blat\s*=\s*"([^"]+)"/i), lo = t.match(/\blon\s*=\s*"([^"]+)"/i);
+      if(!la || !lo) continue;
+      const a = +la[1], o = +lo[1];
+      if(!isFinite(a) || !isFinite(o) || a < -90 || a > 90 || o < -180 || o > 180) continue;
+      line.push([a, o]);
+    }
+    if(line.length < 2) continue;          // a single point is not a leg
+    const times = (b.match(/<time>([^<]*)<\/time>/gi) || []).map(xmlText);
+    tracks.push({
+      name: tag(b, "name"),
+      type: tag(b, "type").toLowerCase(),
+      line,
+      t0: times.length ? times[0].replace(/<\/?time>/gi, "") : "",
+      t1: times.length ? times[times.length-1].replace(/<\/?time>/gi, "") : ""
+    });
+  }
+
   /* KML: one <coordinates> string, lon,lat[,alt] — the reversal. Only Points become stops; a
      LineString is a path someone walked, not a list of places, and turning its thousands of
      vertices into stops would invent a trip nobody planned. */
@@ -1101,18 +1826,143 @@ function parseGeoFile(text){
       push(tag(b, "name") || tag(b, "description"), lat, lon, tag(b, "when") || tag(b, "TimeStamp"));
     }
   }
-  return {pts, skipped};
+  return {pts, tracks, skipped};
+}
+/* WHAT MODE A RECORDED TRACK WAS TRAVELLED BY, and the order matters because each step is
+   weaker than the one above it.
+   1. `<type>`, which Strava writes and which is the activity's own word for itself. Believed.
+   2. AVERAGE SPEED, when the file carries timestamps — arithmetic over the track we already
+      have, rather than a guess. Bands are deliberately wide because this average includes every
+      stop at a light: a ride lands near 18–25 km/h, a run or walk well under 8, a car well over
+      45. It only has to separate three things.
+   3. `bike`, said out loud in the import summary. A recorded track is overwhelmingly something
+      somebody rode or ran, and the leg card lets them change it in one tap — but the summary
+      states the assumption rather than letting the map quietly claim they drove, which is the
+      silent-lie case D-060 was written about. */
+function trackMode(tr){
+  const t = String(tr && tr.type || "");
+  if(/ride|cycl|bike|biking|ebike/.test(t))              return "bike";
+  if(/run|hike|walk|jog|snowshoe/.test(t))               return "walk";
+  if(/kayak|canoe|row|paddl|sail|surf|swim|boat/.test(t))return "water";
+  if(/train|rail/.test(t))                               return "train";
+  if(/drive|car|motor/.test(t))                          return "drive";
+  const secs = (Date.parse(tr.t1) - Date.parse(tr.t0)) / 1000;
+  if(isFinite(secs) && secs > 60){
+    const R = 6371, rad = d => d * Math.PI / 180;
+    let km = 0;
+    for(let i = 1; i < tr.line.length; i++){
+      const a = tr.line[i-1], b = tr.line[i];
+      const dLat = rad(b[0]-a[0]), dLon = rad(b[1]-a[1]);
+      const x = Math.sin(dLat/2)**2 + Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLon/2)**2;
+      km += 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+    }
+    const kph = km / (secs / 3600);
+    if(kph > 45) return "drive";
+    if(kph >= 8) return "bike";
+    return "walk";
+  }
+  return "bike";
+}
+/* OUR OWN .gpx, ROUND-TRIPPED WITH ITS TRACED PATHS INTACT.
+ *
+ * export_trackline() in lib/export.php writes ONE line per vehicle, built as
+ * [stop, path…, stop, path…, stop] — the stops with every hand-drawn path (D-117) spliced in
+ * between them. So the paths are all there in the file; they were simply unrecoverable, because
+ * a track was skipped whole the moment waypoints existed. Downloading a trip and opening it
+ * again lost the one thing on it that nothing can rebuild.
+ *
+ * THE SPLIT IS EXACT, NOT FUZZY, AND THAT IS THE WHOLE REASON THIS IS SAFE. Both <wpt> and
+ * <trkpt> are written by the same `export_coord`, which formats 6 decimals and trims — so a
+ * stop's coordinates are BYTE-IDENTICAL in both places and parse to the same float. Walking the
+ * line and cutting at each stop therefore recovers exactly the arrays that went in. The 5e-7
+ * tolerance is half of the last decimal that survives, so it admits rounding and nothing else.
+ *
+ * IT MATCHES ONLY THE NEXT EXPECTED STOP, never "any stop that has these coordinates". A trip
+ * that returns to the same place — the demo goes back to Tahoe City, and to Reno twice — would
+ * otherwise hand the second visit's path to the first visit's leg. Walking the two lists in step
+ * is what makes a revisited stop safe, and it is why a global coordinate lookup was wrong here.
+ *
+ * A track that does not begin on a stop is left alone: that is somebody else's recorded ride,
+ * which the branch below turns into a leg of its own. This one only claims a track that is
+ * demonstrably the line THROUGH the stops we already read. */
+function pathsFromTracks(pts, tracks){
+  const same = (pt, s) => Math.abs(pt[0] - s.lat) < 5e-7 && Math.abs(pt[1] - s.lng) < 5e-7;
+  const paths = new Map();
+  let used = 0;
+  for(const tr of (tracks || [])){
+    const line = tr.line || [];
+    if(line.length < 2) continue;
+    let j = pts.findIndex(s => same(line[0], s));
+    if(j < 0) continue;                       // not a line through our stops — leave it be
+    let buf = [];
+    for(let k = 1; k < line.length; k++){
+      if(j + 1 < pts.length && same(line[k], pts[j+1])){
+        if(buf.length && !paths.has(j+1)){ paths.set(j+1, buf); used++; }
+        j++; buf = [];
+      }else buf.push(line[k]);
+    }
+  }
+  return {paths, used};
 }
 function geoToDraft(parsed){
   const {pts, skipped} = parsed;
+  const tracks = parsed.tracks || [];
   const dropped = [];
-  if(skipped.tracks) dropped.push(`${skipped.tracks} recorded track${skipped.tracks===1?"":"s"}`);
+  /* THREE WAYS A TRACK CAN BE READ, and which one applies is decided by the file, not guessed.
+     · No waypoints at all — every Strava export — so each track BECOMES a leg. (below)
+     · Waypoints present and a track runs THROUGH them: that is our own .gpx, and the track is
+       the traced geometry between the stops. pathsFromTracks splits it back apart, exactly,
+       because both were written by the same 6-decimal formatter.
+     · Anything else stays skipped and is reported, which is what a bare drawn line still is.
+     Only the second case used to be missing, and it is the one that mattered most: downloading
+     your own trip and opening it again lost every hand-drawn path (D-117) — the one thing on a
+     trip that nothing can rebuild. */
+  const useTracks = !pts.length && tracks.length > 0;
+  const rescued = (pts.length && tracks.length) ? pathsFromTracks(pts, tracks) : {paths:new Map(), used:0};
+  if(skipped.tracks && !useTracks && !rescued.used)
+    dropped.push(`${skipped.tracks} recorded track${skipped.tracks===1?"":"s"}`);
   if(skipped.lines)  dropped.push(`${skipped.lines} drawn line${skipped.lines===1?"":"s"}`);
+
+  if(useTracks){
+    /* PATH_MAX is 200 and the encoder enforces it with a slice, so a 20,000-point ride handed
+       over raw would keep the first four percent and stop dead mid-ride. simplifyPath keeps the
+       shape instead — see legs.js for why that is Douglas–Peucker and not an even sample. The
+       endpoints become the stops, so the interior is what the path carries. */
+    const cap = (typeof PATH_MAX === "number" ? PATH_MAX : 200);
+    const simp = (typeof simplifyPath === "function") ? simplifyPath : (a => a.slice(0, cap));
+    const day = s => (String(s||"").match(/(\d{4}-\d{2}-\d{2})/) || [])[1] || "";
+    const nm = (tr, i) => (tr.name || `Track ${i+1}`).slice(0,120);
+    const first = tracks[0].line[0];
+    const legs = tracks.map((tr, i) => {
+      const line = tr.line, end = line[line.length-1];
+      const inner = simp(line, cap + 2).filter((p,j,a) => j > 0 && j < a.length-1);
+      return { to:{name:nm(tr,i), lat:end[0], lng:end[1]}, mode:trackMode(tr), date:day(tr.t0),
+               who:[], path:inner.length ? inner : null, stay:null, note:"", craft:"" };
+    });
+    return { name:(tracks[0].name || "").slice(0,120),
+             routes:[{origin:{name:`${nm(tracks[0],0)} — start`, lat:first[0], lng:first[1]}, legs}],
+             dropped,
+             tracksUsed:tracks.length,
+             trackPoints:legs.reduce((n,l) => n + (l.path ? l.path.length : 0), 0) };
+  }
+
   if(!pts.length) return {routes:null, dropped};
   const P = p => ({name:p.name, lat:p.lat, lng:p.lng});
-  return {name:"", routes:[{origin:P(pts[0]), legs:pts.slice(1).map(p => ({
-    to:P(p), mode:"drive", date:p.date, who:[], path:null, stay:null, note:"", craft:""}))}],
-    dropped};
+  const cap2 = (typeof PATH_MAX === "number" ? PATH_MAX : 200);
+  const simp2 = (typeof simplifyPath === "function") ? simplifyPath : (a => a.slice(0, cap2));
+  /* `i+1` because leg i arrives at pts[i+1] — the path belongs to the leg that ENDS at that stop,
+     which is the same rule drawMap and the tracer use. Simplified defensively: our own export is
+     already inside PATH_MAX, but a third party writing a dense line between two waypoints would
+     otherwise be truncated by the encoder's slice. */
+  const legs = pts.slice(1).map((p, i) => {
+    const got = rescued.paths.get(i + 1);
+    return { to:P(p), mode:"drive", date:p.date, who:[],
+             path:(got && got.length) ? simp2(got, cap2) : null,
+             stay:null, note:"", craft:"" };
+  });
+  return {name:"", routes:[{origin:P(pts[0]), legs}], dropped,
+          pathsRecovered:rescued.used,
+          pathPoints:legs.reduce((n,l) => n + (l.path ? l.path.length : 0), 0)};
 }
 
 /* ── .ics in (D-102) ──────────────────────────────────────────────────────────────────
@@ -1229,6 +2079,20 @@ function importedFromExport(d){
 }
 
 /* No network, no geocoder, nothing to wait for — the file already knows where everything is. */
+/* `v:3` ON EVERY IMPORT WRITE, AND ITS ABSENCE HAD KILLED ALL OF THEM. The boot loader reads a
+   routes-shaped draft only when `d.v===3` (see the restore block at the foot of this file); it
+   then falls through to `d.v===2`, then to `d.stops`, and finally to an EMPTY builder. All three
+   import paths — .gpx/.kml (D-103), .ics (D-102) and a converted trip.json — wrote
+   `{name, people, routes}` with no `v`, so every one of them stored a perfectly good draft that
+   the very next line of execution threw away. Measured before the fix: a 4,200-point ride wrote
+   5,047 bytes to ttb_scratch with one leg and a 200-point path, and the page came back up with
+   `[{origin:null,legs:[]}]`.
+   Nothing reported it because nothing failed: the write succeeded, the reload succeeded, and the
+   builder opened looking exactly like a builder someone had just opened. The only two writers
+   that set `v` were this builder's own save and the `#d=` handover decoder, which is why the
+   agent path and "save a copy" always worked and importing a FILE never did.
+   That is the whole read half of "a PDF for travel" — the claim that another tool's output can
+   become one of these — and it was answering yes in the parser and no on the screen. */
 function importGeo(text){
   let parsed;
   try{ parsed = parseGeoFile(text); }catch(e){ parsed = {pts:[], skipped:{tracks:0,lines:0}}; }
@@ -1238,9 +2102,25 @@ function importGeo(text){
                            : "No places in that file");
     return;
   }
-  try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify({name:d.name, people:[], routes:d.routes})); }
+  try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify({v:3, name:d.name, people:[], routes:d.routes})); }
   catch(e){ toast("Could not save that — is storage full?"); return; }
-  if(d.dropped.length){
+  /* SAY WHAT WAS INFERRED. The mode of a recorded track is a guess made from <type> or from
+     average speed (see trackMode), and a guess the traveller cannot see is the silent-lie case —
+     a map that quietly claims you drove your bike ride. Naming the mode here is what makes it a
+     default they can change rather than a claim nobody checked. The point count goes in the same
+     sentence because a ride arrives simplified (PATH_MAX 200) and that is worth knowing before
+     somebody counts the corners and finds them fewer than they rode. */
+  if(d.tracksUsed){
+    const modes = [...new Set((d.routes[0].legs||[]).map(l => l.mode))].join(" and ");
+    try{ sessionStorage.setItem("ttb_import_note",
+      `Brought in ${d.tracksUsed} recorded track${d.tracksUsed===1?"":"s"} as ${d.tracksUsed===1?"a leg":"legs"}, `
+      + `${d.trackPoints} points traced — the map follows them. `
+      + `Set as ${modes}; change it on the leg if that is wrong.`); }catch(e){}
+  }else if(d.pathsRecovered){
+    try{ sessionStorage.setItem("ttb_import_note",
+      `Imported the places, and the ${d.pathsRecovered} drawn route${d.pathsRecovered===1?"":"s"} `
+      + `came back with ${d.pathPoints} points — the map follows them.`); }catch(e){}
+  }else if(d.dropped.length){
     try{ sessionStorage.setItem("ttb_import_note",
       `Imported the places. Left behind: ${d.dropped.join(", ")} — a recorded path is not a list of stops.`); }catch(e){}
   }
@@ -1257,7 +2137,7 @@ async function importIcs(text){
     toast(d.dropped.length ? "None of those events had a place we could find" : "Nothing to import");
     return;
   }
-  try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify({name:d.name, people:[], routes:d.routes})); }
+  try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify({v:3, name:d.name, people:[], routes:d.routes})); }
   catch(e){ toast("Could not save that — is storage full?"); return; }
   if(d.dropped.length){
     /* Name them. "3 dropped" is something to worry about; a list is something to act on. */
@@ -1269,6 +2149,82 @@ async function importIcs(text){
   location.reload();
 }
 
+/* ── .kmz in — A ZIPPED KML, UNPACKED WITH NO DEPENDENCY (2026-08-08) ────────────────────
+ *
+ * WHY THIS IS THE FORMAT THAT MATTERS. Checked against Wanderlog's own FAQ rather than a blog
+ * about it: **Wanderlog has no file export at all.** It offers PDF, Print, and "Export to Google
+ * Maps". So there is no Wanderlog file to import, and anybody claiming otherwise is reading
+ * somebody's SEO page. The route that does exist is Wanderlog → Google My Maps → Download
+ * KML/KMZ → here, and My Maps hands out **KMZ** for anything with several placemarks. We read
+ * `.kml` and refused `.kmz`, so the last hop of the only working path was the one that failed.
+ * That makes this the same shape as the Strava finding: the import existed, and the file people
+ * actually have did not go in.
+ *
+ * A KMZ is a ZIP holding `doc.kml`. No npm, no build step (CLAUDE.md), so it is parsed here:
+ * find the End of Central Directory, walk the central directory, take the first `.kml` entry,
+ * read its LOCAL header for the true data offset, and inflate. `DecompressionStream("deflate-raw")`
+ * does the inflating — a browser built-in, so nothing is vendored and nothing is shipped.
+ *
+ * THE LOCAL HEADER IS READ, NOT ASSUMED, and that is the trap in every hand-rolled ZIP reader:
+ * the central directory's offset points at the LOCAL header, whose name and extra-field lengths
+ * differ from the central entry's. Using the central directory's lengths lands you a few bytes
+ * into the compressed data, which inflates to garbage or throws — and it works fine on the files
+ * where the two happen to match, which is most of them.
+ *
+ * Method 0 (stored) is handled alongside 8 (deflate) because small KMLs are sometimes stored
+ * uncompressed, and a reader that only knows deflate fails on exactly the smallest test file
+ * anybody tries first. */
+function zipFindKml(buf){
+  const dv = new DataView(buf), n = buf.byteLength;
+  if(n < 22) return null;
+  /* EOCD: scan back from the end for its signature. The comment field is at most 65535 bytes,
+     so the search is bounded rather than over the whole file. */
+  let eocd = -1;
+  for(let i = n - 22; i >= Math.max(0, n - 22 - 65535); i--){
+    if(dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if(eocd < 0) return null;
+  let count = dv.getUint16(eocd + 10, true);
+  let off   = dv.getUint32(eocd + 16, true);
+  for(let k = 0; k < count && off + 46 <= n; k++){
+    if(dv.getUint32(off, true) !== 0x02014b50) return null;
+    const method  = dv.getUint16(off + 10, true);
+    const compSz  = dv.getUint32(off + 20, true);
+    const nameLen = dv.getUint16(off + 28, true);
+    const extraLen= dv.getUint16(off + 30, true);
+    const cmtLen  = dv.getUint16(off + 32, true);
+    const localAt = dv.getUint32(off + 42, true);
+    const name    = new TextDecoder().decode(new Uint8Array(buf, off + 46, nameLen));
+    if(/\.kml$/i.test(name)){
+      /* The LOCAL header's own name/extra lengths — see the note above. */
+      if(localAt + 30 > n || dv.getUint32(localAt, true) !== 0x04034b50) return null;
+      const lNameLen  = dv.getUint16(localAt + 26, true);
+      const lExtraLen = dv.getUint16(localAt + 28, true);
+      const start = localAt + 30 + lNameLen + lExtraLen;
+      if(start + compSz > n) return null;
+      return { name, method, data: new Uint8Array(buf, start, compSz) };
+    }
+    off += 46 + nameLen + extraLen + cmtLen;
+  }
+  return null;
+}
+async function kmzToKml(buf){
+  const e = zipFindKml(buf);
+  if(!e) return "";
+  if(e.method === 0) return new TextDecoder().decode(e.data);
+  if(e.method !== 8) return "";
+  if(typeof DecompressionStream !== "function") return "";
+  /* A CORRUPT DEFLATE STREAM RETURNS "", IT DOES NOT THROW. The caller turns "" into one plain
+     sentence — "Couldn't read that .kmz — try exporting as KML" — and a rejected promise here
+     would instead surface as an unhandled rejection with a zlib error code in it, which is the
+     "Upload failed — Failed to fetch" mistake §2ad already fixed once. It is also what makes a
+     truncated download behave like a bad file rather than like a broken page. */
+  try{
+    const ds = new DecompressionStream("deflate-raw");
+    const stream = new Blob([e.data]).stream().pipeThrough(ds);
+    return new TextDecoder().decode(new Uint8Array(await new Response(stream).arrayBuffer()));
+  }catch(err){ return ""; }
+}
 function openCopyFile(inp){
   const f=inp.files&&inp.files[0]; inp.value="";
   if(!f) return;
@@ -1284,6 +2240,20 @@ function openCopyFile(inp){
     r.readAsText(f);
     return;
   }
+  /* A KMZ is BYTES, not text, so it forks before the reader is chosen — reading a zip as text
+     mangles it beyond recovery and the failure looks like a corrupt file rather than a wrong
+     read. Sniffed on the extension AND on the "PK" signature, because a KMZ downloaded through
+     some browsers arrives named .zip. */
+  if(/\.(kmz|zip)$/i.test(f.name)){
+    r.onload = async () => {
+      let kml = "";
+      try{ kml = await kmzToKml(r.result); }catch(e){ kml = ""; }
+      if(!kml){ toast("Couldn't read that .kmz — try exporting as KML"); return; }
+      importGeo(kml);
+    };
+    r.readAsArrayBuffer(f);
+    return;
+  }
   r.onload=()=>{
     try{
       const raw=JSON.parse(r.result);
@@ -1292,7 +2262,7 @@ function openCopyFile(inp){
       const conv = raw && raw.routes ? null : importedFromExport(raw);
       const d = conv || raw;
       if(!d||(!d.routes&&!d.legs&&!d.stops)) throw new Error("not a trip file");
-      localStorage.setItem(SCRATCH_KEY,JSON.stringify(conv ? {name:d.name,people:d.people,routes:d.routes} : d));
+      localStorage.setItem(SCRATCH_KEY,JSON.stringify(conv ? {v:3,name:d.name,people:d.people,routes:d.routes} : d));
       if(conv && (conv.dropped.photos || conv.dropped.posts))
         try{ sessionStorage.setItem("ttb_import_note",
           "Imported the route. Photos and posts stay with the trip they came from."); }catch(e){}
@@ -1341,6 +2311,9 @@ function keepIt(tier){
     if(!url){ toast("Couldn't open checkout — tell me and I'll fix it"); return; }
     window.location.href = url + viaParam();
   };
+  /* The sheet carries the browser sentence and the save-a-copy button as standing copy, so under
+     ?keep=1 there is nothing left for a system dialog to say. */
+  if (document.body.classList.contains("keepsheet")) return go();
   if (sessionStorage.getItem("ttb_handoff_ack")) return go();
   const legs = routes.reduce((n,r)=>n+r.legs.length, 0);
   const ok = confirm(
@@ -1357,17 +2330,53 @@ function keepIt(tier){
 function setPrompt(){
   const t=document.getElementById("pTitle"),s=document.getElementById("pSub");
   if(drawing){t.textContent="Tracing the route";s.textContent="Tap along the way, then hit Done.";return;}
-  if(!origin&&!pending){t.textContent="Tap where you're starting";s.textContent="Then tap where you're going — that's your first leg.";}
-  else if(pending){t.textContent="Now tap where you're going";s.textContent="Those two points make your first leg.";}
-  else{t.textContent="Tap where you're going next";
+  /* §2bt(a): ?type=1 INVERTS THE MOVE. Peter's bar is that grandma can text, and the first act
+     this product asked for was spatial reasoning on a continent. Typing is the thing she has
+     already mastered, so under this flag the instruction names TYPING and tapping becomes the
+     alternative. Tapping is not removed and must not be: it is D-029's promoted default and it
+     is faster for anyone who can see where they mean. */
+  const TYPE = document.body.classList.contains("type");
+  if(!origin&&!pending){
+    t.textContent = TYPE ? "Where are you starting?" : "Tap where you're starting";
+    s.textContent = TYPE ? "Type a town, city or airport \u2014 or tap the map" : "Then tap where you're going.";}
+  else if(pending){t.textContent = TYPE ? "Where are you going?" : "Now tap where you're going";
+    /* §2bs, Peter's Mario bar: 1-1 answers the move you just made AND points at the next one.
+       The title is the next move; under ?find=1 the subtitle becomes the ANSWER — the place you
+       actually landed on, which the product already knows and never said. `#pSub` is hidden in
+       flowsheet by default, so this is the one state where it earns its line back. */
+    /* §2bw(B6): PROMOTED OUT OF ?find=1. A zoom-4 tap answers in counties — "TODD COUNTY,
+       SOUTH DAKOTA" — and the old line, "Those two points make your first leg", described the
+       mechanism instead of confirming the place. The product already resolved the name; saying
+       it is what turns a tap into an answer. */
+    s.textContent = pending.name ? "Starting at " + pending.name : "Finding that place\u2026";}
+  else{t.textContent = TYPE ? "Where next?" : "Tap where you're going next";
     s.textContent=(routes.length>1?TRACKS[active].label+" — ":"")+"each leg starts from "+((lastPoint()||{}).name||"your last stop")+".";}
 }
-function addLeg(to){legs.push({id:++uid,to,mode:"drive",date:"",who:[],path:null,stay:null,note:""});
+function addLeg(to){legs.push({id:++uid,to,mode:nextMode(to),date:"",
+  /* INHERIT, the same argument nextMode() already makes for the mode: a crew that has to be
+     re-declared on every leg is a question asked once per tap instead of once per trip. */
+  who: crewMode() ? tripCrew() : [], path:null,stay:null,note:""});
   render(); frameTrip(true);
   /* keeps the shut sheet's "3 legs — tap to open" honest as legs land */
   { const rw=document.getElementById("railwrap");
     if(rw && rw.dataset.step != null) sheetSet(+rw.dataset.step || 0); }
-  refineMode(legs[legs.length-1], to);}
+  /* 🔴 THE RING NO LONGER OPENS AFTER A LEG LANDS (D-170). This was the follow-through
+     problem the cold run named: you tap twice, and instead of seeing the thing you just made, a
+     modal asks "How?" and hides the trip list behind it (`body.ringing .railwrap{display:none}`).
+     Peter's own comment here already called it "the every-leg dismissal", and `?aim=1` was built
+     to delete it — but AIM pays for that by asking BEFORE the first tap instead, which is another
+     interruption in a flow whose complaint is that there are too many. So the ring goes and
+     nothing replaces it. **The mode is still editable from the leg card, which is where refining
+     belongs** — that was true when this comment was written and it is why this is safe.
+     `?refine=1` puts the ring back. */
+  if(!AIM && REFINE) refineMode(legs[legs.length-1], to);
+  /* AND SHOW THEM WHAT THEY MADE. The sheet used to stay wherever it was, which on a first leg is
+     SHUT — so the reward for two taps was a map and a closed drawer. Half, once, on the first leg
+     only: after that the person has seen the rail and can decide for themselves. */
+  if(legs.length === 1 && routes.length === 1){
+    const rw0 = document.getElementById("railwrap");
+    if(rw0 && (+rw0.dataset.step || 0) === 0) sheetSet(1);
+  }}
 
 /* ── the ring, as an optional refine (§2e) ──────────────────────────────────────────────
    Peter's call, and the code agreed with him: /new's TWO taps to a first leg is the cleaner
@@ -1439,7 +2448,64 @@ function refineMode(leg, at){
    while you are still building.
    Labels are priced and short because a wedge is not a pricing table — D-120's cut, and the
    FAB's "Hide cards" before it. The hub carries the term, the wedge carries the price. */
+/* 🔴 ?keep=1 — THE MONEY MOMENT, AS SIGNS. Three things were wrong at the one screen where money
+   changes hands, and the code already admitted the first: its own comment says "the term is NOT
+   the only difference — $5 adds photos and $10 adds video (D-059). A hub reading 'how long' over
+   three priced wedges would quietly say the tiers differ only by years, which is false." It
+   shipped anyway, because a wedge holds about one word — this repo measured "Hide cards" spilling
+   outside its own wedge — so the container could not carry the truth.
+   §2bt already diagnosed that and proposed the test nobody built: **the ring is the one surface
+   here that is not a SIGN.** Everything else follows D-022's highway vocabulary — solid plates, a
+   complete border, the legend stacked — and Peter's "it looks old" was detecting exactly that. So
+   the keep choice becomes three plates in the card machinery the leg card and the crew card
+   already use, each naming the term, the price, and THE ONE THING THAT TIER ADDS (D-088: every
+   tier has exactly one concrete thing the tier below lacks).
+   AND IT SWALLOWS THE confirm(). "Finish checkout in this browser" was a native system dialog
+   headed "thistripbtw.us says" at the instant money moves — the product speaking in the browser's
+   voice — whose Cancel silently DOWNLOADED A FILE. Both halves are standing copy here now: the
+   sentence is always visible, and saving a copy is a button that says so.
+   WHAT IT SAYS EACH TIER ADDS COMES FROM `TIERS` IN api.php, NOT FROM THE PRICING PAGE — which
+   was found the same hour to still say photos were $10, five weeks after D-088 moved them to $5. */
+function keepCard(){
+  const TIERS_UI = [
+    { key:"plan",  term:"One year",   price:"$2.50", adds:"The trip keeps its own address and two share links." },
+    { key:"keep",  term:"Five years", price:"$5",    adds:"Adds photos, pinned where they were taken." },
+    { key:"works", term:"Ten years",  price:"$10",   adds:"Adds video as well." },
+  ];
+  const el=document.createElement("div"); el.className="card";
+  el.innerHTML=`
+    <div class="ctype">Keep this trip</div>
+    <button type="button" class="zoombtn" aria-label="Expand this leg"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6"/></svg></button>
+    <div class="more open">
+      <label class="f">How long should it last?</label>
+      <div class="keeptiers">${TIERS_UI.map(t=>`
+        <button type="button" class="keeptier" data-tier="${t.key}">
+          <span class="kt-term">${t.term}</span>
+          <span class="kt-price">${t.price}</span>
+          <span class="kt-adds">${t.adds}</span>
+        </button>`).join("")}</div>
+      <p class="keepnote"><b>Finish checkout in this browser.</b> Your trip is saved on this device
+      and comes back with you. Paying on a different phone would buy an empty trip.</p>
+      <div class="keepfoot">
+        <button type="button" class="keeplink" id="keepSaveCopy">Save a copy first</button>
+        <a class="keeplink" href="/what-you-get" target="_blank" rel="noopener">Compare all three</a>
+      </div>
+    </div>`;
+  el.classList.add("open");
+  el.querySelectorAll(".keeptier").forEach(b=>b.onclick=()=>keepIt(b.dataset.tier));
+  const sc=el.querySelector("#keepSaveCopy"); if(sc) sc.onclick=()=>saveCopy();
+  return el;
+}
+function openKeepCard(){
+  const rail=document.getElementById("rail"); if(!rail) return;
+  const card=keepCard();
+  rail.appendChild(card); zoomCard(card);
+  const zb=card.querySelector(".zoombtn");
+  if(zb) zb.onclick=()=>{ zoomCard(card); if(!card.classList.contains("zoom")) render(); };
+  return card;
+}
 function openKeepRing(){
+  if(document.body.classList.contains("keepsheet")) return openKeepCard();
   const r = theRing();
   /* No ring (it needs the map) — fall back to the middle tier rather than doing nothing. A
      dead buy button is worse than an opinionated one. */
@@ -1489,7 +2555,7 @@ function sheetSet(step){
     const n = routes.reduce((a,r)=>a+r.legs.length,0);
     g.querySelector("b").textContent = step===0
       ? (n ? n + (n===1?" leg":" legs") + " — tap to open" : "your trip")
-      : (step===2 ? "tap to close" : "tap for more");
+      : "";   /* §2bw(C2): open, the bar is the affordance; the aria-label carries the action */
     g.setAttribute("aria-label", step===0 ? "Open the trip list" : "Resize the trip list");
     g.setAttribute("aria-expanded", step===0 ? "false" : "true");
   }
@@ -1592,22 +2658,50 @@ function openFab(){
       if(it.key === "print"){ setPrintName(); window.print(); }
     }, openFab);                       /* hub goes BACK to the top ring, not away */
 
-  r.open(at, "Trip", "what next", [
-      { key:"describe", label:"Describe" },
-      { key:"near",     label:"Near me"  },
-      { key:"undo",     label:"Undo"     },
-      /* "Hide cards" measured 2 of 6 sample points OUTSIDE its wedge — tested against the
-         annular path with isPointInFill, not against a bounding box, which is wider than the
-         shape at the label's radius and says everything fits. One word, like D-120's cut. */
-      { key:"cards",    label: document.body.classList.contains("full") ? "Show" : "Hide" },
-      { key:"file",     label:"File"     }
-    ], it => {
+  /* §2bt: THE RING IS BUILT FROM STATE, NOT WRITTEN OUT. Peter, 2026-09-01: "the FAB needs to be
+     fully tuned to context - so menus match need - always." `app.html` has done this since §2bc —
+     `const items=[]; if(!READONLY) items.push(...)` — and this ring was the one left as a literal,
+     so on an EMPTY map it offered Undo with nothing to undo and Hide with nothing to hide: two
+     dead wedges out of five, on the loudest control on the page.
+     The rule is need, not taste: a wedge appears when the move it names is available AND useful
+     now. Empty map means the need is BEGINNING, so the three ways in are the whole menu. Once a
+     leg exists the need changes, and `Add route` — the SECOND VEHICLE, which D-011 and the
+     Kishwaukee case exist for — stops being buried in the rail and joins the ring.
+     Flag-gated with the rest of §2br/§2bs; the literal is what runs without `?find=1`. */
+  const FIND = document.body.classList.contains("find");
+  const hasLeg = routes.some(rt => rt.legs.length) || !!origin;
+  const wedges = [];
+  wedges.push({ key:"describe", label:"Describe" });
+  wedges.push({ key:"near",     label:"Near me"  });
+  /* 🔴 ?crew=1 — MOVE 4 OF SIX. "A second vehicle" (D-011, the Kishwaukee case) was the last
+     move nothing taught, and the reason turned out not to be discoverability: `Add route` IS in
+     this ring, and it is gated on `FIND`. `?find=1` is not the default, so on the page everyone
+     actually gets, the wedge never exists and the only route to a second vehicle is scrolling to
+     a dashed tile at the bottom of the sheet — which D-183 deliberately left in the scroll.
+     THE CONTEXT-TUNING PETER ASKED FOR IS IN THE SAME BRANCH. "The FAB needs to be fully tuned to
+     context — so menus match need, always" (2026-09-01), and `!FIND || hasLeg` does exactly that
+     — for `?find=1` only. On the default the ring offers Undo and Hide before there is anything
+     to undo or hide. One flag turns the tuning on for everyone and lets the wedge appear whenever
+     `canAddRoute()` says a second vehicle is possible. §2bt(b) is still Peter's decision, so this
+     is a candidate behind a flag and not a promotion. */
+  const TUNED = FIND || document.body.classList.contains("crew");
+  if(!TUNED || hasLeg) wedges.push({ key:"undo", label:"Undo" });
+  /* "Hide cards" measured 2 of 6 sample points OUTSIDE its wedge — tested against the
+     annular path with isPointInFill, not against a bounding box, which is wider than the
+     shape at the label's radius and says everything fits. One word, like D-120's cut. */
+  if(!TUNED || hasLeg) wedges.push({ key:"cards", label: document.body.classList.contains("full") ? "Show" : "Hide" });
+  if(TUNED && canAddRoute()) wedges.push({ key:"route", label:"Add route" });
+  wedges.push({ key:"file", label:"File" });
+
+  r.open(at, "Trip", "what next", wedges, it => {
       if(it.key === "file") return drawer();
       r.close();
       if(it.key === "describe") toggleAsk();
       if(it.key === "near")     nearMe();
       if(it.key === "undo")     undoLast();
       if(it.key === "cards")    toggleFull();
+      /* The SAME function the rail tile calls — see addRoute(). */
+      if(it.key === "route") addRoute();
     });
 }
 
@@ -1680,6 +2774,18 @@ function toggleAsk(){
      panel changes the railwrap's height, which three other layers are positioned off —
      without the re-measure they kept the closed-panel offsets and landed on the open one. */
   document.body.classList.toggle("asking", !w.hidden);
+  /* AND OPEN THE SHEET IT LIVES IN. This function predates the flow sheet (§2v(c)): back then the
+     railwrap was always visible, so un-hiding the panel was enough. Under `body.flowsheet` the
+     railwrap is `sh-shut` at 62px with its contents display:none, so "or describe it in a
+     sentence" un-hid a panel that measured 0x0 — the hero's second way in led to a map with
+     nothing to type into. Found 2026-08-11 by `make flow`, which could not find `#askText` and was
+     right not to. enterBuildAsk's own comment says the intent out loud: "so 'describe it' lands
+     somewhere ready to type into rather than on a map with a hidden button."
+     HALF, not full: enough to type in while the map stays visible behind it. */
+  if(!w.hidden && document.body.classList.contains("flowsheet")){
+    const rw = document.getElementById("railwrap");
+    if(rw && (+rw.dataset.step || 0) === 0) sheetSet(1);
+  }
   if(!w.hidden){ drawAsk(); document.getElementById("askText").focus(); }
   syncLayout();
 }
@@ -1799,9 +2905,9 @@ function drawAsk(){
   ta.disabled = askBusy || askLeft <= 0; btn.disabled = ta.disabled;
   btn.textContent = askBusy ? "…" : "Send";
   document.getElementById("askFoot").textContent = askLeft > 0
-    ? (askLeft === 1 ? "One more go before you buy. Your conversation isn't stored."
-                     : "Two goes before you buy. Your conversation isn't stored.")
-    : "That's both goes — keep building by hand, it all carries over when you buy.";
+    ? (askLeft === 1 ? "One free try left. Your conversation isn't stored."
+                     : "Two free tries. Your conversation isn't stored.")
+    : "That's both tries used — keep building by hand, and it all carries over when you buy.";
   syncLayout(); // every message changes the panel's height, and three layers stack off it (§2b)
 }
 
@@ -1895,11 +3001,215 @@ function frameTrip(animate){
     const barB=barEl?barEl.getBoundingClientRect().bottom:64;
     const prR=(prEl&&getComputedStyle(prEl).display!=="none")?prEl.getBoundingClientRect():null;
     const top=Math.round(Math.max(76, barB+12, (prR&&prR.top<innerHeight/2)?prR.bottom+12:0));
-    try{map.fitBounds(b,{paddingTopLeft:[28,top],paddingBottomRight:[28,bottom],
+    /* §2bt: CLAMP, BECAUSE THE PADDING CAN NOW EXCEED THE SCREEN. Measured on production
+       2026-09-01 with ?find=1 at 390x664: top 262 + bottom 412 against a 664 viewport, a band of
+       MINUS TEN PIXELS — fitBounds was being asked to fit a route into negative height, which is
+       why the payoff screenshot showed the route as a sliver at the edge. At 390x844 it was 87px,
+       bad but survivable, which is why only the short phone showed it plainly. THE CAUSE WAS THIS
+       FLAG'S OWN WORK: adding the confirmation line and the place field grew `.prompt` from ~120
+       to 250, and F-1's rule "pad below the prompt when it has risen" then charges all of it.
+       Take the overflow off the TOP first, never below the bar: the upper stack has transparent
+       gutters between its plates so a route crossing it is still partly readable, while the sheet
+       below is a solid card where nothing shows at all. A guaranteed band beats an honest one. */
+    const MIN_BAND = 150;
+    let padTop = top, padBottom = bottom;
+    const over = (padTop + padBottom) - (innerHeight - MIN_BAND);
+    if(over > 0){
+      const floor = Math.round(barB + 12);
+      const cut = Math.min(over, Math.max(0, padTop - floor));
+      padTop -= cut;
+      const rest = over - cut;
+      if(rest > 0) padBottom = Math.max(40, padBottom - rest);
+    }
+    try{map.fitBounds(b,{paddingTopLeft:[28,padTop],paddingBottomRight:[28,padBottom],
       animate:!!animate,duration:.7,maxZoom:13});}catch(e){}
   });
 }
 
+/* ── §2z ?snap=1 — the tap lands on a place, not on a coordinate ──────────────────────────
+   The measured cause of "tapping to start is too hard" is not the tap count (a cold start is
+   already three taps) — it is that a COARSE tap is punished. `lib/geocode.php` pins reverse
+   geocoding at `zoom => 14`, so at map-zoom 4, where a thumb covers ±100km, it faithfully names
+   the hamlet under the error: you aim at Chicago and the pin says "Stickney Township". The
+   rational response is to pinch in and tap precisely — and that zoom-in is what breaks the
+   SECOND tap, because the destination is now off screen with nothing to help you back out.
+   Snap removes the reason to zoom in at all, which is why it comes before the camera work.
+
+   The radius is derived from the map, not guessed: project a point SNAP_PX above the tap and
+   the answer is however many degrees the thumb actually covered at this zoom. So the same
+   constant means "a thumb" at every scale — coarse zoom snaps to prominent places, close zoom
+   to small ones — and there is no kilometre figure to tune per zoom level. */
+const SNAP_PX = 24;
+const QS = (()=>{ try{ return new URLSearchParams(location.search); }catch(e){ return new URLSearchParams(""); } })();
+/* §2bs: `?find=1` TURNS SNAP ON TOO, so there is ONE link to hand a person rather than a
+   combination to remember. `?snap=1` keeps working on its own — links already sent behave the
+   same, same rule as ?dense=1 and ?calm=1 after their promotions.
+   They belong together on the evidence: snap is what stops a coarse tap being punished, and
+   §2br's diagnosis is that the coarse tap is the wall all three cold runs hit from different
+   sides. It also completes the first-tap fix above — an unsnapped point is named "Locating…"
+   until a round trip returns, so the new "Starting at <place>" line would flash a placeholder;
+   a snapped point is named and positioned IMMEDIATELY, so the confirmation is true at once. */
+const SNAP = QS.has("snap") || QS.has("find");
+
+/* ── §2z ?out=1 — the origin tap widens the map, because tap TWO has to reach ───────────────
+   Peter: "when they tap a start the map needs to zoom out so they can find the destination
+   easier." The origin tap is the one moment nothing moves the camera — `pending` renders and
+   the map sits exactly where it was — while every later tap is framed by `frameTrip(true)`
+   inside `addLeg`. So this is a real gap rather than a preference, and it is the half of the
+   problem `?snap=1` does not solve: snap removes the REASON to zoom in, this restores reach
+   for anyone who already did.
+
+   THREE RULES, and the clamps are the whole design:
+     · never zoom IN — this can only widen, so it can never take away a view someone chose
+     · at least OUT_MIN_STEPS out, so the gesture is felt rather than guessed at
+     · but no tighter than OUT_PLAN_Z, so someone who pinched to street level to tap precisely
+       is carried all the way back to a scale a trip can be planned at, not merely two levels
+       nearer to one
+     · and never past OUT_FLOOR_Z, which is the cold-start view; below it you are choosing an
+       ocean, not a destination
+   Net effect: z14 → 6 (the rescue case), z9 → 6, z7 → 5, z5 → 4, z4 → no move at all, so the
+   default cold start is untouched and nothing jitters.
+
+   ORIGIN-CENTRED, deliberately: the destination is unknown until the next tap, so there is no
+   direction to bias toward and centring on anything else would be a guess. */
+const OUT = QS.has("out");
+const OUT_MIN_STEPS = 2, OUT_PLAN_Z = 6, OUT_FLOOR_Z = 4;
+/* The outer Math.min(cur, …) is the "never zoom in" rule made true IN THE FUNCTION, not just in
+   its caller. Without it `outTarget(3)` returns 4 — the floor raising a wider-than-floor view —
+   and while widenForDestination's own guard happens to swallow that, a function that can answer
+   "zoom in" to a question called `outTarget` is a trap set for whoever calls it next. */
+const outTarget = cur => Math.min(cur, Math.max(OUT_FLOOR_Z, Math.min(cur - OUT_MIN_STEPS, OUT_PLAN_Z)));
+function widenForDestination(pt){
+  if(!OUT || AIM) return;   // under ?aim=1 the WEDGE decides how far to widen, not the tap
+  try{
+    const cur=map.getZoom(), t=outTarget(cur);
+    if(!(cur - t >= 1)) return;           // under a level is a jitter, not a gesture
+    /* Leaflet stops a flyTo on the first user gesture, so this can never fight a thumb. */
+    map.flyTo([pt.lat, pt.lng], t, {duration:.8});
+  }catch(e){}
+}
+
+/* ── §2z ?aim=1 — the ring stops being a menu of verbs and becomes how you aim ─────────────
+   Peter: "we are using the ring menu in create and a few other places badly", and the deep dive
+   agreed while disagreeing about the fix. His instinct — the ring should bloom on the first tap
+   and guide the second — is the right one. His proposed wedges (airport code · state · region ·
+   nation · continent) are not, for one reason that decides it: they ask a CARTOGRAPHY question.
+   "Is my destination a region or a nation away?" makes someone classify distance in map units
+   before they can act. Every traveller can instantly answer a different question that carries
+   the same information — HOW ARE YOU GETTING THERE — and the product already owns that
+   vocabulary in MODES_TOP. Mode IS the scale ladder, in the user's own words. ("Airport code"
+   was the tell: not a scale, a text entry, and `places.js` already resolves IATA/ICAO.)
+
+   So: the SAME ring, the SAME wedges, moved from AFTER the destination tap to BETWEEN the two
+   taps — and the answer now does double duty. It sets the leg's mode and it flies the map to
+   the scale that mode implies, so the wedge you press aims the tap you are about to make.
+
+   TWO THINGS THIS DELETES, and they matter as much as what it adds:
+     · `addLeg` no longer opens a ring on every leg. The old rhythm was tap → ring → dismiss →
+       tap → ring → dismiss; the 16-stop Kishwaukee trip meant ~15 dismissals of a question
+       whose answer is almost always the default. D-120's own principle — default-then-refine,
+       never interrogate-then-commit — was honoured at COMMIT and violated in CADENCE.
+     · the hardcoded `mode:"drive"` on every leg. A leg now INHERITS the previous leg's mode, so
+       a road trip stays a road trip and an island hop stays a boat.
+   Dismissing costs nothing and moves nothing: mode falls back to drive and the map stays put,
+   which is exactly today's flow. The widen is the reward for answering, never a jump scare. */
+const AIM = QS.has("aim");
+const REFINE = QS.has("refine");   // D-170: puts the after-a-leg mode ring back
+/* A wedge that blooms under a finger already in motion must not be able to answer for them.
+   250ms is under a deliberate tap and over the tail of the one that opened the ring. This is a
+   mitigation, not a cure — the residual risk is structural, and COLD_RUN is what settles it. */
+const AIM_GUARD_MS = 250;
+const outBy = (cur,n) => Math.min(cur, Math.max(OUT_FLOOR_Z, Math.min(cur - n, OUT_PLAN_Z)));
+/* What each mode means in scale. Every one is clamped so it can only ever WIDEN — except the
+   two that should not: on foot or on a bike the destination is round the corner, and that is
+   the one case where zooming IN is the helpful answer. */
+const AIM_Z = {
+  fly:   cur => Math.min(cur, 4),        // nation: a Chicago start shows both coasts
+  drive: cur => outTarget(cur),
+  train: cur => outTarget(cur),
+  water: cur => outBy(cur, 3),
+  ferry: cur => outBy(cur, 3),
+  bike:  cur => Math.max(cur, 12),
+  walk:  cur => Math.max(cur, 12)
+};
+let aimMode = null;                      // the wedge the next addLeg will consume
+function aimZoom(mode, at){
+  try{
+    const cur=map.getZoom(), f=AIM_Z[mode]; if(!f) return;
+    const t=f(cur);
+    if(Math.abs(cur - t) < 1) return;     // under a level is a jitter, not a gesture
+    map.flyTo([at.lat, at.lng], t, {duration:.8});
+  }catch(e){}
+}
+function aimRing(pt){
+  const r = AIM ? theRing() : null;
+  if(!r) return;                          // no ring module: the flow is simply today's flow
+  const at = L.latLng(pt.lat, pt.lng);
+  const t0 = (typeof performance!=="undefined" && performance.now) ? performance.now() : Date.now();
+  const fresh = () => ((typeof performance!=="undefined" && performance.now) ? performance.now() : Date.now()) - t0 >= AIM_GUARD_MS;
+  const take = k => { if(!fresh()) return; r.close(); aimMode = k; aimZoom(k, at); };
+  const more = () => r.open(at, "How?", "the rest", wedgesFor(MODES_REST),
+                            it=>take(it.key), ()=>aimRing(pt));
+  r.open(at, "How?", "or skip",
+    wedgesFor(MODES_TOP).concat([{key:"__more", label:"More"}]),
+    it => { if(!fresh()) return; it.key==="__more" ? more() : take(it.key); });
+}
+/* The mode a new leg is born with. Under ?aim=1 that is the wedge just picked, else whatever
+   the previous leg was — inheritance, not a hardcoded "drive" on every leg. */
+function nextMode(to){
+  /* INHERITANCE IN BOTH BRANCHES NOW (D-170). This used to hardcode "drive" whenever AIM was off,
+     which was defensible while a ring asked the question on every leg. With that ring gone, a
+     hardcoded default would make a four-flight trip four separate corrections; inheriting means a
+     run of flights costs one. The AIM branch already reasoned this way — the comment above it
+     said "inheritance, not a hardcoded drive on every leg" — it just never applied to the path
+     everybody was actually on. */
+  if(aimMode){ const m=aimMode; aimMode=null; return m; }
+  /* AIRPORT TO AIRPORT IS NOT AN INFERENCE, IT IS THE ONLY READING — nobody drives from O'Hare
+     to SFO, and drawing a road route between two runways is wrong rather than merely unhelpful.
+     ONE end is deliberately NOT enough and that restraint is the point: "drive to O'Hare" and
+     "fly out of O'Hare" are both ordinary, so a single airport is genuinely ambiguous and
+     inheritance stays in charge there. A wrong guess costs the same one tap as no guess, so the
+     guess is only worth making where it is certain. */
+  const from = lastPoint();
+  if(from && from.kind === "a" && to && to.kind === "a") return "fly";
+  const prev = legs[legs.length-1];
+  return (prev && prev.mode) || "drive";
+}
+// Warm the 40k-row index at boot when snapping: it is lazy-loaded on first FOCUS, which is far
+// too late for a tap. Shared promise, so this is the same one fetch the search would have made.
+try{ if(SNAP && typeof placesReady==="function") placesReady(); }catch(e){}
+function snapTap(latlng){
+  if(!SNAP || typeof nearestPlace!=="function") return null;
+  try{
+    const c=map.latLngToContainerPoint(latlng);
+    const up=map.containerPointToLatLng(L.point(c.x, c.y - SNAP_PX));
+    return nearestPlace(latlng.lat, latlng.lng, Math.abs(up.lat - latlng.lat));
+  }catch(e){ return null; }   // a snap that fails is just the old behaviour, never an error
+}
+/* One place builds a tapped point, because there are three call sites below and they must not
+   drift. A snapped point is named and positioned IMMEDIATELY — no "Locating…", no round trip. */
+/* 🔴 A PLACE THE PERSON CHOSE BY NAME IS NOT A PAIR OF COORDINATES, AND THIS FUNCTION USED TO
+   TREAT IT AS ONE. Typed picks enter through the map's own click handler — deliberately, so the
+   leg-chaining, naming and save can only behave one way — but the handler re-derived the name
+   from lat/lng, which threw away the only thing the search knew: WHICH PLACE THIS IS. Measured
+   on production, picking two airports:
+       "ORD — Chicago O'Hare"      -> stored as "O'Hare, Chicago"
+       "SFO — San Francisco Intl"  -> stored as "San Mateo County, California"
+   and the leg between them was drawn as a DRIVE. The county is the part that gives it away: it
+   is not a worse name for the airport, it is a different place. Reported from a handset the
+   first time anyone picked from the list and finished the leg — the harness types "evan" and
+   screenshots the suggestions, so it never picked one, and the flag combination that would have
+   snapped instead (SNAP is `?snap=1`/`?find=1`, still off by default) was not the one shipped.
+   `chosen` wins over both the snap and the reverse geocode, and marks the point `snapped` so the
+   async revName below cannot overwrite it a second later. One path is still one path; it simply
+   stops discarding its own input. */
+function tapPoint(latlng, chosen){
+  if(chosen && chosen.name)
+    return {pt:{name:chosen.name, lat:+chosen.lat, lng:+chosen.lng, kind:chosen.kind||null}, snapped:true};
+  const sn=snapTap(latlng);
+  return sn ? {pt:{name:sn.name, lat:sn.lat, lng:sn.lng, kind:sn.kind||null}, snapped:true}
+            : {pt:{name:"Locating…", lat:latlng.lat, lng:latlng.lng}, snapped:false};
+}
 map.on("click",async e=>{
   if(drawing){draft.push([e.latlng.lat,e.latlng.lng]);renderDraft();return;}
   /* An armed insert consumes the next tap and lands in the route it was armed from — NOT the
@@ -1907,19 +3217,25 @@ map.on("click",async e=>{
      insert mode. */
   if(insertAt){
     const t=insertAt; insertAt=null;
-    const ip={name:"Locating…",lat:e.latlng.lat,lng:e.latlng.lng};
+    const ins=tapPoint(e.latlng, e.ttbPlace), ip=ins.pt;
     const rt=routes[t.route];
     if(rt){
       rt.legs.splice(t.slot,0,{id:++uid,to:ip,mode:"drive",date:"",who:[],path:null,stay:null,note:""});
       render(); saveScratch();
-      ip.name=(await revName(ip.lat,ip.lng))||coordLabel(ip); render(); saveScratch();
+      if(!ins.snapped){ ip.name=(await revName(ip.lat,ip.lng))||coordLabel(ip); render(); saveScratch(); }
     }
     return;
   }
-  const pt={name:"Locating…",lat:e.latlng.lat,lng:e.latlng.lng};
-  if(!origin&&!pending){pending=pt;render();pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt);render();saveScratch();return;}
+  const tp=tapPoint(e.latlng, e.ttbPlace), pt=tp.pt;
+  if(!origin&&!pending){
+    pending=pt;render();
+    widenForDestination(pt);   // before the name lands: reach must not wait on a round trip
+    aimRing(pt);               // §2z ?aim=1 — ask HOW here, where the answer can still aim tap two
+    if(!tp.snapped){ pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt); render(); }
+    saveScratch();return;}
   if(pending){origin=pending;pending=null;addLeg(pt);} else addLeg(pt);
-  pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt);render();saveScratch();
+  if(!tp.snapped){ pt.name=(await revName(pt.lat,pt.lng))||coordLabel(pt); render(); }
+  saveScratch();
 });
 /* A typed place enters the trip through the map's own click handler, not a parallel copy of
    it. One path means the leg-chaining rules, the naming and the save can only behave one way. */
@@ -1932,7 +3248,9 @@ map.on("click",async e=>{
       i.value = "";
       i.blur();
       map.setView([p.lat, p.lng], 9);
-      map.fire("click", { latlng: L.latLng(p.lat, p.lng) });
+      /* `ttbPlace` carries what was actually chosen — the name AND the kind — through the click
+         handler, which would otherwise reverse-geocode the coordinates and name a county. */
+      map.fire("click", { latlng: L.latLng(p.lat, p.lng), ttbPlace: p });
     }
   });
 })();
@@ -1966,25 +3284,7 @@ function nearMe(){
 /* ── road routing (D-027): drive follows roads, fly arcs, boat/rail use the drawn path ── */
 const routeCache=new Map(),routePending=new Set();
 const sig=p=>p.map(x=>x[0].toFixed(4)+","+x[1].toFixed(4)).join(";");
-/* Encoded polyline → [[lat,lng],…] (D-110). Kept byte-identical to app.html's copy.
-   The server sends `geometries=polyline` because the same road is 15.9 KB encoded against
-   120.3 KB as coordinate pairs. Google's algorithm: each number is a zigzag-encoded delta from
-   the previous one, sliced into 5-bit chunks low-first, every chunk but the last carrying bit 6,
-   and 63 added so the result is printable ASCII. Precision 5 — hence 1e5. */
-function decodePoly(s){
-  if(typeof s!=="string"||!s) return null;
-  const out=[]; let i=0,lat=0,lng=0;
-  while(i<s.length){
-    let r=0,sh=0,b;
-    do{ b=s.charCodeAt(i++)-63; r|=(b&31)<<sh; sh+=5; }while(b>=32);
-    lat+=(r&1)?~(r>>1):(r>>1);
-    r=0;sh=0;
-    do{ b=s.charCodeAt(i++)-63; r|=(b&31)<<sh; sh+=5; }while(b>=32);
-    lng+=(r&1)?~(r>>1):(r>>1);
-    out.push([lat/1e5,lng/1e5]);
-  }
-  return out.length?out:null;
-}
+
 function cachedRoute(k){if(routeCache.has(k))return routeCache.get(k);
   try{const s=localStorage.getItem("ttb_route_"+k);
     if(s){const v=JSON.parse(s);
@@ -2006,16 +3306,17 @@ async function fetchRoute(pts,k){
   catch(e){routeCache.set(k,null);}
   routePending.delete(k); drawMap();
 }
-function arcPoints(a,b,steps=40,curve=.18){
-  const dx=b[0]-a[0],dy=b[1]-a[1],cx=(a[0]+b[0])/2-dy*curve,cy=(a[1]+b[1])/2+dx*curve,o=[];
-  for(let i=0;i<=steps;i++){const t=i/steps;
-    o.push([(1-t)*(1-t)*a[0]+2*(1-t)*t*cx+t*t*b[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*cy+t*t*b[1]]);}
-  return o;
-}
+
 function drawMap(){
   layer.clearLayers();
+  /* §2bs: THE FIRST TAP'S ONLY FEEDBACK WAS A QUESTION MARK. The name IS fetched right after
+     this (`revName` in the tap handler, which calls render() again) — but the html below was a
+     hardcoded "?", so the answer arrived and the pin went on asking the question. Under ?find=1
+     the ring is just a ring: "you put something here", which is what a first tap should say.
+     The "?" stays the default until this is measured against a person. */
   if(pending) L.marker([pending.lat,pending.lng],{icon:L.divIcon({className:"",iconSize:[30,30],
-    iconAnchor:[15,15],html:'<div class="pin pending">?</div>'})}).addTo(layer);
+    iconAnchor:[15,15],html:'<div class="pin pending">'
+      + (document.body.classList.contains("find") ? '' : '?') + '</div>'})}).addTo(layer);
   routes.forEach((rt,ri)=>drawRoute(rt,ri));
 }
 function drawRoute(rt,ri){
@@ -2039,22 +3340,69 @@ function drawRoute(rt,ri){
     if(i>0) mk.on("click",ev=>{ L.DomEvent.stop(ev); editLeg(ri, i-1, p); });
   });
   let from=rt.origin;
-  rt.legs.forEach(l=>{
+  rt.legs.forEach((l,li)=>{
     if(!from) return;
-    const A=[from.lat,from.lng],B=[l.to.lat,l.to.lng],col=tint,op=dim?.45:.9;
-    if(l.mode==="drive"){
-      const k=sig([A,B]),geo=cachedRoute(k);
-      if(geo&&geo.length) L.polyline(geo,{color:col,weight:4,opacity:op,lineCap:"round"}).addTo(layer);
-      else{L.polyline([A,B],{color:col,weight:4,opacity:op*.7,dashArray:"1 9"}).addTo(layer);
+    const legFrom = from;   // `from` is reassigned at the end of the iteration
+    /* D-159: the leg takes its MODE's colour, falling back to the track tint — which is what
+       keeps drive and fly showing whose vehicle it is. Until today this page painted every leg
+       the track tint and had no mode colour at all, so a boat leg and a drive leg were the same
+       line; the trip page had carried mode colours since D-042. Both read legs.js now. */
+    const A=[from.lat,from.lng],B=[l.to.lat,l.to.lng],col=legColor(l.mode,tint),op=dim?.45:.9;
+    const dash=legDash(l.mode);
+    /* BIKE AND WALK FOLLOW ROADS HERE TOO. app.html's note by `followsRoads` carries the whole
+       reasoning and the measurement behind it — the short version is that a chord draws a bike
+       line across a lake, and that OSRM's demo server has no cycling graph, so this is a ROAD
+       route rather than a bike one. Kept in step with that file deliberately: §2ae(3) measured
+       seven functions sharing a name across these two pages, and this drawing code is exactly
+       where they drifted in opposite directions last time.
+       ORDER: a flight is an arc; a hand-drawn path beats a computed one (D-117); then roads;
+       then the chord for rail, boat and ferry, which have no road network to ask about.
+       `drive` keeps its own weight and its own precedence over a path, so nothing about a drive
+       leg changes. */
+    const hasPath = Array.isArray(l.path)&&l.path.length;
+    const roadish = (l.mode||"drive")==="drive" || l.mode==="bike" || l.mode==="walk";
+    let mid=[(A[0]+B[0])/2,(A[1]+B[1])/2];   // the chord's middle, unless a real line replaces it
+    let drawn=null;                          // whatever geometry actually got painted, for the tap target
+    if(l.mode==="fly"){
+      drawn=arcPoints(A,B);
+      L.polyline(drawn,{color:col,weight:2.5,opacity:op,dashArray:"2 6"}).addTo(layer);
+    } else if(hasPath && l.mode!=="drive"){
+      const line=[A,...l.path,B]; drawn=line;
+      L.polyline(line,{color:col,weight:3.5,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
+      mid=line[Math.floor(line.length/2)];
+    } else if(roadish){
+      const k=sig([A,B]),geo=cachedRoute(k),w=l.mode==="drive"?4:3.5;
+      if(geo&&geo.length){
+        drawn=geo;
+        L.polyline(geo,{color:col,weight:w,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
+        mid=geo[Math.floor(geo.length/2)];   // the glyph rides the ROAD, or it floats off the line
+      }
+      else{drawn=[A,B];
+        L.polyline([A,B],{color:col,weight:w,opacity:op*.7,dashArray:l.mode==="drive"?"1 9":(dash||"5 7")}).addTo(layer);
         if(geo===undefined) fetchRoute([A,B],k);}
-    } else if(l.mode==="fly"){
-      L.polyline(arcPoints(A,B),{color:col,weight:2.5,opacity:op,dashArray:"2 6"}).addTo(layer);
-    } else if(Array.isArray(l.path)&&l.path.length){
-      L.polyline([A,...l.path,B],{color:col,weight:3.5,opacity:op,lineCap:"round"}).addTo(layer);
     } else {
-      L.polyline([A,B],{color:col,weight:3.5,opacity:op,dashArray:"5 7"}).addTo(layer);
+      drawn=[A,B];
+      L.polyline([A,B],{color:col,weight:3.5,opacity:op*.7,dashArray:dash||"5 7"}).addTo(layer);
     }
-    const mid=[(A[0]+B[0])/2,(A[1]+B[1])/2];
+    /* 🔴 ?tapleg=1 — THE ROUTE IS A 3px TARGET AND LEAFLET HIT-TESTS THE STROKE ITSELF, so a
+       thumb aimed at the line misses, falls through to the map, and APPENDS A STOP. Peter, from
+       an iPhone, 2026-09-10: *"I just keep making stops on the route instead of selecting the
+       route to add someone."* He was not missing; the target is three pixels wide.
+       THE IDENTICAL BUG WAS FOUND AND FIXED FOR PINS — see `L.DomEvent.stop` on the marker above,
+       whose comment says without it "tapping a pin ADDS a stop on top of it". The line never got
+       the same treatment, and the line is the bigger target by far: it is the whole trip.
+       A transparent 24px line over the geometry that was actually painted (`drawn`, not the A-B
+       chord, or a road-routed leg's target would sit off its own line). It opens the leg CARD
+       rather than `editLeg`'s mode ring, because the card is where crew, dates and notes live —
+       and crew is what he was reaching for.
+       THE TRADE, and it is why this is a flag: a fat invisible line also swallows taps NEAR the
+       route that meant "add a stop". Tapping mid-route currently appends a leg to the END, which
+       is almost never what somebody means, so this is very likely a straight win — but it changes
+       the core create gesture, and that is Peter's call. */
+    if(document.body.classList.contains("tapleg") && drawn && drawn.length>1){
+      L.polyline(drawn,{color:"#000",opacity:0,weight:24,lineCap:"round"}).addTo(layer)
+        .on("click", ev => { L.DomEvent.stop(ev); openLegCard(l, li, legFrom, rt, ri); });
+    }
     L.marker(mid,{interactive:false,icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],
       html:'<div class="legglyph">'+icon(l.mode,20)+'</div>'})}).addTo(layer);
     from=l.to;
@@ -2089,8 +3437,70 @@ function finishDraw(){
   render();saveScratch();toast("Route drawn");
 }
 
-/* ── crew ── */
-function renderWho(box,l){
+/* ── crew ───────────────────────────────────────────────────────────────────────────────
+   CREW ON THE TRIP, ADJUSTED PER LEG (?crew=1) — Peter's call 2026-09-10, after testing on a
+   handset: *"maybe not a great place to add travel partner, ie off the selection of the leg,
+   maybe from origin and/or stop."*
+   He is right about the shape. `who` was asked once PER LEG, which is the same mistake D-170
+   removed from the mode ring: a question that belongs to the trip, asked again every time you
+   add anything. People say "the four of us are driving to Tahoe", not "Mel is on leg one, Mel is
+   on leg two".
+   🔴 THE DATA MODEL DOES NOT CHANGE, AND THAT IS THE POINT. `who` stays an array on each leg, so
+   `encodeDraft`, the `#d=` payload, `build_trip_link`, the API and D-011's two-track case are all
+   untouched — no schema entry, no API-shape decision. What changes is the DEFAULT (a person you
+   name is aboard everywhere) and the ENTRY POINT (the origin row, which until now was dead). The
+   leg card keeps working exactly as it did and becomes the place you record an EXCEPTION.
+   Scoped to the ACTIVE route on purpose: two tracks exist precisely because somebody flies in
+   separately, so "everyone" must mean everyone on this vehicle, not everyone on the trip. */
+function crewMode(){ return document.body.classList.contains("crew"); }
+/* Who is currently aboard: the last leg's list, because that is what a new leg should inherit.
+   Before there are any legs, everybody named so far. */
+function tripCrew(rt){
+  rt = rt || routes[active]; if(!rt) return [];
+  const last = rt.legs[rt.legs.length-1];
+  if(last && Array.isArray(last.who)) return last.who.slice();
+  return PEOPLE.map(p=>p.name);
+}
+function addCrew(v, rt){
+  v = (v||"").trim(); if(!v) return;
+  if(!PEOPLE.some(p=>p.name.toLowerCase()===v.toLowerCase()))
+    PEOPLE.push({name:v,color:PERSON_COLORS[PEOPLE.length%PERSON_COLORS.length]});
+  /* Naming somebody used to add them to the CREW LIST and to no leg at all — you then had to
+     find their chip and tap it. Under the flag they are simply aboard. */
+  if(!crewMode()) return;
+  rt = rt || routes[active]; if(!rt) return;
+  rt.legs.forEach(l=>{ if(!Array.isArray(l.who)) l.who=[];
+                       if(l.who.indexOf(v)===-1) l.who.push(v); });
+}
+/* One add-person control, because there are two places that need it now and a second copy is how
+   the two drift — the same argument as openLegCard. */
+function addPersonChip(box, onName){
+  const add=document.createElement("button");
+  add.type="button"; add.className="chip addp";
+  add.textContent=PEOPLE.length?"+ add":"+ add someone";
+  add.onclick=()=>{
+    const inp=document.createElement("input");
+    inp.className="addp-in"; inp.placeholder="their name"; inp.maxLength=24;
+    add.replaceWith(inp); inp.focus();
+    let done=false;
+    const commit=()=>{ if(done)return; done=true; onName(inp.value.trim()); };
+    inp.addEventListener("blur",commit);
+    inp.addEventListener("keydown",e=>{
+      if(e.key==="Enter"){ e.preventDefault(); commit(); }
+      else if(e.key==="Escape"){ done=true; onName(""); } });
+  };
+  box.appendChild(add);
+}
+let _crewHintOff = (()=>{ try{ return !!localStorage.getItem("ttb_crewhint"); }catch(e){ return false; } })();
+function crewHintOff(){ return _crewHintOff; }
+function retireCrewHint(){ if(_crewHintOff) return; _crewHintOff = true;
+  try{ localStorage.setItem("ttb_crewhint","1"); }catch(e){} }
+function renderWho(box,l,reflow){
+  /* `reflow` is legCard's "re-render and come back", passed in because toggling a person calls
+     render() and would otherwise close the card you are standing in. Optional: the one-card rail
+     (?cards=1) calls this without one and keeps the old behaviour, which is correct there —
+     nothing is zoomed, so there is nothing to come back to. */
+  const redraw = reflow || (()=>{ render(); saveScratch(); });
   box.textContent="";
   PEOPLE.forEach(p=>{
     const c=document.createElement("button");
@@ -2100,29 +3510,99 @@ function renderWho(box,l){
     c.className="chip"+(on?" sel":"");
     const d=document.createElement("span");d.className="dot";d.style.background=p.color;
     c.appendChild(d);c.appendChild(document.createTextNode(p.name));
-    c.onclick=()=>{l.who=on?l.who.filter(x=>x!==p.name):l.who.concat(p.name);render();saveScratch();};
+    c.onclick=()=>{l.who=on?l.who.filter(x=>x!==p.name):l.who.concat(p.name);redraw();};
     box.appendChild(c);
   });
-  const add=document.createElement("button");
-  add.type="button";add.className="chip addp";add.textContent=PEOPLE.length?"+ add":"+ add someone";
-  add.onclick=()=>{
-    const inp=document.createElement("input");
-    inp.className="addp-in";inp.placeholder="their name";inp.maxLength=24;
-    add.replaceWith(inp);inp.focus();
-    let done=false;
-    const commit=()=>{if(done)return;done=true;
-      const v=inp.value.trim();
-      if(v&&!PEOPLE.some(p=>p.name.toLowerCase()===v.toLowerCase()))
-        PEOPLE.push({name:v,color:PERSON_COLORS[PEOPLE.length%PERSON_COLORS.length]});
-      render();saveScratch();};
-    inp.addEventListener("blur",commit);
-    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commit();}
-      else if(e.key==="Escape"){done=true;render();}});
+  /* THE TEACHING MOMENT FOR MOVE 4, AND IT IS NOT "AFTER THE FIRST LEG". A ring wedge is
+     REACHABLE, never taught — the scoreboard's own test is that a first-timer meets a move
+     without knowing it exists. The moment a second vehicle becomes a real question is the moment
+     a SECOND PERSON is on the trip: that is when "does everyone travel together?" has an answer
+     worth giving. Before that it is trivia. So one line, once, right under the crew chips, and
+     never again on this device.
+     It completes a chain each step of which teaches the next: the chevron teaches the leg card,
+     the leg card carries "+ add someone", and a second person teaches the second vehicle. That is
+     the Mario reading of Peter's bar — 1-1 does not list the moves, it arranges for you to need
+     each one in turn. */
+  if(box.dataset.crewHint !== "1" && PEOPLE.length >= 2 && typeof canAddRoute === "function"
+     && canAddRoute() && document.body.classList.contains("crew") && !crewHintOff()){
+    const h=document.createElement("button");
+    h.type="button"; h.className="crewhint";
+    h.textContent="not all travelling together? give them their own route";
+    h.onclick=()=>{ retireCrewHint(); addRoute(); };
+    box.dataset.crewHint="1";
+    box.appendChild(h);
+  }
+  addPersonChip(box, v => { addCrew(v, routes[active]); redraw(); });
+}
+
+/* The trip-level crew editor — what the origin row opens. A chip is ON when this person is on
+   EVERY leg; tapping it puts them on all of them or takes them off all of them. Per-leg
+   exceptions still live in the leg card, which is where an exception belongs. */
+function renderCrew(box, rt, reflow){
+  box.textContent="";
+  PEOPLE.forEach(p=>{
+    const on = rt.legs.length ? rt.legs.every(l=>(l.who||[]).indexOf(p.name)!==-1) : true;
+    const c=document.createElement("button");
+    c.type="button"; c.setAttribute("role","checkbox");
+    c.setAttribute("aria-checked", on?"true":"false");
+    c.className="chip"+(on?" sel":"");
+    const d=document.createElement("span"); d.className="dot"; d.style.background=p.color;
+    c.appendChild(d); c.appendChild(document.createTextNode(p.name));
+    c.onclick=()=>{
+      rt.legs.forEach(l=>{ if(!Array.isArray(l.who)) l.who=[];
+        const at=l.who.indexOf(p.name);
+        if(on){ if(at!==-1) l.who.splice(at,1); }
+        else  { if(at===-1) l.who.push(p.name); } });
+      reflow();
+    };
+    box.appendChild(c);
+  });
+  addPersonChip(box, v => { addCrew(v, rt); reflow(); });
+}
+
+function crewCard(rt, ri){
+  const el=document.createElement("div"); el.className="card";
+  el.innerHTML=`
+    <div class="ctype">${routes.length>1?esc(TRACKS[ri].label)+" · ":""}Who's coming</div>
+    <button type="button" class="zoombtn" aria-label="Expand this leg"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6"/></svg></button>
+    <div class="route"><input class="place from" value="${esc(rt.origin?rt.origin.name:"")}" readonly aria-label="Where the trip starts"></div>
+    <div class="more">
+      <label class="f">Who's on this trip</label>
+      <div class="chips who"></div>
+      <p class="crewnote">Everyone here rides every leg. Open a leg to drop somebody from just that one.</p>
+    </div>`;
+  el.classList.add("open");
+  const reflow = () => {
+    const wasZoomed = el.classList.contains("zoom");
+    render(); saveScratch();
+    if(wasZoomed) openCrewCard(rt, ri);
   };
-  box.appendChild(add);
+  renderCrew(el.querySelector(".who"), rt, reflow);
+  return el;
+}
+function openCrewCard(rt, ri){
+  const rail=document.getElementById("rail"); if(!rail) return;
+  const card=crewCard(rt, ri);
+  rail.appendChild(card); zoomCard(card);
+  const zb=card.querySelector(".zoombtn");
+  if(zb) zb.onclick=()=>{ zoomCard(card); if(!card.classList.contains("zoom")) render(); };
+  return card;
 }
 
 /* ── render ── */
+/* ONE implementation of "start a second vehicle", because §2bt put it on the FAB as well as the
+   rail, and two copies of a state change is how they drift. `canAddRoute()` is the same guard the
+   rail tile has always used — offering the wedge without it would put back exactly the kind of
+   dead control this change removes.
+   TOP LEVEL, and that is not cosmetic: written INSIDE `render()` first, where `node --check`
+   passed, the page loaded, and the ring threw `ReferenceError: canAddRoute is not defined` on
+   click — a function declaration is scoped to the function it sits in. `make check` cannot see
+   it and the API suite never runs this file; `make flow` caught it in one step. */
+function canAddRoute(){ return routes.length < TRACKS.length && !!routes[0].legs.length; }
+function addRoute(){
+  routes.push({origin:null,legs:[]}); active=routes.length-1; pending=null;
+  render(); saveScratch(); toast(TRACKS[active].label+" — tap where they start");
+}
 function render(){
   setPrompt();drawMap();
   const rail=document.getElementById("rail");rail.innerHTML="";
@@ -2131,7 +3611,7 @@ function render(){
      hidden and no way back. The rail is empty right here, so nothing can be zoomed. */
   document.body.classList.remove("carded");
   const total=routes.reduce((n,r)=>n+r.legs.length,0);
-  document.getElementById("legCount").textContent=total?total+(total===1?" leg":" legs")+(routes.length>1?" · "+routes.length+" routes":""):"no legs yet";
+  document.getElementById("legCount").textContent=total?total+(total===1?" leg":" legs")+(routes.length>1?" · "+routes.length+" routes":""):"nothing here yet";
   document.body.classList.toggle("hasleg", total>0);   // F5: the keepbar's explanation retires itself
   updateKeep();
 
@@ -2162,22 +3642,47 @@ function render(){
     });
   });
   // a second route is how "someone flies in and joins us" gets expressed (D-011: two tracks)
-  if(routes.length<TRACKS.length && routes[0].legs.length){
+  if(canAddRoute()){
     const b=document.createElement("button");
     b.type="button";b.className="addtile";
     b.innerHTML='<span class="plus">+</span><span>add another route</span>';
-    b.onclick=()=>{routes.push({origin:null,legs:[]});active=routes.length-1;pending=null;
-      render();saveScratch();toast(TRACKS[active].label+" — tap where they start");};
+    b.onclick=addRoute;
     rail.appendChild(b);
   }
 }
-/* ── F-11 PROTOTYPE: the dense list. Open /new?dense=1 — the flag is the whole feature and
-   nothing links to it. The question it exists to answer (MASTER_PLAN, F-11's "maybe"): should
-   the OVERVIEW be a list, when the card is what makes a trip read as signs (D-022)? This is
-   the exit-list reading of that constraint — one big guide sign carrying every leg, instead of
-   one sign per leg. Editing is unchanged: a row opens the same full card, zoomed. Stays show
-   on their leg's row but are not editable here. To remove: this function, its call in
-   render(), the .dl- CSS block, and the boot flag. */
+/* ── THE RAIL: the dense list. DEFAULT since 2026-08-10 (D-168); `?cards=1` returns the
+   one-card-per-leg rail. F-11 asked whether the OVERVIEW should be a list when the card is what
+   makes a trip read as signs (D-022). It should: this is the exit-list reading of that
+   constraint — one big guide sign carrying every leg, instead of one sign per leg — and it is
+   what Peter picked over `?calm=1` when both were live. Editing is unchanged: a row opens the
+   same full card, zoomed. Stays show on their leg's row but are not editable here.
+   The one-card rail below is NOT dead code — it is what `?cards=1` serves. */
+/* §2bw(C1): shown once, on the first leg, and never again on this device. It is teaching, and
+   §2bt's Mario rule applies to teaching: 1-1 does not keep the first sign up for the rest of
+   the level. Opening any leg retires it, because at that point they have found the screen. */
+let legHintOff = (()=>{ try{ return !!localStorage.getItem("ttb_leghint"); }catch(e){ return false; } })();
+function retireLegHint(){ if(legHintOff) return; legHintOff = true;
+  try{ localStorage.setItem("ttb_leghint","1"); }catch(e){} }
+/* 🔴 CHANGING THE MODE USED TO EJECT YOU FROM THE CARD, and the flow harness found it the day
+   `edit-leg` was written. The chip handler is `l.mode=...; render()`, and `render()` rebuilds the
+   rail — which destroys the open card. Measured on production: card open with 7 chips, tap Fly,
+   and `.card` is GONE, back to the list. So setting how, when and who was three round trips into
+   the screen this repo's own audit calls the best in the product, and mode is the field people
+   change most.
+   THIS IS D-170's "EVERY-LEG DISMISSAL" ONE LEVEL DOWN — you perform the action and the thing you
+   were looking at disappears. A cold run already forced that fix once at the leg level; nothing
+   had walked the card, so it survived here.
+   The fix is to reopen the same leg's card after the render that the map and the list still need.
+   Factored out of `row.onclick` rather than copied, because two implementations of "open this
+   leg" is how the two drift. */
+function openLegCard(l,i,legFrom,rt,ri){
+  const rail=document.getElementById("rail"); if(!rail) return;
+  const card=legCard(l,i,legFrom,rt,ri);
+  rail.appendChild(card); zoomCard(card);
+  const zb=card.querySelector(".zoombtn");
+  if(zb) zb.onclick=()=>{ zoomCard(card); if(!card.classList.contains("zoom")) render(); };
+  return card;
+}
 function renderDense(rail){
   const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const day=d=>{const p=(d||"").split("-");return p.length===3?MON[+p[1]-1]+" "+(+p[2]):"";};
@@ -2187,8 +3692,19 @@ function renderDense(rail){
     const list=document.createElement("div");list.className="denselist";
     let from=rt.origin;
     if(from&&from.name){
-      const o=document.createElement("div");o.className="dl-row dl-origin";
-      o.innerHTML='<span class="dl-num">•</span><span class="dl-to">'+esc(from.name)+'</span><span class="dl-meta">start</span>';
+      /* THE ORIGIN ROW WAS DEAD — `cursor:default`, opening nothing — and it is exactly where a
+         person looks to say who is coming, because it is the top of the trip. Under ?crew=1 it
+         becomes the trip-level crew editor and says how many are aboard. */
+      const crewOn = crewMode();
+      const o=document.createElement(crewOn ? "button" : "div");
+      if(crewOn){ o.type="button"; o.onclick=()=>openCrewCard(rt,ri);
+                  o.setAttribute("aria-label","Who's coming on this trip"); }
+      o.className="dl-row dl-origin"+(crewOn?" dl-tappable":"");
+      const aboard = crewOn ? tripCrew(rt).length : 0;
+      const meta = crewOn
+        ? (aboard ? aboard + (aboard===1?" aboard":" aboard") : "who's coming?")
+        : "start";
+      o.innerHTML='<span class="dl-num">•</span><span class="dl-to">'+esc(from.name)+'</span><span class="dl-meta">'+meta+'</span>';
       list.appendChild(o);
     }
     rt.legs.forEach((l,i)=>{
@@ -2199,15 +3715,15 @@ function renderDense(rail){
         +'<span class="dl-to">'+esc(l.to.name)+'</span>'
         +'<span class="dl-meta">'+esc(lab)+(l.date?" · "+day(l.date):"")+(l.stay?" · "+icon("bed",12):"")+'</span>';
       row.setAttribute("aria-label","Leg "+(i+1)+" to "+l.to.name+" — open to edit");
-      row.onclick=()=>{
-        const card=legCard(l,i,legFrom,rt,ri);
-        rail.appendChild(card); zoomCard(card);
-        const zb=card.querySelector(".zoombtn");
-        zb.onclick=()=>{zoomCard(card); if(!card.classList.contains("zoom")) render();};
-      };
+      row.onclick=()=>{ retireLegHint(); openLegCard(l,i,legFrom,rt,ri); };
       list.appendChild(row);
       from=l.to;
     });
+    if(!legHintOff && routes.length===1 && rt.legs.length===1){
+      const h=document.createElement("div"); h.className="dl-hint";
+      h.textContent="tap a leg to set how, when and who";
+      list.appendChild(h);
+    }
     rail.appendChild(list);
   });
 }
@@ -2224,7 +3740,18 @@ function routeHead(rt,ri){
 
 function legCard(l,i,from,rt,ri){
   const el=document.createElement("div");el.className="card";
-  const drawable=(l.mode==="water"||l.mode==="train"), hasPath=Array.isArray(l.path)&&l.path.length;
+  /* §2aa: not driven and not flown means it is a STRAIGHT LINE until somebody traces it, and a
+     straight line goes wherever the geometry sends it — through a headland, over a mountain.
+     This read `water||train`, which is why a ferry, bike or walking leg could never be traced
+     here even though the renderer above (`Array.isArray(l.path)`) would happily have drawn one.
+     app.html had the same split the other way round; both files use one rule now. */
+  const drawable=(l.mode!=="drive"&&l.mode!=="fly"), hasPath=Array.isArray(l.path)&&l.path.length;
+  /* Bike and walk now DRAW a road (see the renderer above), so "Straight line for now — it can
+     cross land" became false for them. Saying it anyway would be copy describing behaviour the
+     code stopped having, which is the §2ad OFF_CACHE mistake. The amber stays for the case that
+     really is wrong: rail, boat and ferry drawing a chord through whatever lies between. */
+  const roadedLeg=!hasPath&&(l.mode==="bike"||l.mode==="walk");
+  const traceNoun={water:"boat",train:"rail",ferry:"ferry",bike:"bike",walk:"walking"}[l.mode]||"";
   el.innerHTML=`
     <div class="ctype">${routes.length>1?esc(TRACKS[ri].label)+" · ":""}Leg ${i+1}</div>
     <span class="saved" role="status" aria-live="polite">saved ✓</span>
@@ -2236,15 +3763,23 @@ function legCard(l,i,from,rt,ri){
     <div class="chips how" role="radiogroup" aria-label="How this leg travels">
       ${MODES.map(([m,lab])=>`<button type="button" class="chip${l.mode===m?" sel":""}" role="radio" aria-checked="${l.mode===m}" data-m="${m}">${icon(m)}${lab}</button>`).join("")}
     </div>
+    <!-- §2aa: OUTSIDE .detail on purpose. It lived inside, behind the "Add detail" toggle, which
+         is display:none until tapped — so the sentence explaining what the mode you just picked
+         does to the line was hidden behind a control you have no reason to open. The chips are
+         visible; the consequence of the chips has to be too. Same placement as app.html. -->
+    ${drawable?`<div class="pathnote${hasPath||roadedLeg?" done":""}"><span class="pn-txt">${hasPath
+          ? l.path.length+" point"+(l.path.length===1?"":"s")+" traced \u2014 the map follows them."
+          : roadedLeg
+            ? "On roads for now — trace it if you took a trail."
+            : "Straight line for now — it can cross land."}</span><button type="button" class="lnk draw ${hasPath?"done":""}">${icon("pencil",14)}${(hasPath?"Edit the ":"Draw the ")+traceNoun+" route"}</button></div>`:""}
     <button class="moretog" type="button" aria-expanded="false">Add detail</button>
     <div class="detail">
       <label class="f">When <span class="opt">· optional</span></label>
       <input class="fld date" type="date" value="${l.date||""}" aria-label="When this leg travels">
-      <label class="f">Who's on this leg</label>
+      <label class="f">Who's on this leg${crewMode()?' <span class="opt">· everyone, unless you drop them</span>':''}</label>
       <div class="chips who"></div>
       <label class="f">Note</label>
       <textarea class="fld note" placeholder="Anything the crew should know">${esc(l.note)}</textarea>
-      ${drawable?`<button type="button" class="lnk draw ${hasPath?"done":""}">${icon("pencil",14)}${hasPath?"Edit the "+(l.mode==="water"?"boat":"rail")+" route ✓":"Draw the "+(l.mode==="water"?"boat":"rail")+" route"}</button>`:""}
     </div>
     <div class="cardfoot">
       ${l.stay?"":`<button type="button" class="lnk addstay">${icon("bed",14)}Add a stay</button>`}
@@ -2254,16 +3789,31 @@ function legCard(l,i,from,rt,ri){
   el.querySelector(".zoombtn").onclick=()=>zoomCard(el);
   if(i===0) el.querySelector(".from").addEventListener("change",e=>{rt.origin.name=e.target.value;flash();saveScratch();drawMap();});
   el.querySelector(".to").addEventListener("change",e=>{l.to.name=e.target.value;flash();saveScratch();drawMap();});
-  el.querySelectorAll(".how .chip").forEach(b=>b.onclick=()=>{l.mode=b.dataset.m;render();saveScratch();});
-  el.querySelector(".date").addEventListener("change",e=>{l.date=e.target.value;flash();saveScratch();render();});
+  /* render() is still called — the map redraws the leg in the new mode's colour and dash, and the
+     list row's meta changes — but the card it destroys is put straight back, on the same leg, so
+     the person stays where they were. `wasZoomed` guards the one-card rail (?cards=1), where the
+     card is not zoomed and there is nothing to restore. */
+  /* 🔴 EVERY FIELD IN THIS CARD EJECTED YOU, NOT JUST THE MODE. Each handler calls render(),
+     render() rebuilds the rail, and this card is a child of the rail — so setting the mode, the
+     date, the crew or a stay all threw you back to the list. The mode was fixed first because
+     `edit-leg` walked it; the other three had no flow, which is the whole tier-2 argument again.
+     One helper now, rather than four copies of the same three lines: two implementations of
+     "re-render and come back" is how they drift, and there were nearly four. */
+  const reflow = () => {
+    const wasZoomed = el.classList.contains("zoom");
+    render(); saveScratch();
+    if(wasZoomed) openLegCard(l,i,from,rt,ri);
+  };
+  el.querySelectorAll(".how .chip").forEach(b=>b.onclick=()=>{ l.mode=b.dataset.m; reflow(); });
+  el.querySelector(".date").addEventListener("change",e=>{l.date=e.target.value;flash();reflow();});
   el.querySelector(".note").addEventListener("change",e=>{l.note=e.target.value;flash();saveScratch();});
-  renderWho(el.querySelector(".who"),l);
+  renderWho(el.querySelector(".who"),l,reflow);
   const mt=el.querySelector(".moretog");
   const sync=()=>{const o=el.classList.contains("open");mt.setAttribute("aria-expanded",o?"true":"false");mt.textContent=o?"Hide detail":"Add detail";};
   if(l.date||l.who.length||l.note||hasPath) el.classList.add("open");
   sync(); mt.onclick=()=>{el.classList.toggle("open");sync();};
   const dw=el.querySelector(".draw"); if(dw) dw.onclick=()=>{active=ri;startDraw(i);};
-  const as=el.querySelector(".addstay"); if(as) as.onclick=()=>{l.stay={lodging:"",note:""};render();saveScratch();};
+  const as=el.querySelector(".addstay"); if(as) as.onclick=()=>{l.stay={lodging:"",note:""};reflow();};
   /* D-117: a hand-drawn route is the one thing here nothing can rebuild — a geocoder finds a
      stop again, routing redraws a drive, but a line traced down a river by hand exists once.
      This deleted it with no confirmation whatsoever. */
@@ -2315,14 +3865,73 @@ function setPrintName(){
 }
 window.addEventListener("beforeprint", setPrintName);
 
-/* F-11 prototype flag — see renderDense(). Nothing links here; the URL is the switch. */
-try{ if(new URLSearchParams(location.search).has("dense")) document.body.classList.add("dense"); }catch(e){}
+/* PROMOTED TO THE DEFAULT 2026-08-10 (D-168), on Peter's call after seeing it against `?calm=1`:
+   "dense over calm — go live with dense." F-11's question was whether the OVERVIEW should be a
+   list when the CARD is what makes a trip read as signs (D-022). The answer is that both readings
+   were right about different things: the card is the sign, and the list is the sign you read from
+   a moving car. One guide sign carrying every leg, one row per leg, and a row opens the same full
+   card zoomed — so nothing is lost, it is one tap deeper.
+   **`?cards=1` is the way back and it stays.** `?dense=1` still works and now changes nothing;
+   links already sent keep behaving. Same lesson as D-165: the promotion that deletes its own
+   fallback needs it within the week. */
+/* §2br: ?find=1 — uncovers the zoom control and puts the place search on screen. Flag-gated,
+   nothing promoted; Peter's phone decides, same rule as dense/calm/bar/refine. */
+try{ if(new URLSearchParams(location.search).has("find")) document.body.classList.add("find"); }
+catch(e){}
+/* §2bu: ?low=1 — a shorter resting sheet. Separate from ?find=1 so the trade against §2aw
+   can be tested on its own; ?find=1&low=1 is the combination Peter tests. */
+/* Captured HERE, before the replaceState below strips the query — mapstyle.js loads
+   dynamically and would otherwise read an empty search. */
+try{ window.TTB_BRAND = new URLSearchParams(location.search).has("brand"); }catch(e){}
+/* THE SHORTER HALF IS THE DEFAULT SINCE 2026-09-04 (D-183) — Peter's call, after the flow guard
+   held the 112px band red across five flows. `?tall=1` restores the 46dvh half and it stays;
+   `?low=1` still works and now changes nothing, so links already sent keep behaving. Default-on
+   in the catch too, for the same reason D-168 and D-182 are: a URLSearchParams that throws must
+   not silently ship the OLD default. */
+try{ if(!new URLSearchParams(location.search).has("tall")) document.body.classList.add("low"); }
+catch(e){ document.body.classList.add("low"); }
+try{ if(new URLSearchParams(location.search).has("tall")) document.body.classList.add("tall"); }
+catch(e){}
+/* §2bw move 4 — ?crew=1: the FAB tuned to context for everyone (not only under ?find=1), the
+   `Add route` wedge whenever a second vehicle is possible, and one line under the crew chips the
+   first time a trip has two people on it. Flag-gated because §2bt(b) — what belongs in the FAB —
+   is Peter's open decision, and a promotion needs him plus a DECISIONS entry. */
+/* CREW ON THE TRIP IS THE DEFAULT SINCE 2026-09-10 (D-184). `?perleg=1` restores the old model —
+   crew asked once per leg, origin row inert — and it stays; `?crew=1` still works and now changes
+   nothing, so links already sent keep behaving. Default-on in the catch for the same reason
+   D-168/D-182/D-183 are: a URLSearchParams that throws must not silently ship the OLD default. */
+try{ if(!new URLSearchParams(location.search).has("perleg")) document.body.classList.add("crew"); }
+catch(e){ document.body.classList.add("crew"); }
+/* TAPPING THE ROUTE OPENS ITS LEG — default since 2026-09-10 (D-184). `?maptap=1` gives the map
+   back every tap, which is the behaviour that made a 3px line unhittable. */
+/* THE KEEP SHEET IS THE DEFAULT SINCE 2026-09-10 (D-190) — three guide-sign plates instead of a
+   radial ring, carrying what each tier ADDS and the browser sentence the confirm() used to say.
+   `?keepring=1` restores the ring and the dialog; `?keep=1` still works and now changes nothing.
+   Default-on in the catch, same reason as D-168/D-182/D-183/D-184/D-185. See keepCard(). */
+try{ if(!new URLSearchParams(location.search).has("keepring")) document.body.classList.add("keepsheet"); }
+catch(e){ document.body.classList.add("keepsheet"); }
+try{ if(!new URLSearchParams(location.search).has("maptap")) document.body.classList.add("tapleg"); }
+catch(e){ document.body.classList.add("tapleg"); }
+/* TYPING FIRST — PROMOTED TO THE DEFAULT 2026-09-04 (D-182), reversing D-029's promotion of the
+   tap. `?tap=1` is the way back and it stays; `?type=1` still works and now changes nothing.
+   Default-on in the catch too: a URLSearchParams that throws must not silently ship the OLD
+   default, which is the shape D-168's promotion already uses. */
+try{ if(!new URLSearchParams(location.search).has("tap")) document.body.classList.add("type"); }
+catch(e){ document.body.classList.add("type"); }
+/* The placeholder said "…or type a place", which is the voice of a SECOND option. It is the
+   first one now, so it names what to type instead of apologising for existing. */
+try{ if(document.body.classList.contains("type")){
+  var pf=document.getElementById("pFind"); if(pf) pf.placeholder="Town, city or airport";
+} }catch(e){}
+try{ if(!new URLSearchParams(location.search).has("cards")) document.body.classList.add("dense"); }
+catch(e){ document.body.classList.add("dense"); }
 /* §2v(c): read here, not later — the replaceState below strips the query, which is exactly
    how ?bar=1 on a trip page silently did nothing until it was captured at boot. */
 /* §2z: same lifecycle point as the flag above. Wrapped, because a prototype that throws would
    take the whole inline script — and therefore the whole page — down with it, and this one is
    reached by a URL a stranger could land on. */
 try{ initFlow(); }catch(e){}
+try{ watchPromptHeight(); }catch(e){}
 
 /* ── restore a draft. v3 carries routes; v2 (single chain) and v1 (stop-shaped, pre
    D-037) both load into route 0 — migrate rather than discard someone's work. ── */
@@ -2350,8 +3959,12 @@ try{ initFlow(); }catch(e){}
      matched against a fixed set. A bad payload is dropped for the local draft rather than
      half-loaded. */
   const MODES_OK = ["drive","fly","train","ferry","water","bike","walk"];
-  function fromHash(){
-    const m = location.hash.match(/[#&]d=([A-Za-z0-9_\-]+)/);
+  const PATH_MAX = 200;                 // traced points carried per leg, both ways
+  /* `h` is optional and defaults to the real hash. It exists so the ENCODER can be proved
+     against this exact decoder — same validation, same clamps — instead of against a second
+     copy of the rules that would drift. */
+  function fromHash(h){
+    const m = String(h == null ? location.hash : h).match(/[#&]d=([A-Za-z0-9_\-]+)/);
     if(!m) return null;
     try{
       const b64 = m[1].replace(/-/g,"+").replace(/_/g,"/");
@@ -2373,6 +3986,19 @@ try{ initFlow(); }catch(e){}
         "walk","hike","run","ebike"];
       const CRAFT = ["Bike","Canoe","Kayak"];
       const str = (v,n) => String(v == null ? "" : v).slice(0,n);
+      /* 200 points is generous for a traced leg and small enough that several of them still fit
+         in a link — the `json.length > 60000` ceiling above is the real backstop either way. */
+      const pathOf = v => {
+        if(!Array.isArray(v)) return null;
+        const out = [];
+        for(const p of v.slice(0, PATH_MAX)){
+          if(!Array.isArray(p) || p.length < 2) continue;
+          const a = +p[0], b = +p[1];
+          if(!isFinite(a) || !isFinite(b) || a < -90 || a > 90 || b < -180 || b > 180) continue;
+          out.push([a, b]);
+        }
+        return out.length ? out : null;
+      };
       const legs = (Array.isArray(raw.l) ? raw.l : []).slice(0,40).map(l=>{
         const to = pt(l && l.to); if(!to) return null;
         const who = Array.isArray(l.who)
@@ -2385,12 +4011,156 @@ try{ initFlow(); }catch(e){}
           subtype: SUBTYPES.includes(l.subtype) ? l.subtype : null,
           craft: CRAFT.includes(l.craft) ? l.craft : null,
           flight: /^[A-Za-z0-9 ]{2,10}$/.test(l.flight||"") ? str(l.flight,10).toUpperCase() : null,
-          who, path: null, stay,
+          /* A HAND-DRAWN ROUTE NOW TRAVELS (§2ab). This was hardcoded `path: null`, which meant
+             a traced boat or rail line — the one thing on a trip that nothing can rebuild
+             (D-117) — was dropped by every handover. Treated as hostile like everything else
+             here: pairs only, both finite, both in range, capped at PATH_MAX so a link cannot be
+             made enormous by a payload we did not write. */
+          who, path: pathOf(l.path), stay,
           note: str(l.note,400) };
       }).filter(Boolean);
       return {v:3, name:String(raw.n||"").slice(0,60), people:[], routes:[{origin, legs}]};
     }catch(e){ return null; }
   }
+
+  /* ── §2ab ?send=1 — THE DRAFT CAN BE SENT ────────────────────────────────────────────────
+     Peter, 2026-08-06: "the agent can make but can't share for free/no account." The hole is
+     real and it is not a pricing hole. `build_trip_link` already hands back `/new#d=<base64>`
+     with the whole trip in the FRAGMENT — free, no account to build one, and it never reaches
+     our server.
+     The recipient opens it, and then the `replaceState` below strips the payload from the
+     address bar so a refresh cannot re-import over their edits. That is right. But there was no
+     ENCODER anywhere in this page, only the decoder above — so the shareable thing existed for
+     one instant and could never be rebuilt. "Only on this device until you keep it" was true
+     because the LINK was thrown away, not because a rule said so.
+
+     This is the inverse of `fromHash`, and it is deliberately built to be checked against it
+     rather than trusted: `sendableDraft()` round-trips through the very same decoder before the
+     link is handed over, so a payload this page cannot read is never copied to anyone.
+
+     WHAT DOES NOT TRAVEL, said out loud rather than lost quietly:
+       · a HAND-DRAWN route — `fromHash` forces `path:null`, because the wire format is shared
+         with the MCP tool and widening it is an API-shape decision (D-117 is emphatic that a
+         traced line exists once, so silently dropping one is the worst option available)
+       · a SECOND vehicle — the format carries one origin and one leg list, so the active track
+         is what gets sent
+     Both are warned about at the moment of copying, which is the only moment they matter. */
+  /* PROMOTED TO THE DEFAULT 2026-08-07, on Peter's call. Every draft can be copied as a link.
+     `?send=1` in a link already sent is simply unread now and changes nothing. */
+  function encodeDraft(){
+    const rt = routes[active];
+    if(!rt || !rt.origin || !rt.legs.length) return null;
+    const pt = p => ({ name: String(p.name || "Stop").slice(0,120), lat: +p.lat, lng: +p.lng });
+    const l = rt.legs.slice(0,40).map(leg => {
+      const o = { to: pt(leg.to), mode: leg.mode || "drive" };
+      if(leg.date) o.date = leg.date;
+      if(leg.subtype) o.subtype = leg.subtype;
+      if(leg.craft) o.craft = leg.craft;
+      if(leg.flight) o.flight = leg.flight;
+      if(Array.isArray(leg.who) && leg.who.length) o.who = leg.who.slice(0,8);
+      if(leg.stay && (leg.stay.lodging || leg.stay.note))
+        o.stay = { lodging: leg.stay.lodging || "", note: leg.stay.note || "" };
+      if(leg.note) o.note = leg.note;
+      /* ROUNDED TO 5 DECIMALS — about a metre, which is far finer than a finger tracing a
+         coastline, and it roughly halves the characters a path costs in a URL. A traced line is
+         the one thing on a trip nothing can rebuild (D-117), so it travels; it just does not
+         travel at fifteen decimal places. */
+      if(Array.isArray(leg.path) && leg.path.length){
+        const pts = [];
+        for(const p of leg.path.slice(0, PATH_MAX)){
+          if(!Array.isArray(p) || p.length < 2) continue;
+          const a = +p[0], b = +p[1];
+          if(isFinite(a) && isFinite(b)) pts.push([+a.toFixed(5), +b.toFixed(5)]);
+        }
+        if(pts.length) o.path = pts;
+      }
+      return o;
+    });
+    const name = (document.getElementById("tripName").textContent || "").trim().slice(0,60);
+    const json = JSON.stringify(name ? { n:name, o:pt(rt.origin), l } : { o:pt(rt.origin), l });
+    /* base64url, unpadded — byte-identical to what the MCP produces and what fromHash reads.
+       The escape/unescape pair is the standard UTF-8 → latin1 hop `btoa` needs; it is what the
+       decoder above already inverts, so accented place names survive the trip. */
+    const b64 = btoa(unescape(encodeURIComponent(json)))
+      .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    /* THE LINK CARRIES THE FLAG WHILE THERE IS A FLAG, and it has to. A copied link is opened by
+       someone who then wants to forward it themselves — that is the whole loop this closes — and
+       a bare `/new` link lands them on a page with no Copy button, so the chain dies at one hop.
+       Tested and found exactly that. When this is promoted the flag goes and `q` becomes "",
+       which is the clean URL; nothing else has to change. */
+    return { url: location.origin + "/new#d=" + b64, json, legs: l.length };
+  }
+  /* Returns `{why}` rather than a bare null, because the three ways this fails need three
+     different sentences — "add a leg" is a lie when the real problem is that the trip is too big
+     to fit in a URL. */
+  function sendableDraft(){
+    const e = encodeDraft(); if(!e) return { why:"empty" };
+    if(e.json.length > 60000) return { why:"toobig" };   // the decoder's own ceiling
+    /* PROVE IT BEFORE HANDING IT OVER: a link this page cannot read is not a link. The check
+       counts traced POINTS as well as legs now — a path that silently failed validation on the
+       way back would otherwise pass a leg-count comparison and lose the one thing D-117 says
+       cannot be rebuilt. */
+    const back = fromHash("#d=" + e.url.split("#d=")[1]);
+    const pts = ls => ls.reduce((n,l) => n + (Array.isArray(l.path) ? l.path.length : 0), 0);
+    const rt = routes[active];
+    if(!back || !back.routes[0] || back.routes[0].legs.length !== e.legs) return { why:"unreadable" };
+    const wantPts = pts(rt.legs.map(l => ({ path:(l.path||[]).slice(0,PATH_MAX) })));
+    if(pts(back.routes[0].legs) !== wantPts) return { why:"unreadable" };
+    return { url: e.url, chars: e.url.length, points: wantPts,
+             lostTracks: routes.filter(r => r.legs.length).length - 1 };
+  }
+  async function copyDraftLink(){
+    const s = sendableDraft();
+    if(s.why === "empty"){ toast("Nothing to send yet — add a leg first."); return; }
+    if(s.why === "toobig"){ toast("This trip is too big for a link. Keep it instead and share that."); return; }
+    if(s.why){ toast("Could not build a link this page can read back — nothing was copied."); return; }
+    // Hand-drawn routes travel now, so the only thing left to warn about is a second vehicle.
+    const lostNote = s.lostTracks > 0
+      ? " Not included: " + s.lostTracks + " other vehicle" + (s.lostTracks===1?"":"s") + "."
+      : "";
+
+    /* THE OS SHARE SHEET FIRST, where there is one. app.html has had navigator.share in four
+       places since it shipped; this page — the one a draft actually spreads FROM — had none, so
+       the free artifact was the harder of the two to pass on. On a phone "copy the link, leave the
+       page, find the thread, paste" is four steps against one tap, and the sheet's own list
+       includes Copy, so nothing is lost by preferring it.
+       Cancelling is NOT a failure: AbortError means the person changed their mind and returns
+       silently. Any OTHER error falls through to the clipboard below, so an unsupported target or
+       a blocked sheet still ends with a link in hand. Same shape as app.html's shareLink(). */
+    if(navigator.share){
+      try{
+        await navigator.share({ title:"this trip, btw", text:"A trip I started:", url:s.url });
+        /* No "shared ✓" — the sheet is its own receipt, and a toast on top of it is noise. The
+           lost-vehicle warning still goes, because that is information the sheet cannot carry. */
+        if(lostNote) toast("Sent." + lostNote);
+        return;
+      }catch(e){ if(e && e.name === "AbortError") return; }
+    }
+
+    let ok = false;
+    try{ await navigator.clipboard.writeText(s.url); ok = true; }catch(e){}
+    if(!ok){                                          // no clipboard permission: select it instead
+      try{
+        const ta = document.createElement("textarea");
+        ta.value = s.url; ta.setAttribute("readonly",""); ta.style.cssText = "position:fixed;top:-1000px";
+        document.body.appendChild(ta); ta.select(); ok = document.execCommand("copy"); ta.remove();
+      }catch(e){}
+    }
+    toast(ok
+      ? "Link copied — it opens a copy of this trip." + lostNote
+      : "Could not reach the clipboard — copy it from the address bar after opening the link.");
+  }
+
+  /* The label has to tell the truth about what the tap does, and that differs by device: a share
+     sheet where there is one, a clipboard copy where there is not. Set from the same capability
+     check the handler branches on, so the two can never disagree. */
+  { const b = document.getElementById("sendBtn");
+    if(b){ b.onclick = copyDraftLink;
+           if(navigator.share) b.textContent = "Share"; } }
+  /* The test hook keeps its own flag now that the FEATURE has none — same bargain as ?rdiag=1.
+     The encoder belongs inside this closure; proving it round-trips through the real decoder
+     needs a way to call it. No customer meets this: it does not exist without ?sdiag=1. */
+  if(QS.has("sdiag")) window.__ttbSend = sendableDraft;
 
   /* Changing only the fragment does not reload the page, so someone already sitting on /new
      who is handed a link would see nothing happen. Re-run the import on hashchange. */
@@ -2412,15 +4182,23 @@ try{ initFlow(); }catch(e){}
          marks ours; everything else is a genuine handover. */
       var fromStarts = HANDOVER_FROM_STARTS;
       if(m) m.innerHTML = '<span class="kb-dot"></span>' + (fromStarts
-        ? '<b>A starting point.</b> Change every part of it &mdash; the places are placeholders. ' +
-          'Only on this device until you keep it.'
-        : '<b>Your assistant built this.</b> Change anything &mdash; it&rsquo;s yours. ' +
-          'Only on this device until you keep it.');
+        /* The "only on this device" clause is GONE from both. It stopped being true the moment
+           Copy link shipped, and it was also the longest sentence in a bar that had just grown a
+           second button — on a 375px phone it wrapped to two lines and pushed the bar to 122px,
+           which is a quarter of the screen on a short handset. The button now answers the
+           question the clause was trying to answer. */
+        ? '<b>A starting point.</b> Change every part of it &mdash; the places are placeholders.'
+        : '<b>Your assistant built this.</b> Change anything &mdash; it&rsquo;s yours.');
     }, 0);
     // Someone handed this over; it is theirs now. Save it as the local draft and drop the
     // payload from the address bar so a refresh does not re-import over their edits.
+    /* KEEP THE QUERY. The reason for this line is to drop the FRAGMENT; taking the query with it
+       was incidental, and §2v already recorded that exact collateral once — a flag read after
+       boot saw `location.search === ""` and looked broken while the code was fine. Here it bit
+       the recipient of a handed-over link: their address bar lost `?send=1`, so a refresh took
+       the Copy button away and the chain died at one hop. */
     try{ localStorage.setItem(SCRATCH_KEY, JSON.stringify(d)); }catch(e){}
-    history.replaceState(null,"",location.pathname);
+    history.replaceState(null,"",location.pathname + location.search);
   }else{
     try{d=JSON.parse(localStorage.getItem(SCRATCH_KEY)||"null");}catch(e){}
   }
@@ -2451,6 +4229,13 @@ try{ initFlow(); }catch(e){}
   }
   if(!routes.length) routes=[{origin:null,legs:[]}];
   active=0; restoring=false;
+  /* A HANDED-OVER TRIP ARRIVES WITH THE SHEET OPEN. §2aw opens the sheet on the first leg because
+     a cold run found the reward for two taps was "a map and a closed drawer" — and a person
+     opening an assistant's link has made zero taps and gets the same closed drawer, with three
+     legs already in it. Same finding, applied to arrival: open to half so the list they were
+     handed is visible next to the route. (Audit 2026-09-10, B.) */
+  if(document.body.classList.contains("handover") && routes.some(r=>r.legs.length))
+    setTimeout(()=>{ try{ sheetSet(1); }catch(e){} }, 420);
   if(routes.some(r=>r.origin||r.legs.length)){
     enterBuild();
     const b=routeBounds(); if(b) setTimeout(()=>{try{map.fitBounds(b.pad(.4));}catch(e){}},420);
@@ -2458,6 +4243,33 @@ try{ initFlow(); }catch(e){}
   render();
 })();
 render();
+</script>
+<script>
+/* ?calm=1 — see the CSS block. Additive on purpose: if this whole script throws, the page is
+   exactly the page that shipped, because nothing below runs unless the flag is present. */
+(function(){
+  /* PROMOTED TO THE DEFAULT 2026-08-11 (D-170), on the cold run: the create flow is "still too
+     much / too hard to create / follow through". The hero offered FOUR ways in at equal weight —
+     start a leg, describe it, open a file, explore the demo — and a first-timer has to choose
+     before they have any idea what they are choosing between. Now it offers one, and the other
+     three sit behind a single quiet line.
+     `?ways=1` restores all four and it STAYS, same rule as D-165 and D-168: the promotion that
+     deletes its own fallback needs it within the week. `?calm=1` still works and now changes
+     nothing, so links already sent keep behaving. */
+  var on=true; try{ on = !new URLSearchParams(location.search).has("ways"); }catch(e){ on=true; }
+  if(!on) return;
+  document.body.classList.add("calm");
+  function line(cls, label, cls2){
+    var b=document.createElement("button");
+    b.type="button"; b.className="calm-more "+cls; b.textContent=label;
+    b.onclick=function(){ document.body.classList.add(cls2); };
+    return b;
+  }
+  var hero=document.getElementById("hero");
+  if(hero) hero.appendChild(line("h","other ways to start","calm-open"));
+  var prompt=document.querySelector(".prompt");
+  if(prompt) prompt.appendChild(line("p","or start another way","calm-open2"));
+})();
 </script>
 </body>
 <script src="/pages.js?v=2"></script>

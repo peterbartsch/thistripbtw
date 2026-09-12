@@ -26,11 +26,11 @@
 </style>
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=36">
+<link rel="stylesheet" href="/pages.css?v=37">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 </head>
 <body>
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
   <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
@@ -44,7 +44,7 @@
 
 <main class="pagebody sheet">
   <div class="card">
-    <p><strong>The short version:</strong> you pay a few dollars once, so you're the customer — not the product. We don't run ads, we don't use analytics or trackers, and we never build a profile of you. Building a trip asks nothing of you — no account, no card, no email. Buying one lets you make an account, and that account holds <strong>your email address, a one-way hash of your password, and a list of which trips are yours</strong>. That's the entire record.</p>
+    <p><strong>The short version:</strong> you pay a few dollars once, so you're the customer — not the product. We don't run ads, we don't use analytics or trackers, and we never build a profile of you. Building a trip asks nothing of you — no account, no card, no email. Buying one lets you make an account, and that account holds <strong>your email address, your password scrambled one way so nobody can read it back, and a list of which trips are yours</strong>. That's the entire record.</p>
   </div>
 
   <h2>What we store</h2>
@@ -52,7 +52,7 @@
   <ul>
     <li>The <strong>stops, posts, notes, and pins</strong> you add — places, dates, captions, and the words you type.</li>
     <li><strong>Photos and videos</strong>, if you're on the tier that includes them.</li>
-    <li>Two <strong>hashed passwords</strong> per trip (edit + view). We store only a one-way hash, so we can't read a phrase back or tell you what yours was. <strong>That is no longer the same as saying we can't open your trip</strong> &mdash; if you have an account, signing in opens the trips on it, so the server can reach their contents. See &ldquo;What signing in can do&rdquo; below.</li>
+    <li>Two <strong>scrambled passwords</strong> per trip (edit + view). We scramble them on the way in, one way only, so we can't read a phrase back or tell you what yours was. <strong>That is no longer the same as saying we can't open your trip</strong> &mdash; if you have an account, signing in opens the trips on it, so the server can reach their contents. See &ldquo;What signing in can do&rdquo; below.</li>
   </ul>
   <p>If you have <strong>bought</strong> a trip, we also store, <em>on the trip itself</em>:</p>
   <ul>
@@ -62,29 +62,31 @@
   <p>And if you chose to make an <strong>account</strong> after buying, we store exactly three things about you:</p>
   <ul>
     <li>Your <strong>email address</strong> — the one you gave Stripe at checkout.</li>
-    <li>A <strong>one-way hash of your password</strong>. We can't read your password, only check it.</li>
+    <li><strong>Your password, scrambled one way on the way in.</strong> We can't read it back — we can only check that what you typed matches. Nor can anyone who steals the file.</li>
     <li>A <strong>list of which trips are yours</strong> — the ones you bought, and any you added with a personal link.</li>
   </ul>
   <p><strong>Said plainly, because it matters:</strong> that list is stored in a form we can read, and <strong>so are your trips.</strong> Signing in opens the trips on your account, which means the server can open them too &mdash; and so could anyone who got the whole database. We used to say the opposite here, and it was true then: nothing but the phrase could open a trip. We changed it because the alternative was worse in practice. The account could tell you <em>which</em> trips were yours and then not let you into any of them, and people lose links. <strong>This is the trade, and you should know it is the one we made:</strong> a customer who can get back in, at the cost of a database that could be made to give trips up.</p>
 
 <h2 id="signing-in">What signing in can do</h2>
 <p>An account opens the trips you bought and the ones you were invited to &mdash; nothing else. It does <strong>not</strong> make you a person on the trip: easter eggs left for someone else stay shut, because who you are on a trip comes from a personal link, never from being signed in. And only the person who bought a trip can delete it, change its passwords, or remove people from it. Someone you invited can add to the trip; they cannot take it away from you.</p>
-  <p>When you buy a trip, <strong>we make you an account from the email address Stripe already collected to send your receipt</strong> &mdash; checkout never sends you through a signup form, and we never ask you for anything extra. (Since D-076 anyone may also make an account for themselves, without buying; it holds the same email and list and nothing more.) It exists so you can find your trips again later. Setting a password is optional; if you don't, we'll email you a link to set one when you need it. And an account still holds no name, no profile, no behaviour, and nothing a data broker would want.</p>
+  <p>When you buy a trip, <strong>we make you an account from the email address Stripe already collected to send your receipt</strong> &mdash; checkout never sends you through a signup form, and we never ask you for anything extra. (Since D-076 anyone may also make an account for themselves, without buying; it holds the same email and list and nothing more.) It exists so you can find your trips again later. Setting a password is optional; if you don't, we'll email you a link to set one when you need it. And an account still holds no name, no profile, nothing about what you did, and nothing a data broker would want.</p>
   <p><strong>How long:</strong> a trip and its contents stay until you delete them, or until a $2.50 trip reaches its one-year end and deletes itself. An account stays until you ask us to remove it — email <a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a> and it's gone, along with the list.</p>
-  <p>We do <strong>not</strong> store your name, contacts, location history, browsing behaviour, or any advertising or tracking identifiers. We do not build a profile of you, and there is nothing here a data broker would pay for.</p>
+  <p>We do <strong>not</strong> store your name, contacts, location history, what you browse, or any advertising or tracking identifiers. We do not build a profile of you, and there is nothing here a data broker would pay for.</p>
 
   <h2>Who we work with</h2>
   <p>A few services help run the trip. Here's the whole list and what each one sees:</p>
   <table>
     <tr><td>Stripe</td><td>Handles payment when you buy a trip, and collects the email for its receipt. We receive the email address and make your account from it, and we learn which tier was bought — we never see your card number, your billing address, or your name. If you arrived from a page that names a channel &mdash; say, our page for AI assistants &mdash; the checkout carries one word saying so (<code>via_agents</code>), so we can tell whether that channel works. It is a word on a payment: not a cookie, not an identifier, not kept on our side, and nothing about you.</td></tr>
     <tr><td>DreamHost / Cloudflare</td><td>Host and serve the site (in the United States). Like any web host, they process the normal request data (including IP addresses) needed to deliver pages.<br><br><strong>Cloudflare also adds a script of its own to every page</strong>, after it leaves our server and before it reaches you. It is bot detection, and it loads from a path on our own domain (<code>/cdn-cgi/&hellip;</code>), so it does not look like an outside request and would be easy for us to leave unmentioned. We did not write it and cannot see what it collects. We have turned off every setting that is supposed to control it and it is still there; we are still working out why. Everything else on the site is served from our own domain on purpose &mdash; the map library and the fonts are copies we host, not links to somebody else&rsquo;s server.</td></tr>
-    <tr><td>Carto &amp; OpenStreetMap</td><td>Provide the map tiles. They see the map areas your browser loads (and your IP, as any tile server does).</td></tr>
+    <tr><td>OpenStreetMap</td><td>The map itself comes from their data. <strong>Your browser no longer contacts anyone for it.</strong> We used to load map tiles from Carto, which meant a third party saw the areas you looked at and your IP &mdash; a map of where you were planning to go. We now build the map from OpenStreetMap data ourselves and serve it from this domain, so the places you look at stay here. OpenStreetMap and Protomaps are credited on the map because their licence asks for it, not because anything is sent to them.</td></tr>
     <tr><td>OSRM (OpenStreetMap)</td><td>Draws driving routes along real roads. <strong>Your browser no longer contacts them:</strong> we ask on your behalf and cache the answer, so they see our server rather than you, once per distinct road path. Roads are public and road shapes do not change, so most routes are answered from that cache without asking anyone.</td></tr>
     <tr><td>Nominatim (OpenStreetMap)</td><td><strong>Your browser no longer contacts them either.</strong> Turns places into points and back &mdash; what you type in the search box, and the coordinates of a spot you tap so we can name it. <strong>Our server makes this call on your behalf</strong> (it used to come straight from your browser), which means Nominatim sees our server, not you. We cache the answers so the same place isn&rsquo;t looked up twice.</td></tr>
     <tr><td>Anthropic</td><td>Runs the optional <strong>&ldquo;Describe&rdquo;</strong> assistant. Only if you use it: what you type, plus the stops and dates already on the trip, are sent so it can answer and add legs. It is not used to train their models, and nothing is sent unless you open Ask and type.</td></tr>
     <tr><td>AeroDataBox</td><td>Looks up a flight's scheduled times, only when you give Ask a flight number. It receives the flight number and date &mdash; nothing about you or the trip.</td></tr>
   </table>
   <p><strong>Ask is opt-in.</strong> Never opening it means nothing on your trip is ever sent to a model. We do not keep the conversation &mdash; only a count of requests, to stay inside our own budget.</p>
+  <p><strong>The record outlives us.</strong> Fourteen days before a trip reaches its end date, the address that bought it is emailed the whole trip as a zip &mdash; the itinerary as a page that opens with no internet, the data behind it, and the map files &mdash; and the full download with photos stays available until the last day. <strong>If this service ever shuts down, every live trip is sent to its buyer the same way, first, before anything is switched off.</strong> That is a script we keep ready, not a sentiment; a trip you paid for should never depend on us still being here.</p>
+  <p><strong>Two more counts, and that is the whole list.</strong> We count how many times the trip builder page was opened each day, and how many times an AI assistant read a kept trip each day. Two whole numbers per day &mdash; no address, no browser, no time finer than the day, nothing that could say who, or whether two visits were one person. They exist so we can tell whether anyone is arriving at all, which until now we could not.</p>
   <p>All of these are used only to run the trip — never to profile you, and we never sell or share your trip's contents with anyone.</p>
 
   <h2>Deleting everything</h2>

@@ -68,3 +68,58 @@ function var_read(string $path): array {
     $j = json_decode((string)@file_get_contents($path), true);
     return is_array($j) ? $j : [];
 }
+
+/**
+ * Hold the whole site to one upstream call per $gapUs, across every visitor at once.
+ *
+ * Returns true when a slot was reserved (having slept until it), false when the queue is already
+ * longer than $capUs — in which case the caller must SHED, not wait.
+ *
+ * ── WHAT WAS WRONG WITH THE TWO IT REPLACES ────────────────────────────────────────────────
+ * geo_pace() and rt_pace() each read filemtime, computed a wait, usleep'd, then touched the
+ * file. Both failed in both directions at once, and the API comments in front of them claimed a
+ * guarantee neither delivered ("holds the whole site to ~1 upstream call/sec no matter how many
+ * people are typing").
+ *
+ *   1. NO LOCK between reading the clock and touching it. N concurrent requests read the same
+ *      mtime, computed the same wait, slept the same amount and then fired together — so the
+ *      pacer was a no-op under exactly the concurrency it existed to control.
+ *   2. filemtime() returns integer SECONDS while microtime() does not, so elapsed time was
+ *      overstated by the sub-second remainder and the wait undershot by up to 990 ms:
+ *
+ *          +0.00s into the second   wait 1100 ms   (correct)
+ *          +0.50s into the second   wait  600 ms   -500 ms
+ *          +0.99s into the second   wait  110 ms   -990 ms
+ *
+ *      About 2x the intended rate on average, up to 10x at the worst phase.
+ *
+ * Meanwhile it still blocked a PHP worker for up to a full gap inside the request. Worst of both.
+ *
+ * ── WHY IT IS SHAPED THIS WAY ──────────────────────────────────────────────────────────────
+ * RESERVE UNDER THE LOCK, SLEEP OUTSIDE IT. Each caller atomically claims the next free slot and
+ * moves the marker on, so ten simultaneous callers get ten DISTINCT slots instead of one shared
+ * one. The sleep happens after the lock is released, or the lock would serialize the very waiting
+ * it hands out and one slow caller would stall everybody.
+ *
+ * SHED RATHER THAN QUEUE. Without $capUs a traffic spike converts directly into blocked PHP
+ * workers — every one of them asleep, holding a process, waiting on a third party. That is a
+ * self-inflicted outage where the honest answer is cheap: both callers already degrade on null
+ * (the map dashes a straight line, a name goes unresolved), and neither is worth an outage.
+ *
+ * The timestamp lives INSIDE the file, in microseconds, so the clock has the resolution the
+ * arithmetic assumes. Fails OPEN like everything else here: if var/ is unwritable the caller
+ * proceeds unpaced rather than being refused.
+ */
+function var_pace(string $path, int $gapUs, int $capUs): bool {
+    $now = (int)(microtime(true) * 1000000);
+    $slot = var_update($path, function (array $j) use ($now, $gapUs, $capUs) {
+        $next = (int)($j['next'] ?? 0);
+        $when = max($now, $next);
+        if ($when - $now > $capUs) return [null, null];   // too deep a queue: reserve nothing
+        return [['next' => $when + $gapUs], $when];
+    });
+    if ($slot === null) return false;
+    $wait = (int)$slot - (int)(microtime(true) * 1000000);
+    if ($wait > 0) usleep($wait);
+    return true;
+}

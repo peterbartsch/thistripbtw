@@ -1,0 +1,25 @@
+# this trip, btw — how to report a security problem.
+# RFC 9116. The canonical copy is at https://thistripbtw.us/.well-known/security.txt
+#
+# EXPIRES IS NOT DECORATION. RFC 9116 makes it mandatory precisely because an abandoned
+# security.txt is worse than none: it tells a researcher there is a live channel when there may
+# not be. scripts/audit.php asserts this date nightly and fails within 30 days of it, so the
+# renewal is somebody's problem before it is a researcher's.
+
+Contact: mailto:hello@thistripbtw.us
+Expires: 2027-08-07T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://thistripbtw.us/.well-known/security.txt
+
+# Scope, in short — the long version is SECURITY.md in the repo:
+#
+#   · A trip's word phrases are capability secrets. Reading someone's pins WITHOUT a valid
+#     phrase is always in scope.
+#   · Sealed-drop content reaching a viewer who has not opened it — including over the wire,
+#     not merely on screen — is in scope. Surprise is a security property here.
+#   · Rate-limit bypass on the phrase gate is in scope.
+#
+# Please do not test against trips you do not own. A $2.50 trip is a legitimate target and is
+# the cheapest way to have one.
+#
+# You will get a human reply within 72 hours.

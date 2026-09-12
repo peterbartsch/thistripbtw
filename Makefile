@@ -6,13 +6,31 @@ help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n",$$1,$$2}'
 
-check: check-js check-php check-secrets check-stripe check-copy check-delete check-sitemap check-tokens check-mcp-version test-tools test-mcp ## All static checks (what CI runs)
+check: check-js check-decls check-css check-php check-secrets check-stripe check-links check-copy check-delete check-sitemap check-tokens check-mcp-version check-wellknown test-tools test-mcp ## All static checks (what CI runs)
 
 check-mcp-version: ## Fail if the MCP version disagrees across package.json, serverInfo and server.json
 	@node test/mcp-version.mjs
 
+check-wellknown: ## Fail if /.well-known/mcp.json has drifted from mcp/server.json
+	@node test/wellknown-drift.mjs
+
 check-tokens: ## Fail if tokens.css or the Figma primitives drift from design/tokens.json
 	@node test/token-drift.mjs
+
+flow: ## Run the user flows in Chrome at both phone heights and write a findings report
+	@node test/flow/run.mjs $(ARGS)
+
+flow-diff: ## Fail only on a finding that is NEW against test/flow/baseline.json (§2bu)
+	@node test/flow/diff.mjs
+
+flow-baseline: ## Accept the newest run as the baseline — DELIBERATE, read the findings first
+	@node scripts/flow-baseline.mjs
+
+check-css: ## Fail on a stray */ in inline CSS — it silently discards every rule after it
+	@./scripts/check-css.sh
+
+check-decls: ## Fail if a client page uses a canary identifier it no longer declares
+	@./scripts/check-decls.sh
 
 check-sitemap: ## Fail if a sitemap <lastmod> no longer matches the file's commit date
 	@php scripts/sitemap-lastmod.php --check
@@ -50,6 +68,9 @@ check-stripe: ## Fail if a test-mode payment link is shipped to customers
 	@# a day. A test_ link in public/ is never right in a deployable tree.
 	@! grep -rn 'buy\.stripe\.com/test_' public/ \
 	  && echo "✓ no test-mode payment links"
+
+check-links: ## Fail if the payment links in new.html and api.php have drifted apart
+	@php test/stripe-links.php
 
 check-copy: ## Fail if a retired claim is shipped to customers or to agents
 	@# D-059 ended "permanent" and CLAUDE.md retired "no accounts", and both survived for a
@@ -202,8 +223,13 @@ test-tools: ## Unit-test the chat-agent tool adapter (no DB, no network)
 	@php test/mcp-parity.php
 	@php test/structured-test.php
 	@php test/mail-header-test.php
+	@php test/chat-rate-test.php
+	@php test/pace-test.php
+	@php test/gzip-test.php
+	@php test/geo-cache-test.php
 	@node test/replay-tz-test.mjs
 	@node test/pickplace-test.mjs
+	@node test/exif-gps-test.mjs
 	@# TZ is load-bearing: the bug this guards against only appears west of Greenwich.
 	@TZ=America/Los_Angeles node test/dochead-test.mjs
 	@php test/tutorial-code-test.php
@@ -214,17 +240,43 @@ test-tools: ## Unit-test the chat-agent tool adapter (no DB, no network)
 	@node test/places-iata-test.mjs
 	@node test/skill-parity.mjs
 	@node test/ring-test.mjs
+	@node test/outbox-test.mjs
+	@node test/post-arrival-test.mjs
 	@node test/route-poly-test.mjs
+	@node test/esc-test.mjs
 	@php test/export-read-parity.php
 	@php test/export-map-test.php
 
 test: ## Run the smoke tests against local PHP+MySQL
 	@bash test/smoke.sh
 
-deploy: check ## Static checks, then ship to the DreamHost VPS
+deploy: check ## Static checks, ship to the VPS, then run the flow guard against what just shipped
 	@bash scripts/deploy.sh
+	@echo ""
+	@echo "── post-deploy guard — the site is LIVE; this says whether it regressed ──"
+	@echo "   (a few minutes. SKIP_GUARD=1 make deploy to skip, and say so if you do.)"
+ifndef SKIP_GUARD
+	@$(MAKE) --no-print-directory flow >/dev/null 2>&1 || true
+	@$(MAKE) --no-print-directory flow-diff || ( 	  echo ""; 	  echo "⚠ THE FINDINGS ABOVE ARE ON THE LIVE SITE, NOT ON A BRANCH."; 	  echo "  Fix forward or revert. Do not baseline them to make this quiet —"; 	  echo "  make flow-baseline is a person's decision and it means 'this is acceptable'."; 	  exit 1 )
+endif
 
 serve: ## Local PHP server on :8080
 	@php -S 127.0.0.1:8080 index.php
 
-.PHONY: help check check-js check-php check-secrets check-stripe check-copy check-delete test-tools test-mcp test deploy serve
+
+.PHONY: help check check-links check-js check-php check-secrets check-stripe check-copy check-delete test-tools test-mcp test deploy serve
+
+# The service worker's behaviour, which no other guard can see: `make check` is node --check
+# (syntax, never references) and the suite never executes app.html's inline script. Needs the
+# network and a deployed worker, so it is NOT part of `make check` — run it after a deploy that
+# touches sw.js, index.php's /sw route, or the shell asset list.
+.PHONY: offline
+offline:
+	@node test/offline-check.mjs
+
+# §2bl — the interaction counts behind "dead simple to create/edit a trip". Needs the LOCAL stack
+# (`make serve` on :8080) because a real EDIT needs a real edit phrase and production's demo link
+# is a view key. Counts are LOWER BOUNDS: the harness knows where every control is.
+.PHONY: friction
+friction:
+	@node test/friction.mjs

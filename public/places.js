@@ -185,16 +185,19 @@
   }
 
   /* what the list shows, and what picking it writes into the trip, per kind of row */
+  /* `kind` RIDES ALONG NOW. It was computed, used to rank, and then dropped one line before the
+     caller could see it — so nothing downstream could tell an airport from a town, and a leg
+     between two airports was drawn as a car journey. It costs one field. */
   function present(r) {
     if (r.iata) return {
       main: r.iata + " · " + r.name,
       sub: (r.region ? r.region + (countryName(r.cc) ? ", " : "") : "") + countryName(r.cc),
-      pick: r.iata + " — " + r.name, lat: r.lat, lng: r.lng
+      pick: r.iata + " — " + r.name, lat: r.lat, lng: r.lng, kind: r.kind || "a"
     };
     var where = r.cc === "US" ? r.region : countryName(r.cc);
     return {
       main: r.name, sub: where,
-      pick: r.name + (where ? ", " + where : ""), lat: r.lat, lng: r.lng
+      pick: r.name + (where ? ", " + where : ""), lat: r.lat, lng: r.lng, kind: r.kind
     };
   }
 
@@ -239,7 +242,7 @@
       if (!p) return;
       input.value = p.pick;
       close();
-      onPick({ name: p.pick, lat: p.lat, lng: p.lng });
+      onPick({ name: p.pick, lat: p.lat, lng: p.lng, kind: p.kind || null });
     }
     function mark() {
       Array.prototype.forEach.call(box.children, function (c, i) {
@@ -329,13 +332,19 @@
     "  background:var(--card,#fff);border:2px solid var(--ink,#141414);border-radius:12px;",
     "  box-shadow:0 12px 30px rgba(0,0,0,.24);overflow:hidden;max-height:264px;overflow-y:auto}",
     ".sg-list[hidden]{display:none}",
-    ".sg-item{display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;",
-    "  padding:10px 13px;min-height:44px;font:inherit;color:var(--ink,#141414);",
+    /* ONE LINE PER PLACE, 44px, because a phone with the keyboard up has ~165px of list.
+       Stacked name-over-region made each row 78px, so "evan" offered THREE results at 390x664
+       and two once iOS raises the keyboard — on the input this product now opens with. Flat
+       rows put five or six in the same space. The row is still 44px, so nothing about the tap
+       target changes; only the stacking does. */
+    ".sg-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;cursor:pointer;",
+    "  padding:6px 13px;min-height:44px;font:inherit;color:var(--ink,#141414);",
     "  border-bottom:1px solid var(--line,#E4E1D8)}",
     ".sg-item:last-child{border-bottom:0}",
     ".sg-item.on,.sg-item:hover{background:var(--sheet,#FCFBF8)}",
-    ".sg-name{display:block;font-weight:600;font-size:15px}",
-    ".sg-full{display:block;font-size:12.5px;opacity:.62;margin-top:1px;",
+    ".sg-name{flex:0 1 auto;font-weight:600;font-size:15px;",
+    "  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".sg-full{flex:1 1 auto;min-width:0;font-size:12.5px;opacity:.62;",
     "  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"
   ].join("");
 
@@ -348,5 +357,68 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", injectCss);
   else injectCss();
 
+  /* ── nearestPlace: snap a coarse map tap to a real place (§2z) ────────────────────────────
+   *
+   * The analysis behind /new?snap=1: the cold start was never too many taps, it was that a
+   * COARSE tap is punished. Reverse geocoding is pinned at `zoom => 14` (lib/geocode.php), and
+   * at map-zoom 4 a thumb covers ±100km — so it faithfully names the hamlet under the error and
+   * a tap aimed at Chicago comes back "Stickney Township". People then pinch in to be precise,
+   * and THAT is what breaks the second tap, because the destination is now off screen. Snapping
+   * removes the reason to zoom in at all.
+   *
+   * The caller passes a radius in DEGREES OF LATITUDE, because only it knows the zoom — /new
+   * derives it by projecting a point N screen pixels above the tap, so the radius is whatever
+   * the thumb actually covered. Coarse zoom therefore snaps to prominent places and close zoom
+   * to small ones, which is the behaviour you want and falls out for free.
+   *
+   * CITIES BEAT AIRPORTS, and an airport wins only when no city is in range. Airport rows carry
+   * a flat-ish weight (median 38, max 50) that beats most towns outright, so a rank on weight
+   * alone turns a tap at the edge of a metro into "XYZ — Podunk Regional Airport". You tap a
+   * PLACE; if you want the airport you type its code, which already works (D-111/D-112).
+   *
+   * RANKED BY `weight − (fraction of the thumb's reach)`, which is one line and was chosen from
+   * measured numbers rather than taste. Ranking on weight ALONE was the first cut and it failed
+   * a case worth keeping: a tap on Tahoe City at zoom 4 returned **Sacramento, 133km away**,
+   * because Sacramento (5.7) outweighs Reno (5.4) and a 182km radius reaches both. You aimed at
+   * the Sierra and got the Central Valley. Subtracting the distance as a FRACTION OF THE RADIUS
+   * fixes it without a tuned constant: Reno 5.4−0.27 = 5.13 beats Sacramento 5.7−0.73 = 4.97,
+   * while Chicago 6.4−0.02 = 6.38 still crushes Milwaukee 5.8−0.75 = 5.05 for a tap on Chicago.
+   * Weights span roughly 3.0–7.4, so "the edge of your thumb costs one weight point" is a real
+   * penalty that still cannot let a hamlet under the finger beat a metro at arm's length — and
+   * at zoom 4 you cannot be aiming at a hamlet anyway.
+   *
+   * Because the penalty is a fraction, it rescales with the zoom for free, which is the same
+   * reason the radius is derived from pixels rather than being a fixed kilometre count.
+   *
+   * Returns null and never throws when the index has not loaded — no snap is always safe,
+   * because the reverse-geocode path it replaces is still there underneath.
+   */
+  function nearestPlace(lat, lng, radiusDeg) {
+    if (!IDX || !(radiusDeg > 0)) return null;
+    var k = Math.cos(lat * Math.PI / 180); if (!(k > 1e-6)) k = 1e-6;
+    var lngR = radiusDeg / k;
+    var rows = IDX.rows;
+    var city = null, cityS = -Infinity, air = null, airS = -Infinity;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var dLat = r.lat - lat; if (dLat > radiusDeg || dLat < -radiusDeg) continue;
+      var dLng = r.lng - lng; if (dLng > lngR || dLng < -lngR) continue;
+      var ex = dLng * k, d = Math.sqrt(dLat * dLat + ex * ex);
+      if (d > radiusDeg) continue;                       // a circle, not the bounding box
+      var score = r.w - (d / radiusDeg);
+      if (r.kind === "a") { if (score > airS)  { air  = r; airS  = score; } }
+      else                { if (score > cityS) { city = r; cityS = score; } }
+    }
+    var best = city || air;
+    if (!best) return null;
+    // present().pick is what picking a suggestion already writes into a trip, so a snapped tap
+    // and a typed pick name the same place the same way.
+    return { name: present(best).pick, lat: best.lat, lng: best.lng, kind: best.kind, w: best.w };
+  }
+
   global.attachSuggest = attachSuggest;
+  global.nearestPlace  = nearestPlace;
+  /* The index is lazy-loaded on first focus, which is too late for a tap. A caller that intends
+     to snap warms it at boot; the promise is shared, so this costs one fetch either way. */
+  global.placesReady   = loadIndex;
 })(window);

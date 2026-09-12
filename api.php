@@ -5,6 +5,7 @@
 if (!defined('SECURE_ACCESS')) { http_response_code(403); exit('forbidden'); }
 require_once __DIR__ . '/lib/config.php';
 require_once __DIR__ . '/lib/db.php';
+require_once __DIR__ . '/lib/trip.php';   // auth, sealing, wire shape — shared with lib/mcp.php (D-172)
 require_once __DIR__ . '/lib/words.php';
 
 /* ── tiers & limits (mirror worker.js) ───────────────────── */
@@ -23,6 +24,19 @@ require_once __DIR__ . '/lib/words.php';
 
    Photos moved DOWN a tier, never up, so no existing trip loses anything: `works` keeps both and
    `keep` gains photos. Prices are unchanged, so the Stripe Payment Links are untouched. */
+/* The three live payment links, ONCE in PHP, so the expiry notice can offer a renewal (D-188).
+   They are the same three strings as PAY in public/new.html, and test/stripe-links.php holds the
+   two together in `make check` — one value in two files with no guard is how the live flip missed
+   new.html for a day (check-stripe) and how a version number sat wrong through a whole release
+   (check-mcp-version). A renewal link pointing at a retired price fails the same way and is
+   invisible: the customer pays, the webhook matches no tier, the extension silently does not
+   happen. A renewal is the same link with ?client_reference_id=renew_<slug>, which the webhook
+   below reads — the first time anything server-side has read that field. */
+const PAY_LINKS = [
+  'plan'  => 'https://buy.stripe.com/4gM00jazY6Uf3ak28jaIM02',
+  'keep'  => 'https://buy.stripe.com/eVqbJ1gYm4M726gcMXaIM00',
+  'works' => 'https://buy.stripe.com/00w5kD8rQ0vRbGQ7sDaIM01',
+];
 const TIERS = [
   'plan'  => ['cents' => 250,  'days' => 365,   'photo' => false, 'video' => false],  // one year
   'keep'  => ['cents' => 500,  'days' => 1826,  'photo' => true,  'video' => false],  // five years (leap-safe)
@@ -43,7 +57,6 @@ const SLUG_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';           // no 0/1/i/l
 const DEFAULT_LABELS = '{"truck":"Vehicle 1","rental":"Vehicle 2"}';
 
 /* ── helpers ─────────────────────────────────────────────── */
-function now_ms() { return (int) round(microtime(true) * 1000); }
 
 function security_headers() {
   header('X-Content-Type-Options: nosniff');
@@ -68,108 +81,12 @@ function body_json() {
   return is_array($d) ? $d : [];
 }
 
-function rand_str($len, $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789') {
-  $n = strlen($alphabet); $s = '';
-  for ($i = 0; $i < $len; $i++) $s .= $alphabet[random_int(0, $n - 1)];
-  return $s;
-}
 
 /* JS `v || default` semantics ('' / 0 / false / null → default; note '0' is truthy in JS) */
-function jor($v, $default) {
-  if ($v === null || $v === false || $v === '' || $v === 0 || $v === 0.0) return $default;
-  return $v;
-}
-function is_number($v) { return is_int($v) || is_float($v); }
-function norm_mode($m, $flyFallback = false) {   // valid transit mode, else drive (or fly for legacy)
-  static $M = ['drive','fly','train','ferry','water','bike','walk','bus'];
-  if (in_array($m, $M, true)) return $m;
-  return $flyFallback ? 'fly' : 'drive';
-}
 
-function auth_header() {
-  if (!empty($_SERVER['HTTP_AUTHORIZATION']))          return $_SERVER['HTTP_AUTHORIZATION'];
-  if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) return $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-  if (function_exists('getallheaders')) {
-    foreach (getallheaders() as $k => $v) if (strcasecmp($k, 'Authorization') === 0) return $v;
-  }
-  return '';
-}
 
-/* ── auth: Bearer phrase → "edit" | "view" | null (guess-rate-limited) ── */
-/* Is this request same-origin? Only consulted for COOKIE-authenticated writes (D-071).
-   A Bearer phrase cannot be attached by another site, so phrase auth needs no CSRF defence and
-   has never had one. A session cookie rides along automatically, so the moment an account can
-   change a trip, a form on any other page could too. Sec-Fetch-Site is the modern answer and
-   Origin the fallback; both are absent only on non-browser clients, which use a phrase. Fails
-   CLOSED — an unrecognised request shape is refused rather than trusted. */
-function same_origin_write() {
-  $sfs = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? '';
-  if ($sfs !== '') return $sfs === 'same-origin' || $sfs === 'none';
-  $o = $_SERVER['HTTP_ORIGIN'] ?? '';
-  if ($o === '') return false;
-  $host = strtolower((string)parse_url($o, PHP_URL_HOST));
-  $apex = strtolower(APEX);
-  return $host === $apex || str_ends_with($host, '.' . $apex);
-}
 
-/* D-071: an account opens the trips it owns or was invited to. Reached ONLY when no phrase was
-   presented, so the phrase paths below are untouched and a wrong password can never feed the
-   phrase guess-limiter (which would let a stranger lock out link holders).
 
-   It deliberately returns no `member` key. `seal_pin()` withholds a sealed drop unless `$who`
-   matches, and `$who` comes from that key — so signing in as the owner grants the TRIP, never a
-   PERSON. Drops left for someone else stay shut, and D-047 stands unchanged. */
-function acct_trip_access($sub, $trip) {
-  require_once __DIR__ . '/lib/accounts.php';
-  $a = acct_current();
-  if (!$a) return ['level' => null];
-  $row = q_first('SELECT role FROM account_trips WHERE account_id=? AND slug=?', [(string)$a['id'], $sub]);
-  if (!$row) return ['level' => null];
-  if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' && !same_origin_write())
-    return ['level' => null, 'csrf' => true];
-  return ['level' => 'edit', 'trip' => $trip,
-          'account_id' => (string)$a['id'],
-          'owner' => ((string)$row['role'] === 'owner')];
-}
-
-function access_level($sub) {
-  $h = auth_header();
-  $token = (stripos($h, 'Bearer ') === 0) ? strtolower(trim(substr($h, 7))) : '';
-  $trip = q_first('SELECT * FROM trips WHERE slug=?', [$sub]);
-  if (!$trip) return ['level' => null];
-
-  /* A "plan it" trip promises to delete itself after a year, and five pages say so. Until
-     now the only thing that could make that true was a nightly cron — which was not
-     installed, so an expired trip stayed fully readable. A promise that depends on one
-     crontab line is not a promise. The check lives here, at the single choke point every
-     authenticated read passes through, so the trip is gone to everyone the moment it
-     expires whether or not the sweep ever runs. The sweep still does the actual reaping. */
-  if ($trip['expires'] !== null && (int)$trip['expires'] < now_ms())
-    return ['level' => null, 'expired' => true];
-
-  /* No phrase presented — try the account session. Placed AFTER the expiry check so an expired
-     trip is gone to its owner too, and before any guess-limiter accounting. */
-  if ($token === '') return acct_trip_access($sub, $trip);
-
-  // A correct token ALWAYS passes — never locked out by the guess limiter (the slug
-  // is public, so a global lockout would let anyone deny access). hash_equals = constant time.
-  $hash = hash('sha256', $token);
-  if (hash_equals((string)$trip['edit_hash'], $hash)) return ['level' => 'edit', 'trip' => $trip, 'owner' => true];
-  if (hash_equals((string)$trip['view_hash'], $hash)) return ['level' => 'view', 'trip' => $trip];
-
-  // per-person member phrase (D-023): grants EDIT + an identity (handle). Indexed lookup
-  // by hash — also a correct token, so it must pass BEFORE the guess limiter (same reason
-  // as edit/view: the slug is public, a global lockout can't be allowed to lock members out).
-  $mem = q_first('SELECT id,handle FROM members WHERE slug=? AND phrase_hash=? AND deleted=0', [$sub, $hash]);
-  if ($mem) return ['level' => 'edit', 'trip' => $trip, 'member' => (string)$mem['handle'], 'member_id' => (string)$mem['id']];
-
-  // wrong token: rate-limit the guessing at 30 fails/trip/hour, then record the miss
-  $win = intdiv(now_ms(), 3600000);
-  $g = q_first('SELECT hits FROM gate WHERE slug=? AND win=?', [$sub, $win]);
-  if ($g && (int)$g['hits'] >= 30) return ['level' => null, 'limited' => true];
-  q('INSERT INTO gate (slug,win,hits) VALUES (?,?,1) ON DUPLICATE KEY UPDATE hits=hits+1', [$sub, $win]);
-  return ['level' => null];
-}
 
 /* ── Stripe: fetch a checkout session (base URL configurable for tests) ── */
 function stripe_get_session($id) {
@@ -226,10 +143,6 @@ const RADIUS_MAX_MI  = 500;
 /** A custom geofence, or null to mean "use the default for this kind". Clamped rather than
  *  rejected: a trip that arrives beats a tool call that errors over one number, which is the
  *  same rule the mode and subtype fields already follow. */
-function clamp_radius($v) {
-  if ($v === null || $v === '' || !is_numeric($v)) return null;
-  return max(RADIUS_MIN_MI, min(RADIUS_MAX_MI, (float)$v));
-}
 
 /** Great-circle miles between two points — used to enforce the sealed-drop radius. */
 function haversine_mi(float $aLat, float $aLng, float $bLat, float $bLng): float {
@@ -239,72 +152,8 @@ function haversine_mi(float $aLat, float $aLng, float $bLat, float $bLng): float
     return 2 * $r * asin(min(1.0, sqrt($h)));
 }
 
-function seal_pin($p, $who) {
-  /* Two kinds of withheld pin now (D-050):
-       · a sealed DROP  — private by nature, left for particular people
-       · a near-only POST — public to the trip, but only once you have stood where it happened
-     The identity rule is the same for both (D-047): it comes from the token, never a name the
-     caller typed, and no identity means it stays shut. */
-  $locked = ($p['kind'] ?? '') === 'sealed' || !empty($p['near_only']);
-  if (!$locked) return $p;
-  if ($who !== '' && $who === ($p['author'] ?? '')) return $p;          // your own drop
-  $opened = json_decode($p['opened_by'] ?? '[]', true);
-  if (is_array($opened) && $who !== '' && in_array($who, $opened, true)) return $p;
-  $p['title'] = ''; $p['notes'] = ''; $p['lodging'] = '';
-  $p['photo'] = ''; $p['spotify'] = '';
-  /* S1: the CONTENT was blanked and the GUEST LIST was not. `opened_by` is the handles of
-     everyone who has already opened this drop, and it went over the wire to people who have
-     not — so you could see who else had read theirs, and who had not yet. A small social leak
-     in a feature whose whole point is that nobody knows anything until they open it.
-     `author` deliberately stays: "a drop from Dad" is the intended shape, and knowing who left
-     a drop is not knowing what it says. */
-  $p['opened_by'] = '[]';
-  return $p;
-}
 
-/* ── row → wire shape: match worker.js JSON exactly (types, opened_by stays a string) ── */
-function normalize_pin($r) {
-  return [
-    'id'           => (string)$r['id'],
-    'slug'         => (string)$r['slug'],
-    'kind'         => (string)$r['kind'],
-    'track'        => $r['track'] !== null ? (string)$r['track'] : null,
-    'date'         => $r['date']  !== null ? (string)$r['date']  : null,
-    'ts'           => $r['ts']    !== null ? (int)$r['ts']       : null,
-    'lat'          => (float)$r['lat'],
-    'lng'          => (float)$r['lng'],
-    'title'        => (string)$r['title'],
-    'lodging'      => (string)$r['lodging'],
-    'notes'        => $r['notes'] !== null ? (string)$r['notes'] : '',
-    'photo'        => (string)$r['photo'],
-    'spotify'      => (string)$r['spotify'],
-    'path'         => (isset($r['path']) && $r['path'] !== null && $r['path'] !== '') ? json_decode($r['path'], true) : null,
-    'fly'          => (int)$r['fly'],
-    'mode'         => (string)$r['mode'],
-    'craft'        => (string)($r['craft'] ?? ''),
-    'near_only'    => (int)($r['near_only'] ?? 0),
-    'radius_mi'    => ($r['radius_mi'] ?? null) !== null ? (float)$r['radius_mi'] : null,
-    'here'         => (int)$r['here'],
-    'seq'          => (int)$r['seq'],
-    'opened_by'    => $r['opened_by'] !== null ? (string)$r['opened_by'] : '[]',
-    'claimed_team' => (string)$r['claimed_team'],
-    'claimed_by'   => (string)$r['claimed_by'],
-    'author'       => (string)$r['author'],
-    'updated'      => (int)$r['updated'],
-    'deleted'      => (int)$r['deleted'],
-  ];
-}
 /* user-drawn leg geometry → sanitized JSON text (or null). Caps points + coerces floats. */
-function encode_path($v) {
-  if (!is_array($v) || count($v) < 1) return null;
-  $out = [];
-  foreach (array_slice($v, 0, 500) as $pt) {
-    if (is_array($pt) && isset($pt[0], $pt[1]) && is_numeric($pt[0]) && is_numeric($pt[1])) {
-      $out[] = [(float)$pt[0], (float)$pt[1]];
-    }
-  }
-  return count($out) >= 1 ? json_encode($out) : null;   // intermediate waypoints; leg render adds the stop endpoints
-}
 function normalize_note($r) {
   return [
     'id'      => (string)$r['id'],
@@ -528,6 +377,11 @@ function api_main($sub, $path) {
     require_once __DIR__ . '/lib/accounts.php';
     $a = acct_current();
     if (!$a) json_out(['signed_in' => false]);
+    $ts = acct_trips((string)$a['id']);
+    /* The SHAPE rides along (§2bk) so the list can draw each trip rather than only name it. It is
+       normalised and position-free — see `acct_trip_shapes()` — and it is one extra query for the
+       whole list, not one per row. */
+    $shapes = acct_trip_shapes(array_map(fn($t) => (string)$t['slug'], $ts));
     json_out(['signed_in' => true, 'email' => (string)$a['email'],
               'trips' => array_map(fn($t) => [
                   'slug'    => (string)$t['slug'],
@@ -535,7 +389,8 @@ function api_main($sub, $path) {
                   'tier'    => (string)$t['tier'],
                   'role'    => (string)$t['role'],
                   'expires' => $t['expires'] !== null ? (int)$t['expires'] : null,
-              ], acct_trips((string)$a['id']))]);
+                  'shape'   => $shapes[(string)$t['slug']] ?? null,
+              ], $ts)]);
   }
 
   /* POST /api/account/claim-trip — attach a trip you hold a personal link for (D-047).
@@ -729,7 +584,30 @@ function api_main($sub, $path) {
     foreach (TIERS as $k => $v) if ($v['cents'] === $amount) { $tier = $k; break; }
     require_once __DIR__ . '/lib/accounts.php';
     $email = acct_norm_email((string)($s['customer_details']['email'] ?? $s['customer_email'] ?? ''));
+    /* D-188 — A RENEWAL IS THE SAME PAYMENT WITH ONE WORD ON IT. `client_reference_id` of
+       `renew_<slug>` on a checkout means: extend that trip by the tier just bought, from whichever
+       is later of its current end and today; upgrade the tier if the new one is higher, never
+       downgrade; re-arm the expiry notice. No new trip is minted. Unknown or malformed refs fall
+       through to the ordinary path exactly as before. This is also the first time the webhook has
+       read client_reference_id at all — D-055's via_ tag has only ever been visible in Stripe. */
+    $ref = (string)($s['client_reference_id'] ?? '');
     $existing = q_first('SELECT slug FROM trips WHERE stripe_session=?', [$sid]);
+    if (!$existing && $tier !== '' && preg_match('/^renew_([a-z2-9]{7})$/', $ref, $rm)) {
+      $rt = q_first('SELECT slug, tier, expires FROM trips WHERE slug=?', [$rm[1]]);
+      if ($rt) {
+        $rank = ['plan' => 1, 'keep' => 2, 'works' => 3];
+        $now  = now_ms();
+        $from = max((int)($rt['expires'] ?? 0), $now);
+        $newExp  = $from + TIERS[$tier]['days'] * 86400000;
+        $newTier = ($rank[$tier] ?? 0) > ($rank[(string)$rt['tier']] ?? 0) ? $tier : (string)$rt['tier'];
+        q('UPDATE trips SET expires=?, tier=?, expiry_notified=NULL, updated=? WHERE slug=?',
+          [$newExp, $newTier, $now, $rt['slug']]);
+        q('INSERT INTO payments (session_id,email,amount,tier,slug,created) VALUES (?,?,?,?,?,?)
+           ON DUPLICATE KEY UPDATE slug=COALESCE(VALUES(slug), slug)',
+          [$sid, $email, $amount, $tier, (string)$rt['slug'], $now]);
+        json_out(['ok' => true, 'renewed' => (string)$rt['slug'], 'expires' => $newExp, 'tier' => $newTier]);
+      }
+    }
 
     /* Idempotent: Stripe retries, and the buyer's own claim may already have minted. The primary
        key keeps the first record; the slug is filled in once a trip exists for it. */
@@ -771,6 +649,26 @@ function api_main($sub, $path) {
        between "ask whoever has the link" and having no idea anything exists. The slug alone
        opens nothing — the gate still wants a phrase — and only someone holding the paid
        session id can get this far. */
+    /* D-188: a renewal's session never mints. If the webhook already extended a trip on this
+       session, say so — the return page shows the new end date instead of two passwords. If the
+       webhook has not fired yet (it usually has), do the extension here, idempotently. */
+    $ref = (string)($session['client_reference_id'] ?? '');
+    if (preg_match('/^renew_([a-z2-9]{7})$/', $ref, $rm)) {
+      $paid = q_first('SELECT slug FROM payments WHERE session_id=?', [$session['id']]);
+      $rt   = q_first('SELECT slug, name, tier, expires FROM trips WHERE slug=?', [$rm[1]]);
+      if ($rt && !$paid) {
+        $rank = ['plan' => 1, 'keep' => 2, 'works' => 3];
+        $now  = now_ms(); $from = max((int)($rt['expires'] ?? 0), $now);
+        $newExp  = $from + TIERS[$tier]['days'] * 86400000;
+        $newTier = ($rank[$tier] ?? 0) > ($rank[(string)$rt['tier']] ?? 0) ? $tier : (string)$rt['tier'];
+        q('UPDATE trips SET expires=?, tier=?, expiry_notified=NULL, updated=? WHERE slug=?', [$newExp, $newTier, $now, $rt['slug']]);
+        q('INSERT IGNORE INTO payments (session_id,email,amount,tier,slug,created) VALUES (?,?,?,?,?,?)',
+          [$session['id'], '', $amount, $tier, (string)$rt['slug'], $now]);
+        $rt['expires'] = $newExp; $rt['tier'] = $newTier;
+      }
+      if ($rt) json_out(['renewed' => true, 'slug' => (string)$rt['slug'], 'name' => (string)$rt['name'],
+                         'tier' => (string)$rt['tier'], 'expires' => (int)$rt['expires']]);
+    }
     $dup = q_first('SELECT slug FROM trips WHERE stripe_session=?', [$session['id']]);
     if ($dup) err_out('this payment already made a trip, at ' . APEX . '/' . $dup['slug']
                     . ' — the passwords were shown once and cannot be recovered, so ask whoever has the link', 409);
@@ -884,6 +782,12 @@ function api_main($sub, $path) {
 
   // GET state?since=0 — polling sync: config + changed pins/notes (tombstones included)
   if ($path === 'trip/state' && $method === 'GET') {
+    /* D-187: the stdio MCP server reads a kept trip through this endpoint and announces itself as
+       thistripbtw-mcp/<version>. Counting that prefix is the first agent-channel signal that does
+       not need a purchase. The UA is matched and dropped — nothing about it is kept. */
+    if (str_starts_with((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 'thistripbtw-mcp/')) {
+      require_once __DIR__ . '/lib/tally.php'; tally('kept_read');
+    }
     $since = (int)($_GET['since'] ?? 0);
     // whoever this viewer says they are — used only to decide which sealed drops they've opened
     /* D-047: the viewer's identity for sealing comes from the TOKEN and nowhere else.
@@ -915,6 +819,26 @@ function api_main($sub, $path) {
          tell an internal trip from how the product actually behaves for a customer — chiefly
          that this one has no end date, which no purchasable tier does. */
       'qa'         => (int)($trip['qa'] ?? 0) === 1,
+      /* THE OFFLINE BASEMAP'S URL, AND WHY IT COMES FROM HERE.
+         scripts/trip-tiles.php cuts a vector basemap to this trip's own shape and names the file
+         HMAC(slug, TILES_SALT). It must be named that way rather than after the slug, because a
+         per-trip basemap IS a map of where somebody is going — the slug is in the address bar, in
+         the og card and in every shared link, so a derivable filename would hand the route to
+         anyone holding a link, past the phrase gate entirely.
+         So the token is handed out HERE, on a response that already required a phrase or an
+         account session. Null when no archive has been cut, which is the normal state for a trip
+         whose route has not settled.
+         API SHAPE: additive, signed off as D-157. No existing key changes type or meaning, so a
+         client from before it landed ignores this and behaves exactly as it did. D-157 settles
+         the plumbing and its shape ONLY — adopting Protomaps and retiring CARTO is still open. */
+      'tiles'      => (function () use ($sub) {
+        $st = __DIR__ . '/var/trip-tiles.json';
+        if (!is_file($st)) return null;
+        $j = json_decode((string)@file_get_contents($st), true);
+        $tok = is_array($j) ? ($j[$sub]['token'] ?? null) : null;
+        if (!$tok || !preg_match('/^[a-f0-9]{32}$/', (string)$tok)) return null;
+        return is_file(__DIR__ . "/maps/trips/$tok.pmtiles.bin") ? "/maps/trips/$tok.pmtiles.bin" : null;
+      })(),
       'config'     => ['name' => $trip['name'], 'labels' => json_decode($trip['labels_json'], true)],
       'pins'       => array_map(fn($r) => seal_pin(normalize_pin($r), $who), $pins),
       'notes'      => array_map('normalize_note', $notes),
@@ -956,27 +880,7 @@ function api_main($sub, $path) {
   if ($path === 'trip/pins' && $method === 'POST') {
     $p = body_json();
     if (!is_number($p['lat'] ?? null) || !is_number($p['lng'] ?? null)) err_out('lat/lng required', 400);
-    $id = 'p' . rand_str(12);
-    $pmode = norm_mode($p['mode'] ?? '', !empty($p['fly']));
-    q('INSERT INTO pins (id,slug,kind,track,date,ts,lat,lng,title,lodging,notes,photo,spotify,path,fly,mode,craft,here,near_only,radius_mi,seq,opened_by,claimed_team,claimed_by,author,updated)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [$id, $sub, jor($p['kind'] ?? null, 'post'), jor($p['track'] ?? null, null),
-       jor($p['date'] ?? null, null), jor($p['ts'] ?? null, null),
-       $p['lat'], $p['lng'], mb_substr((string)jor($p['title'] ?? null, ''), 0, 300, 'UTF-8'),
-       mb_substr((string)jor($p['lodging'] ?? null, ''), 0, 300, 'UTF-8'),
-       mb_substr((string)jor($p['notes'] ?? null, ''), 0, 4000, 'UTF-8'),
-       jor($p['photo'] ?? null, ''), jor($p['spotify'] ?? null, ''), encode_path($p['path'] ?? null),
-       ($pmode === 'fly') ? 1 : 0, $pmode,
-       mb_substr((string)jor($p['craft'] ?? null, ''), 0, 24, 'UTF-8'),
-       !empty($p['here']) ? 1 : 0, !empty($p['near_only']) ? 1 : 0, clamp_radius($p['radius_mi'] ?? null),
-       (int)($p['seq'] ?? $t),
-       /* Clamped to the column widths (OT2). These two were the only user-writable strings left
-          unclamped here, beside title/lodging/notes/craft/author which are all clamped above —
-          so an over-long claim was ERROR 1406 under strict MySQL rather than a quiet trim. */
-       json_encode($p['opened_by'] ?? []),
-       mb_substr((string)jor($p['claimed_team'] ?? null, ''), 0, 16, 'UTF-8'),
-       mb_substr((string)jor($p['claimed_by'] ?? null, ''), 0, 40, 'UTF-8'),
-       mb_substr((string)jor($p['author'] ?? null, ''), 0, 40, 'UTF-8'), $t]);
+    $id = insert_pin($sub, $p, $t);
     json_out(['id' => $id, 'updated' => $t]);
   }
   /* POST trip/pins/{id}/open — open a sealed drop, as yourself (D-047).
@@ -1211,6 +1115,21 @@ function api_main($sub, $path) {
     if (!$in || !$out) err_out('upload failed', 500);
     $wrote = (int)stream_copy_to_stream($in, $out);
     fclose($in); fclose($out);
+
+    /* A TRUNCATED UPLOAD IS NOT AN UPLOAD. `stream_copy_to_stream` returns whatever actually
+       arrived, and a phone that loses signal mid-transfer sends fewer bytes than it declared.
+       Without this check the half a JPEG stayed on disk, `media_bytes` was charged for it, and
+       the caller never saw the 200 because the connection it would have travelled down is the
+       one that died — so the customer got an invisible, unreachable file counted against their
+       allowance, and every retry in the same dead zone left another. That is the road this
+       product is for, so it is worth a line.
+       `$len` is always > 0 here: the check further up rejects a missing or oversized
+       Content-Length, which also rules out chunked bodies, so a healthy upload always writes
+       exactly what it declared. */
+    if ($wrote !== $len) {
+      @unlink(PHOTOS_DIR . '/' . $key);
+      err_out('the upload was cut short — try again when the signal is better', 400);
+    }
 
     /* Count what was actually written. Content-Length is supplied by the caller and the per-file
        check above trusts it; the aggregate must not, or the cap is advisory. If the real bytes

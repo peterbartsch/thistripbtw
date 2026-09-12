@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=36">
+<link rel="stylesheet" href="/pages.css?v=37">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   /* §2i — two zones, not one form doing two jobs.
@@ -51,6 +51,11 @@
     background:var(--card);min-height:64px;
     transition:border-color .15s ease,transform .15s ease}
   .trip:hover{border-color:var(--link)}
+  /* Sized like an icon and coloured like text, so a trip with no stops yet leaves a quiet gap
+     rather than a broken frame. */
+  .t-shape{flex:0 0 auto;width:34px;height:34px;color:var(--soft);opacity:.85}
+  .trip:hover .t-shape{color:var(--link);opacity:1}
+  .t-noshape{display:inline-block}
   .trip:active{transform:scale(.99)}
   .trip:focus-visible{outline:3px solid var(--link);outline-offset:2px}
   .t-main{flex:1;min-width:0}
@@ -78,7 +83,7 @@
   }
 </style>
 
-<button id="themeBtn" title="Sky follows the time of day" aria-label="Theme: Sky follows the time of day. Tap to change."><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
   <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
@@ -195,7 +200,23 @@
          plain text, while the only link was the title styled as a heading — so the row showed a
          trip and offered no obvious way to open it. */
       /* One <a>, not three. See the note by .trip in the stylesheet. */
+      /* THE TRIP'S OWN SHAPE, drawn small (§2bk). From `go.remap.earth`, which gives each route
+         a silhouette so you tell them apart before reading a word. This list was text links; a
+         trip already had a shape and nothing drew it.
+         Inline SVG, no network, no library — the server sends at most 24 points already
+         normalised into a 0-1000 box (`acct_trip_shapes()`), so this only has to draw them.
+         `vector-effect` keeps the stroke 2px however the box is scaled, and the whole thing is
+         aria-hidden: it is a picture OF the row's own link text, so announcing it twice would
+         only make the list longer to listen to. */
+      const glyph = Array.isArray(t.shape) && t.shape.length > 1
+        ? `<svg class="t-shape" viewBox="-60 -60 1120 1120" aria-hidden="true" focusable="false">
+             <polyline points="${t.shape.map(p => p[0] + "," + p[1]).join(" ")}"
+               fill="none" stroke="currentColor" stroke-width="70"
+               stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+           </svg>`
+        : `<span class="t-shape t-noshape" aria-hidden="true"></span>`;
       return `<a class="trip" href="/${esc(t.slug)}">
+        ${glyph}
         <span class="t-main">
           <span class="t-name">${esc(t.name || "our trip")}</span>
           <span class="t-meta"><span class="addr">thistripbtw.us/${esc(t.slug)} &middot; </span>${esc(life)}</span>

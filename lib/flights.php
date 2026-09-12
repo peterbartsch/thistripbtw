@@ -122,7 +122,10 @@ function flight_lookup(string $num, string $date): array
     ]);
     $raw  = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    /* no curl_close(): a no-op since PHP 8.0 and deprecated in 8.5, and leaving it in lets a
+       Deprecated warning into the response body wherever display_errors is on. api.php's
+       stripe_get_session() dropped it for that reason; these four were missed. The VPS is on
+       8.2 today, so this was latent rather than live — it goes noisy the day DreamHost moves. */
 
     if ($code === 404) return ['error' => 'not_found', 'message' => 'No flight by that number on that date. Say so and add the leg without times.'];
     if ($raw === false || $code >= 400)

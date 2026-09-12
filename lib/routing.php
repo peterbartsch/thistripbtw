@@ -26,11 +26,21 @@
 
 declare(strict_types=1);
 
+/* var_pace() lives here. Neither this file nor routing.php loaded it before, because
+   nothing in them needed varstore until the pacer moved into it — and api.php reaches
+   these two directly, without going through chat.php, which is what used to pull it in. */
+require_once __DIR__ . '/varstore.php';
+
 const RT_HOST       = 'router.project-osrm.org';
 const RT_UA         = 'thistripbtw.us/1.0 (trip planner; support@thistripbtw.us)';
 const RT_TTL        = 180 * 86400;   // roads do not move; six months is still conservative
 const RT_MAX        = 4000;          // bounded, oldest trimmed first
 const RT_MIN_GAP_US = 250000;        // ~4/sec — the demo server asks for restraint, not silence
+/* How long a request may wait for its turn before giving up. At a 250ms gap that is about six
+   callers deep. Past that the honest answer is cheaper than the wait: every queued request is a
+   PHP worker asleep on a third party, and the fallback here is already good — the client draws
+   the dashed straight line it draws for any leg with no road route. */
+const RT_MAX_WAIT_US = 1500000;      // 1.5s
 const RT_MAX_PTS    = 25;            // a leg is 2 points; a whole route is a handful
 
 /* ONE FILE PER ROUTE, not one big JSON (D-110).
@@ -89,17 +99,12 @@ function rt_cache_trim(): void
     foreach (array_slice(array_keys($age), 0, $drop) as $p) @unlink($p);
 }
 
-/** Hold to a few upstream requests a second across every visitor at once (see geo_pace). */
-function rt_pace(): void
+/** Hold to a few upstream requests a second across every visitor at once (see var_pace).
+ *  False means the queue is deeper than RT_MAX_WAIT_US and the caller must give up — which draws
+ *  the dashed straight line, the same thing a genuinely routeless leg already does. */
+function rt_pace(): bool
 {
-    $f = rt_gate_path();
-    $dir = dirname($f);
-    if (!is_dir($dir)) @mkdir($dir, 0775, true);
-    $last = is_file($f) ? (int)(@filemtime($f) * 1000000) : 0;
-    $now  = (int)(microtime(true) * 1000000);
-    $wait = RT_MIN_GAP_US - ($now - $last);
-    if ($wait > 0) usleep((int)min($wait, RT_MIN_GAP_US));
-    @touch($f);
+    return var_pace(rt_gate_path(), RT_MIN_GAP_US, RT_MAX_WAIT_US);
 }
 
 /**
@@ -132,7 +137,10 @@ function rt_route(string $coords): ?string
     $hit = rt_cache_get($key);
     if ($hit !== null) return $hit === '' ? null : $hit;   // '' is a cached "no route"
 
-    rt_pace();
+    /* Shed rather than queue. Returning null here is NOT cached as "no route" — the cache put
+       below is only reached on a real upstream answer — so a leg skipped during a spike routes
+       normally the next time somebody asks for it. */
+    if (!rt_pace()) return null;
     // OSRM wants lng,lat — the reverse of everything else in this codebase, which is exactly
     // the kind of detail worth writing down rather than rediscovering.
     $path = '/route/v1/driving/' . implode(';', array_map(
@@ -155,7 +163,10 @@ function rt_route(string $coords): ?string
     ]);
     $raw  = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    /* no curl_close(): a no-op since PHP 8.0 and deprecated in 8.5, and leaving it in lets a
+       Deprecated warning into the response body wherever display_errors is on. api.php's
+       stripe_get_session() dropped it for that reason; these four were missed. The VPS is on
+       8.2 today, so this was latent rather than live — it goes noisy the day DreamHost moves. */
 
     // A failure is NOT cached as "no route": the map falls back to a straight dashed line, and
     // caching a transient outage for six months would make that permanent.

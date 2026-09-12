@@ -6,7 +6,16 @@
    the PHP mirror, and the mirror has no serverInfo to disagree with.
 
    Bumping it then turned up two MORE copies in server.json, the registry manifest, still on the
-   old number. Four places, one number, no guard — this is that guard. */
+   old number. Four places, one number, no guard — this is that guard.
+
+   THAT LAST PARAGRAPH ABOUT THE MIRROR EXPIRED, AND THE SAME BUG CAME BACK THROUGH THE GAP.
+   lib/mcp.php grew a serverInfo, hardcoded "1.0.0", so on 2026-08-11 the HOSTED endpoint was
+   telling clients it predated read_trip_link while serving it — 1.1.0's bug again, in the one
+   copy this file cannot see. This guard reads files it knows the names of, which is exactly what
+   it cannot fix about itself. Two changes closed it: the PHP now DERIVES the version from
+   mcp/package.json rather than holding a fifth literal, and mcp-parity.php asks both real
+   initialize handlers what they report and demands the same answer. If you add a sixth place,
+   prefer deriving over adding a name here. */
 import { readFileSync } from "node:fs";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");

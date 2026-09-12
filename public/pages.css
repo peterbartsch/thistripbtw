@@ -226,9 +226,13 @@ a { color: var(--link); font-weight: 600; }
   color: var(--link); font-weight: 600; text-decoration: none;
   /* min-height rather than padding arithmetic: padding round a 13px line box gave 41px, and
      a target that depends on the font's metrics is a target that breaks when the font does. */
-  display: inline-flex; align-items: center; vertical-align: middle;
-  min-height: 44px; padding: 0 7px;
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  min-height: 44px; min-width: 44px; padding: 0 7px;
 }
+/* F9 FINISHED, 2026-08-11. It set the height and stopped there, so short words stayed narrow:
+   `make flow`'s hit test found "help" at 38x44 — vertical ok, horizontal FAIL. `min-width` with
+   centred text costs nothing visually (the separators sit outside the links) and completes the
+   rule on both axes, which is what DESIGN.md §3 asks for. */
 .pagefoot a:hover { color: var(--accent); text-decoration: underline; }
 .pagefoot .sep { opacity: .45; padding: 0 2px; }
 /* `.pagefoot .powered` lived here from 2026-08-03 and is GONE (Peter, 2026-08-05: the Stripe
