@@ -63,6 +63,14 @@ export async function launch({ headless = true, port = 9337 } = {}) {
   });
 
   await send("Page.enable"); await send("Runtime.enable"); await send("Log.enable");
+  /* Tell lib/tally.php this is us. Every harness that drives Chrome comes through this launch(),
+     including the post-deploy flow guard that runs against PRODUCTION — so this one line is what
+     stops D-187's daily count measuring our own deploys. Set on the Network domain so it rides
+     every request the page makes, navigations included, which is where tally('new') fires.
+     Same-origin only in practice (nothing we ship loads from anybody else), so it adds no CORS
+     preflight to a fetch that did not already have one. */
+  await send("Network.enable");
+  await send("Network.setExtraHTTPHeaders", { headers: { "X-TTB-Harness": "1" } });
 
   const page = {
     consoleLog, pageErrors,

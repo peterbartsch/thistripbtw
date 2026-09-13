@@ -23,6 +23,17 @@ function tally_dir(): string { return dirname(__DIR__) . '/var/tally'; }
 /** Record one hit of $kind ('new' or 'kept_read') for today, UTC. Never throws, never blocks. */
 function tally(string $kind): void {
     if (!preg_match('/^[a-z_]{1,24}$/', $kind)) return;
+    /* Our own harness is not a visitor. `make deploy` runs the whole flow suite against production
+       after every ship, and each run loads /new about a dozen times at two phone heights — so on
+       2026-09-11, nine deploys produced most of a day's 361 and the count answered "how often did
+       we deploy" instead of "did anyone arrive". test/flow/cdp.mjs now sends this header on every
+       request it makes.
+
+       It records NOTHING new: the request is simply not counted. It reads one header and stores
+       no part of it, so the what-this-is-not list above is unchanged. Anyone can send it, and the
+       only effect of doing so is to go uncounted — an undercount, never a leak or a profile. That
+       is the right failure direction for an instrument whose whole promise is restraint. */
+    if (($_SERVER['HTTP_X_TTB_HARNESS'] ?? '') === '1') return;
     $d = tally_dir();
     if (!is_dir($d) && !@mkdir($d, 0775, true)) return;
     @file_put_contents($d . '/' . gmdate('Y-m-d') . '.' . $kind, '.', FILE_APPEND);

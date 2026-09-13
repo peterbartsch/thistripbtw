@@ -40,7 +40,7 @@
      at the same place, which appears and disappears on scroll, is worse than not having it. */
   mini.setAttribute("aria-hidden", "true");
   mini.tabIndex = -1;
-  mini.innerHTML = '<img src="/sign.svg?v=1" width="700" height="300" alt="">';
+  mini.innerHTML = '<img src="/logo.svg?v=2" width="164" height="184" alt="">';
   document.body.appendChild(mini);
   new IntersectionObserver(function (e) {
     document.documentElement.classList.toggle("scrolled", !e[0].isIntersecting);

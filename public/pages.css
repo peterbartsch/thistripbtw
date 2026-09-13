@@ -79,7 +79,7 @@ html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: v
      of them at every width the site supports, and the sign was oversized for a header anyway —
      it was reading as a second masthead on twelve pages that already say what they are in the
      h1 directly beneath it. */
-  display: block; width: min(220px, 52vw); height: auto;
+  display: block; width: auto; height: 100px;  /* portrait shield, sized by height (D-191) */
 }
 .pagehead h1 {
   font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
@@ -259,7 +259,7 @@ a { color: var(--link); font-weight: 600; }
   opacity: 0; transform: translateY(-6px); pointer-events: none;
   transition: opacity .18s ease, transform .18s ease;
 }
-.minimark img { display: block; width: 104px; height: auto; }
+.minimark img { display: block; width: auto; height: 44px; }
 html.scrolled .minimark { opacity: 1; transform: none; pointer-events: auto; }
 /* The mark still appears, it just stops sliding. Motion is the decoration here, not the
    information — and this is the one file that had no reduced-motion answer at all. */

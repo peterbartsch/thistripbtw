@@ -8,16 +8,60 @@
 <meta property="og:url" content="https://thistripbtw.us/for-agents">
 <meta property="og:title" content="For AI assistants — this trip, btw">
 <meta property="og:description" content="Hand someone a trip on a private map, from a URL. No account to build one, no API key, no card — which is why an AI assistant can actually use it.">
-<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=2">
+<!-- Structured data for the page an assistant actually lands on. The landing page has
+     carried a SoftwareApplication block for weeks and THIS one had none, which was
+     backwards: /for-agents is the most machine-read page on the site. featureList names
+     all six tools, because "six tools" in prose is not something a parser can count.
+     softwareVersion tracks mcp/server.json — bump it there and here together. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "this trip, btw — MCP server",
+  "alternateName": "thistripbtw-mcp",
+  "url": "https://thistripbtw.us/for-agents",
+  "applicationCategory": "TravelApplication",
+  "operatingSystem": "Any (MCP client)",
+  "softwareVersion": "1.3.2",
+  "description": "Persistent, shareable travel workspaces for AI agents. Build a complete itinerary as a private map link and hand it to the person — usable on their behalf where signup-walled travel tools are not. Six tools, no API key, no account to build a trip.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "description": "Building and reading a trip link is free and asks for nothing. Keeping a trip starts at $2.50."
+  },
+  "featureList": [
+    "build_trip_link — Turn an origin and a list of legs into a private map link the person can open.",
+    "find_place — Resolve a place name or IATA code to coordinates, so a trip never lands in the wrong country on a guess.",
+    "amend_trip_link — Change a trip somebody already holds — add, replace or remove legs — and return the new link.",
+    "read_trip_link — Read a draft trip link back as structured legs.",
+    "read_kept_trip — Read a kept trip, given the phrase in its link.",
+    "add_to_kept_trip — Add one stop to a kept trip."
+  ],
+  "softwareHelp": {
+    "@type": "CreativeWork",
+    "url": "https://thistripbtw.us/for-agents"
+  },
+  "installUrl": "https://thistripbtw.us/mcp",
+  "downloadUrl": "https://www.npmjs.com/package/thistripbtw-mcp",
+  "codeRepository": "https://github.com/peterbartsch/thistripbtw-mcp",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": {
+    "@type": "Person",
+    "name": "Peter Bartsch"
+  }
+}
+</script>
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=37">
+<link rel="stylesheet" href="/pages.css?v=40">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <style>
   pre{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:14px;
@@ -39,7 +83,7 @@
 </nav>
 
 <header class="pagehead">
-  <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
+  <a href="/" class="sign"><img src="/logo.svg?v=2" width="164" height="184" alt="this trip, btw — home"></a>
   <h1>For AI assistants</h1>
   <p class="lede">Persistent, shareable travel workspaces for AI agents.</p>
   <p class="lede">Everything about your trip in one shareable link &mdash; a private map anyone
@@ -217,6 +261,6 @@ python3 build_link.py --selftest</pre>
 
 <footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/mission">mission</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="/account">account</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
 <div class="stripe-line"><a class="stripe-badge" href="https://stripe.com" target="_blank" rel="noopener"><span class="lbl">Payments securely powered by</span><span class="stripe-mark">stripe</span></a></div>
-<script src="/pages.js?v=2"></script>
+<script src="/pages.js?v=5"></script>
 <script src="/theme.js?v=4"></script>
 </html>

@@ -32,15 +32,19 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="this trip, btw">
 <meta property="og:title" content="Someone shared a trip with you">
-<meta property="og:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you. No account needed to look.">
-<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<!-- The share preview is the ONE surface that reaches everybody a link is forwarded to, and
+     until 2026-09-11 it never mentioned the thing that makes this different: the people
+     pasting these links into Slack and iMessage are exactly the audience for the last
+     sentence. The account claim stays scoped to its path (D-086) — "no account to look". -->
+<meta property="og:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you, no account to look. An AI assistant can read it and add to it too.">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=2">
 <meta name="description" content="A private map with the whole trip on it. Open the link you were sent.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Someone shared a trip with you">
-<meta name="twitter:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you.">
+<meta name="twitter:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you. An AI assistant can read it and add to it too.">
 <!--
   this trip, btw — multi-tenant trip client. Ported from the westbound.html
   family alpha (reference/, gitignored). Data layer = the PHP REST API
@@ -70,7 +74,7 @@
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6"><!-- design system palette (D-030) -->
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
 <style>
   :root{
     /* brand palette driven by the design system (D-030 tokens.css); semantic names kept so rules don't change */
@@ -126,9 +130,9 @@
      it wrong: the trip name now lives at the top of the sheet, where the document is — so the
      plate was saying it twice — and a map is mostly map. It is the mark alone now, at the same
      weight as the other two controls, and it is a real link home rather than a decoration. */
-  #sign{pointer-events:auto;flex:0 0 auto;display:block;width:88px;line-height:0;
+  #sign{pointer-events:auto;flex:0 0 auto;display:block;width:auto;line-height:0;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
-  #sign img{display:block;width:100%;height:auto}
+  #sign img{display:block;width:auto;height:48px}  /* portrait shield, sized by height (D-191) */
   #themeBtn{pointer-events:auto;background:var(--card);color:var(--ink);border-radius:50%;
     width:40px;height:40px;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.22)}
   /* D-132 on the trip page. Same plate, size and shadow as #themeBtn/#menuBtn so the row
@@ -860,7 +864,7 @@
 
   /* ══ SMALL VIEWPORTS — the brand yields to the map (Peter, 2026-07-24) ══ */
   @media (max-width:430px){
-    #sign{width:76px}
+    #sign img{height:42px}
     #sheetHead{padding:2px 12px 8px;gap:6px}
     #list{padding-left:8px;padding-right:8px}
   }
@@ -1463,7 +1467,7 @@
 <div id="offline" role="status" aria-live="polite"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 21.6 20H2.4z"/><path d="M12 9.6v4.2M12 17.1v.01"/></svg> Offline — your changes may not be saving. Reconnecting…</div>
 
 <header id="topbar">
-  <a id="sign" href="/" title="this trip, btw — home" aria-label="this trip, btw — home"><img src="/sign.svg?v=1" width="700" height="300" alt=""></a>
+  <a id="sign" href="/" title="this trip, btw — home" aria-label="this trip, btw — home"><img src="/logo.svg?v=2" width="164" height="184" alt=""></a>
   <div id="topright">
     <span id="viewTag" title="view-only link"><span class="lbl">View only</span></span>
     <span id="editTag" title="You have the edit link. Anything you change here is live straight away for everyone holding a link to this trip."><span class="dot"></span>Editing<span class="lbl"> · live</span></span>

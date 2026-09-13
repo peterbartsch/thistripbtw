@@ -9,10 +9,10 @@
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
 <style>
   /* the one mark (2026-08-02) — same file as every other page, splash size */
-  .hero .brand-logo{display:block;width:min(340px,78vw);height:auto;margin:0 auto 10px}
+  .hero .brand-logo{display:block;width:auto;height:132px;margin:0 auto 10px}  /* portrait shield, sized by height (D-191) */
 
   /* /new — build-before-pay canvas (D-029) on the D-030 design system.
      D-037: the card is a LEG, not a stop; stays are their own card type. */
@@ -1257,7 +1257,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
 <body class="pre">
 
   <div class="hero" id="hero">
-    <img class="brand-logo" src="/sign.svg?v=1" width="700" height="300"
+    <img class="brand-logo" src="/logo.svg?v=2" width="164" height="184"
          alt="this trip, btw" fetchpriority="high">
     <h1>Start your trip by typing a place.</h1>
     <p>Type where you're starting and it lands on a shared map. Add the crew, build it together, live it — all from one private link.</p>
@@ -1295,7 +1295,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
   <main class="app">
     <h1 class="vh">Build a trip</h1>
     <div class="bar">
-      <a href="/" class="sign"><img src="/sign.svg?v=1" width="700" height="300" alt="this trip, btw — home"></a>
+      <a href="/" class="sign"><img src="/logo.svg?v=2" width="164" height="184" alt="this trip, btw — home"></a>
       <span class="name-trip" id="tripName" contenteditable="true" role="textbox" aria-label="Name your trip"></span>
       <button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
       <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
@@ -4272,6 +4272,6 @@ render();
 })();
 </script>
 </body>
-<script src="/pages.js?v=2"></script>
+<script src="/pages.js?v=5"></script>
 <script src="/theme.js?v=4"></script>
 </html>

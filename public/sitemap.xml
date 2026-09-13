@@ -2,22 +2,22 @@
 <!-- Public pages only. Trips are never listed: a trip address is unguessable by design
      and listing one would hand away the only thing protecting it. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://thistripbtw.us/</loc><lastmod>2026-09-11</lastmod><priority>1.0</priority></url>
+  <url><loc>https://thistripbtw.us/</loc><lastmod>2026-09-13</lastmod><priority>1.0</priority></url>
   <!-- /quick and /quicktree are NOT listed: both carry robots=noindex, and a sitemap
        that advertises a page we have told crawlers to ignore is a contradiction a
        search console reports back as an error. /quick is still the promoted CTA from
        the landing page — that it is unindexable while /new is indexable and unlinked
        is a real strategy question, and it is not settled here. -->
-  <url><loc>https://thistripbtw.us/new</loc><lastmod>2026-09-11</lastmod><priority>0.8</priority></url>
-  <url><loc>https://thistripbtw.us/what-you-get</loc><lastmod>2026-09-10</lastmod><priority>0.8</priority></url>
-  <url><loc>https://thistripbtw.us/starts</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/for-agents</loc><lastmod>2026-09-10</lastmod><priority>0.8</priority></url>
-  <url><loc>https://thistripbtw.us/agent-ready</loc><lastmod>2026-09-10</lastmod><priority>0.8</priority></url>
-  <url><loc>https://thistripbtw.us/tutorials</loc><lastmod>2026-09-10</lastmod><priority>0.8</priority></url>
-  <url><loc>https://thistripbtw.us/about</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/mission</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/help</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/faq</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/privacy</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
-  <url><loc>https://thistripbtw.us/terms</loc><lastmod>2026-09-10</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/new</loc><lastmod>2026-09-13</lastmod><priority>0.8</priority></url>
+  <url><loc>https://thistripbtw.us/what-you-get</loc><lastmod>2026-09-13</lastmod><priority>0.8</priority></url>
+  <url><loc>https://thistripbtw.us/starts</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/for-agents</loc><lastmod>2026-09-13</lastmod><priority>0.8</priority></url>
+  <url><loc>https://thistripbtw.us/agent-ready</loc><lastmod>2026-09-13</lastmod><priority>0.8</priority></url>
+  <url><loc>https://thistripbtw.us/tutorials</loc><lastmod>2026-09-13</lastmod><priority>0.8</priority></url>
+  <url><loc>https://thistripbtw.us/about</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/mission</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/help</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/faq</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/privacy</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
+  <url><loc>https://thistripbtw.us/terms</loc><lastmod>2026-09-13</lastmod><priority>0.5</priority></url>
 </urlset>

@@ -63,7 +63,7 @@ let KILLED = false;
 const LOG = [];
 const note = m => { LOG.push(m); if (LOG.length > 40) LOG.shift(); };
 
-const V     = "ttb-shell-v1";
+const V     = "ttb-shell-v3";   // v3: the logo recoloured to the palette (D-192); activate() drops v2
 const SHELL = V + "-shell";
 const RUN   = V + "-runtime";
 
@@ -87,7 +87,7 @@ const ASSETS = [
   "/sheet.js?v=1",
   "/places.js?v=5",
   "/mapstyle.js?v=5",
-  "/sign.svg?v=1",
+  "/logo.svg?v=2",
   "/fonts/barlow-400.woff2",
   "/fonts/barlow-500.woff2",
   "/fonts/barlow-600.woff2",

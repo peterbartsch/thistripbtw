@@ -48,16 +48,16 @@ $TOOLBARS = ['app.html'];
 $missing = [];
 foreach (glob("$root/public/*.html") as $f) {
   if (in_array(basename($f), $TOOLBARS, true)) continue;
-  if (!str_contains(file_get_contents($f), 'src="/sign.svg')) $missing[] = basename($f);
+  if (!str_contains(file_get_contents($f), 'src="/logo.svg')) $missing[] = basename($f);
 }
-ok('every non-trip page carries /sign.svg (' . (count(glob("$root/public/*.html")) - count($TOOLBARS)) . ' pages)',
+ok('every non-trip page carries /logo.svg (' . (count(glob("$root/public/*.html")) - count($TOOLBARS)) . ' pages)',
    $missing === []);
 if ($missing) echo "      missing: " . implode(', ', $missing) . "\n";
 ok('and the retired text plate is gone from all of them',
    !array_filter(glob("$root/public/*.html"),
      fn($f) => !in_array(basename($f), ['app.html'], true)
                && str_contains(file_get_contents($f), '<b>this trip, btw</b>')));
-ok('the sign file exists and is one file, not a per-page copy', is_file("$root/public/sign.svg"));
+ok('the logo file exists and is one file, not a per-page copy (D-191)', is_file("$root/public/logo.svg"));
 
 /* 6. ONE POSITIONING LINE, on every surface an assistant quotes verbatim (#14, 2026-08-02).
       Before this, six surfaces each opened with a different sentence — the title said "one link

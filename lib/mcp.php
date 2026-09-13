@@ -282,7 +282,6 @@ function mcp_kept_parts(string $raw): array {
 
 function mcp_read_kept(array $args): array {
     [$slug, $phrase] = mcp_kept_parts((string)($args['link'] ?? ''));
-    require_once __DIR__ . '/tally.php'; tally('kept_read');    // D-187 — the hosted half of the same count
 
     $acc = access_level($slug, $phrase);          // the SHARED choke point, phrase supplied
     $level = $acc['level'] ?? null;
@@ -290,6 +289,14 @@ function mcp_read_kept(array $args): array {
         throw new RuntimeException('that trip reached its end date and was deleted. Every tier has one, so this is the product working rather than a fault');
     if (!$level)
         throw new RuntimeException("not it — that phrase is not accepted for this trip. Check with whoever sent you the link. This counted as one guess against the trip's hourly limit, so it was not retried");
+
+    /* D-187 — the hosted half of the same count. AFTER the phrase is accepted, not before it.
+       It sat two lines up, ahead of access_level(), until 2026-09-11, so it counted ATTEMPTS: a
+       wrong phrase, an expired trip and a malformed slug were all "reads". The first two days of
+       data were exactly two, and both were a deliberate wrong-phrase probe from an audit — the
+       one number this product's thesis turns on was measuring its own test. A rejected phrase
+       is not an agent reading a kept trip, and the tally's own header says that is what it counts. */
+    require_once __DIR__ . '/tally.php'; tally('kept_read');
 
     $trip = $acc['trip'];
     $who  = trim((string)($acc['member'] ?? ''));   // D-047: identity from the token, never a name

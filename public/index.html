@@ -18,16 +18,16 @@
 <meta property="og:url" content="https://thistripbtw.us/">
 <meta property="og:title" content="this trip, btw — one private map link for the whole trip">
 <meta property="og:description" content="Plan, share, and keep a trip on one private map link. No profiling, no ads, no trackers. Free to build, from $2.50 to keep.">
-<meta property="og:image" content="https://thistripbtw.us/og.png?v=1">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=1">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=2">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
 <link rel="stylesheet" href="/tokens.css?v=6">
 <link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=37">
+<link rel="stylesheet" href="/pages.css?v=40">
 <style>
   /* F2 (2026-08-02): this page now links pages.css like the other twelve, and what used to
      sit here — a :root palette, the reset, the body rule, the whole hamburger-and-toggle
@@ -48,7 +48,7 @@
 
   /* hero — the highway sign is the masthead */
   header{padding:72px 0 0;text-align:center}
-  .brand-logo{display:block;width:min(380px,80%);height:auto;margin:0 auto 6px}
+  .brand-logo{display:block;width:auto;height:min(168px,34vw);margin:0 auto 6px}  /* portrait shield, sized by height (D-191) */
   .tag{font-family:var(--disp);font-weight:700;font-size:31px;line-height:1.26;letter-spacing:.01em;
     margin:46px auto 0;max-width:600px}
   /* The primary action on the whole site, so it is gold like the buy buttons — teal now means
@@ -116,10 +116,32 @@
      would have re-wrapped the line and grown the block. Measured — see the note by .closer. */
   .lead{margin:28px auto 0;font-family:var(--body);font-weight:500;font-size:21px;letter-spacing:0;color:var(--ink);line-height:1.28}
   .lead span{display:block;font-family:var(--body);font-weight:500;font-size:16px;color:var(--soft);margin-top:5px}
-  .pillars{list-style:none;display:inline-block;text-align:left;margin:20px auto 0;padding:0}
-  .pillars li{position:relative;padding:8px 0 8px 30px;font-size:17px;color:var(--ink);line-height:1.45}
-  .pillars li::before{content:"✓";position:absolute;left:0;top:8px;color:var(--accent);
-    font-family:var(--disp);font-weight:700;font-size:18px}
+  /* THE PROMISE PLATE (2026-09-13). The four claims plus the closer, on a plate that matches
+     .sentby directly above it. For weeks they were four 17px lines floating on bare sky between a
+     white card and three white cards — the page's strongest promises drawn as its weakest element,
+     and ?row=1 (2026-09-11) only rearranged the float. Peter: "still too small and lost in
+     relation to the rest of the page." A plate fixes both halves: the claims stop being a hole in
+     the page because they sit on the same card language as everything around them, and they get
+     the display face at 20px instead of body at 17px.
+     No new font: Barlow Condensed 700 is already on this page for headings, .sentby b and the
+     receipts strip. The disc is a solid orange so the tick reads at a glance — an orange glyph on
+     white measures about 2:1 and was decoration; ink on orange is how a road sign does it. */
+  .promise{max-width:640px;margin:0 auto;padding:22px 26px 20px;text-align:left;
+    border:2px solid var(--pine);border-radius:14px;background:var(--card,#fff);
+    box-shadow:0 6px 20px rgba(0,0,0,.10)}
+  .pillars{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 26px}
+  .pillars li{position:relative;padding:2px 0 2px 42px;min-height:30px;display:flex;align-items:center;
+    font-family:var(--disp);font-weight:700;font-size:20px;line-height:1.15;letter-spacing:.03em;
+    text-transform:uppercase;color:var(--ink)}
+  .pillars li::before{content:"✓";position:absolute;left:0;top:50%;transform:translateY(-50%);
+    width:30px;height:30px;border-radius:50%;background:var(--accent);color:#141414;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:700;font-size:18px;line-height:1}
+  @media (max-width:560px){
+    .promise{padding:18px 18px 16px}
+    .pillars{grid-template-columns:1fr;gap:12px}
+    .pillars li{font-size:19px}
+  }
   /* Body for the same reason. Barlow 600 is already loaded for spans and <b> on this page, so
      this costs no new font file — the point of the change is that the landing page now fetches
      FOUR faces instead of six.
@@ -128,29 +150,8 @@
      to the 500 face — so deleting either @font-face would break app.html. This is a per-page
      saving, not a smaller font directory, and that distinction was worth checking before
      assuming otherwise. */
-  .closer{margin:24px auto 0;font-family:var(--body);font-weight:600;font-size:17px;
-    letter-spacing:0;color:var(--link);max-width:460px}
-  /* ?row=1 — the four claims as ONE ROW instead of a column (2026-09-11).
-     The column is 188px wide and the band it sits in is as wide as the window, so on any
-     desktop the page's four strongest promises are a narrow strip marooned in empty sky, with
-     a white card above them and white cards below. The band reads as a hole in the page, and
-     the claims read as the weakest thing on it — which is backwards, they are the product.
-     A row fills the width the band already occupies, so nothing new is introduced: the same
-     four claims, the same tick, the same words. It also returns about 100px of vertical space
-     between the hero and HOW IT WORKS, which was dead sky.
-     flex-wrap, so this degrades to 2×2 on a phone rather than needing its own breakpoint —
-     and 2×2 is shorter than the 1×4 it replaces. */
-  /* WIDE SCREENS ONLY, and that is the whole point — the column is CORRECT on a phone, where
-     the band is 350px wide and a row wraps to three ragged lines. Measured at 390: 3 rows, 83px.
-     The defect is a desktop defect. */
-  @media (min-width:700px){
-    html.rowpillars .pillars{display:flex;flex-wrap:wrap;justify-content:center;
-      gap:9px 34px;max-width:880px;margin:32px auto 0;text-align:left}
-    html.rowpillars .pillars li{padding:0 0 0 25px;font-size:16px;line-height:1.35}
-    html.rowpillars .pillars li::before{top:-1px;font-size:17px}
-    html.rowpillars .closer{margin-top:22px}
-    html.rowpillars .hero{padding-bottom:38px}
-  }
+  .closer{margin:18px 0 0;padding-top:16px;border-top:2px solid rgba(3,107,131,.18);
+    font-family:var(--body);font-weight:600;font-size:17px;letter-spacing:0;text-align:center}
   /* demo shown in a phone mockup */
   .phone-link{display:block;text-decoration:none}
   .phone{display:block;width:min(300px,72vw);margin:46px auto 0;position:relative;
@@ -182,12 +183,11 @@
      viewport instead: the full sky compressed into every screenful, so a block of
      text met a different stop depending on scroll position and the palette could
      never be tuned against it (audit F13). */
-  .hero{padding-bottom:52px}
+  .hero{padding-bottom:30px}  /* was 52 — the promise plate closes the hero now, and 52 under a solid card read as a gap */
   .closer{color:var(--ink)}
   .card,.priv,.stripe-badge{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
   /* text sitting directly on the sky gets a subtle shadow on the darker skies */
   html:not([data-sky="day"]) .tag, html:not([data-sky="day"]) .lead,
-  html:not([data-sky="day"]) .pillars li, html:not([data-sky="day"]) .closer,
   html:not([data-sky="day"]) .how h2, html:not([data-sky="day"]) .how p,
   html:not([data-sky="day"]) footer, html:not([data-sky="day"]) footer a{text-shadow:0 1px 3px rgba(0,0,0,.34)}
 
@@ -457,12 +457,6 @@
   ]
 }
 </script>
-<script>/* ?row=1 — see the .rowpillars block above. In <head> so the class lands before
-  first paint: setting it from the page's main script at the bottom would show the column and
-  then snap it into a row. No const at top level, deliberately — a bare IIFE that throws up here
-  would kill nothing else, but this file's main script runs later and shares no scope. */
-try{ if(new URLSearchParams(location.search).get("row")==="1")
-  document.documentElement.classList.add("rowpillars"); }catch(e){}</script>
 </head>
 <body>
 
@@ -473,7 +467,7 @@ try{ if(new URLSearchParams(location.search).get("row")==="1")
 </nav>
 
 <header class="hero"><div class="wrap">
-  <img class="brand-logo" src="/sign.svg?v=1" width="700" height="300"
+  <img class="brand-logo" src="/logo.svg?v=2" width="164" height="184"
        alt="this trip, btw" fetchpriority="high">
 
   <!-- #14, 2026-08-02. The old line ("privately woven together … quietly better at every
@@ -501,6 +495,7 @@ try{ if(new URLSearchParams(location.search).get("row")==="1")
       sign-up to open it.</p>
     <div class="sb-links"><a href="/faq"><span>How that works &rarr;</span></a><a href="/starts"><span>Starting points &rarr;</span></a></div>
   </div>
+  <div class="promise">
   <ul class="pillars">
     <li>no app to install</li>
     <li>no sign-up to build</li>
@@ -508,6 +503,7 @@ try{ if(new URLSearchParams(location.search).get("row")==="1")
     <li>works on any browser</li>
   </ul>
   <p class="closer">We sell you a service, never your data to third parties.</p>
+  </div>
 </div></header>
 
 <main class="wrap">

@@ -539,7 +539,7 @@ function serve_html($file, $strip = null, $ogSlug = null) {
   if ($ogSlug !== null) {
     if ($strip !== null) { send_body((string)file_get_contents($file), $gz); return; }
     send_body(str_replace(
-      'content="https://thistripbtw.us/og.png?v=1"',
+      'content="https://thistripbtw.us/og.png?v=2"',   // MUST track the ?v= on the pages' og:image — an exact match, so a bump here-or-there-only silently drops every trip's own card
       'content="https://thistripbtw.us/' . $ogSlug . '/og.png"',
       (string)file_get_contents($file)), $gz);
     return;
