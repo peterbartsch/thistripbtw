@@ -109,11 +109,11 @@ if (count($segs) === 2 && $segs[1] === 'manifest.json'
     'scope'            => $base,
     'display'          => 'standalone',
     'orientation'      => 'portrait',
-    'background_color' => '#035A83',
-    'theme_color'      => '#035A83',
+    'background_color' => '#0A4DA2',
+    'theme_color'      => '#0A4DA2',
     'icons'            => [
-      ['src' => '/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-      ['src' => '/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+      ['src' => '/icon-192.png?v=2', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+      ['src' => '/icon-512.png?v=2', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
     ],
   ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
   exit;
@@ -539,7 +539,7 @@ function serve_html($file, $strip = null, $ogSlug = null) {
   if ($ogSlug !== null) {
     if ($strip !== null) { send_body((string)file_get_contents($file), $gz); return; }
     send_body(str_replace(
-      'content="https://thistripbtw.us/og.png?v=2"',   // MUST track the ?v= on the pages' og:image — an exact match, so a bump here-or-there-only silently drops every trip's own card
+      'content="https://thistripbtw.us/og.png?v=3"',   // MUST track the ?v= on the pages' og:image — an exact match, so a bump here-or-there-only silently drops every trip's own card
       'content="https://thistripbtw.us/' . $ogSlug . '/og.png"',
       (string)file_get_contents($file)), $gz);
     return;

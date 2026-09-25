@@ -7,9 +7,9 @@
 <meta name="description" content="Build your trip on a private map — nothing to install, no sign-up to build.">
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=6">
-<link rel="stylesheet" href="/sky.css?v=11">
-<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
+<link rel="stylesheet" href="/tokens.css?v=7">
+<link rel="stylesheet" href="/sky.css?v=12">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
 <style>
   /* the one mark (2026-08-02) — same file as every other page, splash size */
   .hero .brand-logo{display:block;width:auto;height:132px;margin:0 auto 10px}  /* portrait shield, sized by height (D-191) */
@@ -62,11 +62,11 @@
      on this gold is 1.84:1 and is never used (DESIGN.md §1). */
   .cta{font-size:var(--font-size-xl);padding:18px 30px;border-radius:var(--radius-lg);
     background:var(--color-brand-orange);color:var(--color-brand-ink);
-    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #C38D00,0 10px 24px rgba(195,141,0,.26)}
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #B8480A,0 10px 24px rgba(184,72,10,.24)}
   .cta:hover:not(:disabled){background:var(--color-brand-orange);color:var(--color-brand-ink);filter:brightness(1.06);
-    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #C38D00,0 10px 24px rgba(195,141,0,.26)}
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 3px 0 #B8480A,0 10px 24px rgba(184,72,10,.24)}
   .cta:active{transform:translateY(3px);
-    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 0 0 #C38D00,0 4px 12px rgba(195,141,0,.22)}
+    box-shadow:inset 0 0 0 1.5px var(--color-brand-ink),0 0 0 #B8480A,0 4px 12px rgba(184,72,10,.2)}
   /* D-090: the board does the work. Following the sky still failed three skies of four —
      dawn 3.03, day 3.60, dusk 2.42 — because no one mid-tone teal clears 4.5:1 against both
      a pale blue sky and an orange one. That is arithmetic, not taste. DESIGN.md's answer is
@@ -90,6 +90,11 @@
     font-size:16px;font-weight:600;letter-spacing:.01em;line-height:1.32;text-align:center;
     box-shadow:0 2px 10px rgba(0,0,0,.22)}
   .reassure span{display:block}
+  /* D-193: the road look. The primary takes sign corners; the reassure sign gets its inset
+     rule; and by day the hero stands on the same contour paper as body (sky.css). */
+  .hero .cta{border-radius:6px}
+  html[data-sky="day"] .hero{background:url(/road-contours.svg?v=1) 0 0/900px 900px repeat,
+    var(--sky) 0 0/100% 100% no-repeat;background-color:#F4EEE1}
   /* The arrow row: its own line under the legend, arrow to the LEFT, as on the reference where the
      ramp arrow leads and the route shield follows it. Nothing follows ours — we are not a road. */
   /* TWO ARROWS, because a two-lane exit gets two — Peter, 2026-08-11. It is also the reference's
@@ -152,7 +157,7 @@
   .demo-link{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;
     background:var(--color-brand-board);color:var(--color-brand-teal);
     border-radius:999px;padding:0 18px;text-decoration:underline;text-underline-offset:3px;
-    text-decoration-color:rgba(3,90,131,.45);
+    text-decoration-color:rgba(10,77,162,.45);
     font-weight:var(--font-weight-semibold);font-size:14px;border-bottom:0}
 
   /* ── BUILD CANVAS ── */
@@ -913,7 +918,7 @@
     text-align:left;font-family:var(--font-family-body);font-size:13px;line-height:18px;
     color:var(--color-brand-teal);background:none;cursor:pointer;
     border:1.5px dashed var(--color-brand-teal);border-radius:var(--radius-md,10px)}
-  .crewhint:active{background:rgba(3,90,131,.08)}
+  .crewhint:active{background:rgba(10,77,162,.08)}
   /* The empty state must stop before the map toolbar. .mapbtns carries z-index:20 but lives
      INSIDE .maprap, whose z-index:0 is load-bearing for containing Leaflet's panes — so the
      whole wrapper, toolbar included, sits under .railwrap (16). Measured at 375x812 on a fresh
@@ -946,7 +951,7 @@
     display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 16px;flex-wrap:wrap}
   .kb-msg{color:var(--color-steel-2);font-size:13.5px}
   .kb-msg b{color:var(--color-brand-ink)}
-  /* Dark skies. #035A83 is a DARK teal — on a translucent dark plate it is nearly unreadable,
+  /* Dark skies. The brand blue (D-193; was teal #035A83) is DARK — on a translucent dark plate it is nearly unreadable,
      so the link goes near-white and keeps its underline to stay a link. Measured after. */
   html[data-sky="night"] .keepbar,html[data-sky="dusk"] .keepbar,
   html[data-sky="dawn"] .keepbar{background:rgba(16,20,26,.62);
@@ -1009,7 +1014,7 @@
      yet and a price is just noise over an empty map. body.hasleg is the page's own signal. */
   body:not(.hasleg) .keepbar{display:none}
   .kb-up{display:inline-flex;align-items:center;min-height:44px;background:none;border:0;cursor:pointer;font-size:12.5px;
-    color:var(--color-brand-teal);font-weight:var(--font-weight-semibold);border-bottom:1px solid rgba(3,107,131,.4);white-space:nowrap}
+    color:var(--color-brand-teal);font-weight:var(--font-weight-semibold);border-bottom:1px solid rgba(10,77,162,.4);white-space:nowrap}
   /* F5 (audit 2026-07-29). The keepbar reserved a fixed strip of every screen for the whole
      session, and on a phone it was TWO rows — three lines of prose plus the buttons — for a
      decision most people make once. The prose is only true while there is nothing to keep:
@@ -1212,7 +1217,7 @@ body.calm.calm-open2 .psearch{ display:flex; }
   border:0; border-radius:999px; cursor:pointer;
   font-family:inherit; font-size:13.5px; font-weight:var(--font-weight-semibold);
   text-decoration:underline; text-underline-offset:3px;
-  text-decoration-color:rgba(3,90,131,.45); text-shadow:none;
+  text-decoration-color:rgba(10,77,162,.45); text-shadow:none;
 }
 .calm-more:hover{ text-decoration-color:var(--color-brand-teal); }
 body.calm.calm-open .calm-more.h,
@@ -1257,7 +1262,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
 <body class="pre">
 
   <div class="hero" id="hero">
-    <img class="brand-logo" src="/logo.svg?v=2" width="164" height="184"
+    <img class="brand-logo" src="/logo.svg?v=4" width="164" height="164"
          alt="this trip, btw" fetchpriority="high">
     <h1>Start your trip by typing a place.</h1>
     <p>Type where you're starting and it lands on a shared map. Add the crew, build it together, live it — all from one private link.</p>
@@ -1295,7 +1300,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
   <main class="app">
     <h1 class="vh">Build a trip</h1>
     <div class="bar">
-      <a href="/" class="sign"><img src="/logo.svg?v=2" width="164" height="184" alt="this trip, btw — home"></a>
+      <a href="/" class="sign"><img src="/logo.svg?v=4" width="164" height="164" alt="this trip, btw — home"></a>
       <span class="name-trip" id="tripName" contenteditable="true" role="textbox" aria-label="Name your trip"></span>
       <button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
       <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
@@ -1387,7 +1392,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
   aria-label="Trip actions" aria-haspopup="true"><svg viewBox="0 0 24 24" width="20" height="20"
   fill="currentColor" aria-hidden="true"><circle cx="5.6" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.4" cy="12" r="1.9"/></svg></button>
 
-<script src="/ring.js?v=3"></script>
+<script src="/ring.js?v=4"></script>
 <script src="/sheet.js?v=1"></script>
 <script>
 /* Stripe payment links — mirror public/index.html #pricing (flip test→live together). */

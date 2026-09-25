@@ -18,16 +18,16 @@
 <meta property="og:url" content="https://thistripbtw.us/">
 <meta property="og:title" content="this trip, btw — one private map link for the whole trip">
 <meta property="og:description" content="Plan, share, and keep a trip on one private map link. No profiling, no ads, no trackers. Free to build, from $2.50 to keep.">
-<meta property="og:image" content="https://thistripbtw.us/og.png?v=2">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=2">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=3">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
-<link rel="stylesheet" href="/tokens.css?v=6">
-<link rel="stylesheet" href="/sky.css?v=11">
-<link rel="stylesheet" href="/pages.css?v=40">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
+<link rel="stylesheet" href="/tokens.css?v=7">
+<link rel="stylesheet" href="/sky.css?v=12">
+<link rel="stylesheet" href="/pages.css?v=42">
 <style>
   /* F2 (2026-08-02): this page now links pages.css like the other twelve, and what used to
      sit here — a :root palette, the reset, the body rule, the whole hamburger-and-toggle
@@ -57,10 +57,10 @@
   .cta{display:inline-flex;align-items:baseline;gap:10px;background:var(--accent);color:#141414;text-decoration:none;
     font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:.06em;text-transform:uppercase;
     border-radius:12px;padding:17px 36px;margin:40px auto 0;
-    box-shadow:0 3px 0 #C38D00, 0 10px 24px rgba(195,141,0,.26);
+    box-shadow:0 3px 0 var(--accent-deep), 0 10px 24px rgba(184,72,10,.24);
     transition:transform .12s,box-shadow .12s,filter .12s}
   .cta:hover{filter:brightness(1.06)}
-  .cta:active{transform:translateY(3px);box-shadow:0 0 0 #C38D00, 0 4px 12px rgba(195,141,0,.22)}
+  .cta:active{transform:translateY(3px);box-shadow:0 0 0 var(--accent-deep), 0 4px 12px rgba(184,72,10,.2)}
   .cta:focus-visible{outline:3px solid var(--pine);outline-offset:3px}
   .cta span{font-family:var(--body);font-weight:600;font-size:14px;letter-spacing:.02em;text-transform:none;opacity:.78}
   /* On a phone the label and its footnote fought over one line and both wrapped. Stack them:
@@ -99,7 +99,8 @@
      it only exists while the pointer is down on it. "See a live trip" filled with --pine and white
      text was unreadable at the moment it was being pressed. WCAG applies to every state, not just
      the resting one. The rule two blocks up already says it: ink on gold, never white. */
-  .cta2:hover{background:var(--pine);color:#141414}
+  .cta2:hover{background:var(--pine);color:#fff}
+  html:not([data-sky="day"]) .cta2:hover{color:#141414}  /* D-193: by day --pine is the blue, white on it 8.09:1; after dark it is the light #8CBAF7 and takes ink */
   .cta2:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
   .cta2 .ic{flex:0 0 auto}
   @media (max-width:520px){
@@ -150,7 +151,7 @@
      to the 500 face — so deleting either @font-face would break app.html. This is a per-page
      saving, not a smaller font directory, and that distinction was worth checking before
      assuming otherwise. */
-  .closer{margin:18px 0 0;padding-top:16px;border-top:2px solid rgba(3,107,131,.18);
+  .closer{margin:18px 0 0;padding-top:16px;border-top:2px solid rgba(10,77,162,.18);
     font-family:var(--body);font-weight:600;font-size:17px;letter-spacing:0;text-align:center}
   /* demo shown in a phone mockup */
   .phone-link{display:block;text-decoration:none}
@@ -242,7 +243,7 @@
   .sentby a{display:inline-flex;align-items:center;min-height:44px;
     color:var(--pine);font-weight:700;font-family:var(--disp);
     font-size:14px;letter-spacing:.05em;text-transform:uppercase;text-decoration:none}
-  .sentby a span{border-bottom:2px solid rgba(3,107,131,.35);padding-bottom:1px}
+  .sentby a span{border-bottom:2px solid rgba(10,77,162,.35);padding-bottom:1px}
   .sentby a:hover span{border-bottom-color:var(--pine)}
   @media (max-width:520px){
     .sentby{padding:18px;margin:26px auto 22px}
@@ -294,7 +295,7 @@
 
   /* Our pick — not "most popular". One purchase has ever been made and it was the $2.50
      tier, so "popular" would be a claim we cannot support. This one we can: it is our pick. */
-  .card.mid{border-color:var(--accent);box-shadow:0 0 0 4px rgba(247,142,4,.16)}
+  .card.mid{border-color:var(--accent);box-shadow:0 0 0 4px rgba(242,106,27,.18)}
   .pick{position:absolute;top:-12px;left:22px;background:var(--accent);color:#141414;
     font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.14em;
     text-transform:uppercase;padding:4px 12px 3px;border-radius:999px}
@@ -315,9 +316,9 @@
     background:var(--accent);color:#141414;text-decoration:none;white-space:nowrap;
     font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.06em;
     text-transform:uppercase;border-radius:10px;padding:13px 10px;
-    box-shadow:0 2px 0 #C38D00;transition:transform .12s,box-shadow .12s,filter .12s}
+    box-shadow:0 2px 0 var(--accent-deep);transition:transform .12s,box-shadow .12s,filter .12s}
   .buy:hover{filter:brightness(1.06)}
-  .buy:active{transform:translateY(2px);box-shadow:0 0 0 #C38D00}
+  .buy:active{transform:translateY(2px);box-shadow:0 0 0 var(--accent-deep)}
   .buy:focus-visible{outline:3px solid var(--pine);outline-offset:2px}
 
   /* Swipe hint — only says anything while the rail actually scrolls. */
@@ -371,8 +372,9 @@
        nothing about the chip, and it is the pattern this file already uses: .cta and .buy put
        #141414 on gold at 10:1. Same ink, same reason. */
     .step .addr{display:inline-block;margin-top:14px;font-family:var(--disp);font-weight:700;
-    letter-spacing:.04em;font-size:15px;color:#141414;background:var(--pine);
+    letter-spacing:.04em;font-size:15px;color:#fff;background:var(--pine);
     border-radius:8px;padding:6px 11px}
+  html:not([data-sky="day"]) .step .addr{color:#141414}  /* D-193: white on the day blue, ink on the light night blue */
   @media (max-width:720px){ .steps{grid-template-columns:1fr;gap:14px} }
   .priv{background:var(--card);border:2px solid var(--ink);border-radius:18px;padding:28px;
     margin-top:clamp(46px,9vw,68px)}
@@ -421,6 +423,65 @@
     #claim input{background:var(--ground);color:var(--ink);border-color:var(--line)}
     .linkbox{background:#171B21}
   }
+  /* ── the road look (D-193, 2026-09-14) ─────────────────────────────────────────────────
+     Promoted from ?look=road. In daylight this page read as thios.co — rounded cards, gold
+     buttons, a blue sky field — so the surfaces become SIGNS and the route becomes STRUCTURE.
+     Colour lives in the tokens and sky.css; this block is only what is shaped like a road. */
+
+  /* Surfaces are signs: 3px edge, tight corners, and by day the white inset rule. */
+  .promise,.sentby,.saidbox,.step,.priv,.card{border-width:3px;border-radius:7px}
+  html[data-sky="day"] .promise,html[data-sky="day"] .sentby{border-color:var(--sign-ink)}
+  html[data-sky="day"] .promise,html[data-sky="day"] .sentby,html[data-sky="day"] .saidbox,
+  html[data-sky="day"] .step,html[data-sky="day"] .priv,html[data-sky="day"] #pricing .card{
+    outline:1.5px solid rgba(20,20,20,.22);outline-offset:-8px;
+    box-shadow:0 2px 0 rgba(20,20,20,.12),0 8px 18px rgba(80,60,20,.08)}
+  .alsotry code,.receipts span{border-radius:5px}
+  .cta,.buy,.cta2{border-radius:6px}
+  .pick{border-radius:4px}
+  .pillars li::before{border-radius:5px}
+
+  /* Section headings are guide-sign plates: blue field, white type, white inset rule. */
+  section h2{display:inline-block;background:var(--brand);color:#fff;text-shadow:none!important;
+    padding:9px 18px 8px;border-radius:6px;outline:2px solid #fff;outline-offset:-6px;
+    box-shadow:0 0 0 2px var(--brand-deep)}
+
+  /* Exit tabs: the step number is the tab on top of the sign. */
+  .steps{margin-top:34px;row-gap:40px}
+  .step{position:relative}
+  .step .n{position:absolute;top:-31px;left:14px;width:auto;height:30px;margin:0;padding:0 12px 0 10px;
+    border-radius:6px 6px 0 0;background:var(--brand);color:#fff;font-size:16px;letter-spacing:.08em;gap:6px;
+    box-shadow:0 0 0 2px var(--brand-deep)}
+  .step .n::before{content:"EXIT";font-size:12px;letter-spacing:.12em;opacity:.85}
+  .step .addr{border-radius:4px}
+
+  /* Mile markers on the tiers — the markers are the years the trip lasts: 1, 5, 10. A flex item
+     at the end of .price, so it can never collide with the tier name or its term. */
+  #pricing .card .price::after{margin-left:auto;align-self:flex-start;width:38px;padding:6px 0 7px;
+    background:var(--brand);color:#fff;border-radius:4px;
+    outline:1.5px solid #fff;outline-offset:-4px;box-shadow:0 0 0 1.5px var(--brand-deep);
+    font-family:var(--disp);font-weight:700;text-align:center;white-space:pre;
+    font-size:17px;line-height:1.05;letter-spacing:.02em;text-shadow:none}
+  #pricing .card:nth-child(1) .price::after{content:"YR\A 1"}
+  #pricing .card:nth-child(2) .price::after{content:"YRS\A 5"}
+  #pricing .card:nth-child(3) .price::after{content:"YRS\A 10"}
+
+  /* The centreline: dashed orange down the left of the main column, a blue stop at each section.
+     Desktop only — a phone has no gutter for it, and a line through the words is decoration
+     fighting them. */
+  @media (min-width:980px){
+    main.wrap{position:relative}
+    main.wrap::before{content:"";position:absolute;top:-10px;bottom:40px;left:-52px;width:5px;border-radius:3px;
+      background:repeating-linear-gradient(to bottom,var(--accent) 0 22px,transparent 22px 40px)}
+    main.wrap section h2{position:relative}
+    main.wrap section h2::before,#pricing::before{content:"";position:absolute;left:-83px;top:50%;
+      width:22px;height:22px;margin-top:-11px;box-sizing:border-box;border-radius:50%;
+      background:var(--brand);border:4px solid #fff;box-shadow:0 0 0 2px var(--brand-deep)}
+    /* "Why we charge" sits inside the .priv sign: 3px border + 28px padding further in */
+    main.wrap .priv h2::before{left:-114px}
+    /* pricing has no heading, so its stop sits beside the first line */
+    #pricing{position:relative}
+    #pricing::before{top:calc(clamp(46px,9vw,68px) + 2px);margin-top:0}
+  }
 </style>
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
 <script type="application/ld+json">
@@ -467,7 +528,7 @@
 </nav>
 
 <header class="hero"><div class="wrap">
-  <img class="brand-logo" src="/logo.svg?v=2" width="164" height="184"
+  <img class="brand-logo" src="/logo.svg?v=4" width="164" height="164"
        alt="this trip, btw" fetchpriority="high">
 
   <!-- #14, 2026-08-02. The old line ("privately woven together … quietly better at every
@@ -483,8 +544,8 @@
   </div>
   <a class="phone-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener" aria-label="Open the live demo trip">
     <span class="phone"><span class="phone-screen"><picture>
-      <source media="(min-width:720px)" srcset="demo-land.jpg?v=3">
-      <img src="demo-phone.jpg?v=3" alt="A live trip on the map — four friends converging on Lake Tahoe by car and by plane">
+      <source media="(min-width:720px)" srcset="demo-land.jpg?v=4">
+      <img src="demo-phone.jpg?v=4" alt="A live trip on the map — a Tahoe loop with driving and flight legs, and pins where people stopped">
     </picture></span></span>
     <span class="phone-cap"><svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4.8 19 12 8 19.2z"/></svg> Live demo — tap to open</span>
   </a>

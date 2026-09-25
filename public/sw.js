@@ -63,7 +63,7 @@ let KILLED = false;
 const LOG = [];
 const note = m => { LOG.push(m); if (LOG.length > 40) LOG.shift(); };
 
-const V     = "ttb-shell-v3";   // v3: the logo recoloured to the palette (D-192); activate() drops v2
+const V     = "ttb-shell-v5";   // v5: D-193 road look — blue/orange tokens and shield; activate() drops v4
 const SHELL = V + "-shell";
 const RUN   = V + "-runtime";
 
@@ -78,16 +78,16 @@ const SHELL_KEY = "/__ttb_shell";
    <script src>, so it does not appear in any grep for tags. Missing it means an offline page with
    no basemap — the exact failure D-167 and cbda85b each cost this repo days over. */
 const ASSETS = [
-  "/tokens.css?v=6",
+  "/tokens.css?v=7",
   "/fonts.css?v=1",
   "/vendor/leaflet-1.9.4/leaflet.min.css?v=1",
   "/vendor/leaflet-1.9.4/leaflet.min.js?v=1",
   "/legs.js?v=3",
-  "/ring.js?v=3",
+  "/ring.js?v=4",
   "/sheet.js?v=1",
   "/places.js?v=5",
   "/mapstyle.js?v=5",
-  "/logo.svg?v=2",
+  "/logo.svg?v=4",
   "/fonts/barlow-400.woff2",
   "/fonts/barlow-500.woff2",
   "/fonts/barlow-600.woff2",

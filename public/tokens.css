@@ -5,9 +5,9 @@
 
 :root {
   /* ── brand (the sign) ── */
-  --color-brand-teal:   #035A83;
-  --color-brand-teal-deep: #024260;   /* F-14: the outline under the plate */
-  --color-brand-orange: #F7B304;
+  --color-brand-teal:   #0A4DA2;   /* D-193: motorway blue (was teal #035A83) */
+  --color-brand-teal-deep: #073A7A;   /* F-14: the outline under the plate */
+  --color-brand-orange: #F26A1B;   /* D-193: highway orange (was gold #F7B304) */
   --color-brand-board:  #ECECEC;
   --color-brand-ink:    #141414;
 
@@ -44,7 +44,7 @@
      nothing used while four tuned 172deg ones shipped, so /new invented a fifth. A token
      that disagrees with what renders is worse than no token — it invites a third value. */
   --gradient-sky-dawn:  linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
-  --gradient-sky-day:   linear-gradient(172deg,#EAF3FA 0%,#7FBBDE 60%,#3E8FC4 100%);
+  --gradient-sky-day:   linear-gradient(172deg,#F7F2E7 0%,#F3ECDD 60%,#EFE6D2 100%);   /* D-193: road-atlas paper */
   --gradient-sky-night: linear-gradient(172deg,#0A0F2A 0%,#131240 38%,#1D1652 70%,#281B5C 100%);
   --gradient-sky-dusk:  linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
 

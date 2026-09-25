@@ -20,10 +20,10 @@
    So the teal never moves. The board does the work, and links fall back to the other
    brand anchor (sign orange) on dark skies rather than to an invented hue. */
 :root {
-  --brand:      var(--color-brand-teal,   #035A83);
-  --brand-deep: var(--color-brand-teal-deep, #024260);
-  --accent:      var(--color-brand-orange, #F7B304);
-  --accent-deep: #C38D00;                 /* the pressed edge under a gold button */
+  --brand:      var(--color-brand-teal,   #0A4DA2);
+  --brand-deep: var(--color-brand-teal-deep, #073A7A);
+  --accent:      var(--color-brand-orange, #F26A1B);
+  --accent-deep: #B8480A;                 /* the pressed edge under an orange button (D-193; was #C38D00 under gold) */
   --sign-ink:    var(--color-brand-ink, #141414);
   --board:      var(--color-brand-board,  #ECECEC);
   --link:       var(--brand);
@@ -43,7 +43,11 @@
    other D-026 anchor, not a new colour. Filled things (the sign, .btn) stay teal: a solid
    plate with white text reads at any hour, which is the whole point of a highway sign. */
 html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: var(--accent); }
-@media (prefers-color-scheme: dark) { :root { --link: var(--accent); } }
+/* NO-JS FALLBACK ONLY (fixed 2026-09-14). This used to be `:root`, so an OS in dark mode turned
+   links orange on the DAY sky too — the head script sets data-sky from the clock, not the OS, so a
+   phone in dark mode at noon got orange on white: 3.06:1, and 2.65:1 on the paper (the old gold
+   was 1.84:1). Found by the post-D-193 sweep. The sky decides; the OS only speaks when no sky did. */
+@media (prefers-color-scheme: dark) { html:not([data-sky]) { --link: var(--accent); } }
 
 /* ── shared header ────────────────────────────────────────────────────────────────────
    Every non-trip page gets the same one: the sign, and the same menu the landing page has.
@@ -139,15 +143,15 @@ html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: v
   border-radius: 0 10px 10px 0; padding: 16px 18px;
 }
 @supports not (background: color-mix(in srgb, red 9%, transparent)) {
-  .pagebody.sheet .card { background: rgba(247,142,4,.09); }
+  .pagebody.sheet .card { background: rgba(242,106,27,.09); }
 }
 
 /* ── one button, everywhere ─────────────────────────────────────────────────────────────
    Primary actions are GOLD, not teal (Peter, 2026-07-27). Both are D-026 anchors; this makes
    the sign orange mean "the thing to press" and leaves teal to mean "this is us".
 
-   The text is ink, never white. White on #F7B304 is 2.4:1 and fails WCAG AA outright; ink
-   #141414 on it is 7.8:1. It is also just how a highway sign works — black on amber — so the
+   The text is ink, never white. White on the D-193 orange #F26A1B is 3.06:1 and fails AA for
+   button text; ink #141414 on it is 6.0:1. It is also just how a highway sign works — black on amber — so the
    accessible choice and the on-brand one are the same choice here. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -156,12 +160,12 @@ html[data-sky="dusk"], html[data-sky="night"], html[data-sky="dawn"] { --link: v
   font-family: var(--disp, "Barlow Condensed", sans-serif); font-weight: 700;
   font-size: 16px; letter-spacing: .06em; text-transform: uppercase;
   border: 0; border-radius: 10px; cursor: pointer;
-  box-shadow: 0 2px 0 var(--accent-deep, #C38D00);
+  box-shadow: 0 2px 0 var(--accent-deep, #B8480A);
   transition: transform .12s, box-shadow .12s, filter .12s;
 }
 .btn:hover { filter: brightness(1.06); }
 /* Presses down onto its own shadow rather than changing colour — the colour IS the meaning. */
-.btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--accent-deep, #C38D00); }
+.btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--accent-deep, #B8480A); }
 .btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 .btn-quiet {
   background: transparent; color: var(--link);
@@ -351,3 +355,27 @@ html.scrolled .minimark { opacity: 1; transform: none; pointer-events: auto; }
   }
   .pagebody td + td { color: var(--soft); line-height: 1.6; }
 }
+
+/* ── surfaces are signs (D-193, 2026-09-14) ──────────────────────────────────────────────
+   The set used to be rounded startup cards — the same kit thios.co uses, which was half of why
+   the two read as one family. A guide sign has tight corners, a heavy edge and a white rule
+   inset from it, and its headings are plates. So: 3px edge and 7px corners on the sheet, the
+   inset rule by day (on the dark skies the edge is already light on dark and a second line is
+   noise), and h2 on a blue plate in white type. Buttons take 6px corners. */
+.pagebody.sheet { border-width: 3px; border-radius: 7px; }
+html[data-sky="day"] .pagebody.sheet {
+  outline: 1.5px solid rgba(20,20,20,.22); outline-offset: -8px;
+  box-shadow: 0 2px 0 rgba(20,20,20,.12), 0 8px 18px rgba(80,60,20,.08);
+}
+/* the callout inside a sheet stays a callout, not a sign in a sign */
+.pagebody.sheet .card { border-left-width: 5px; border-radius: 0 4px 4px 0; }
+.pagebody h2 {
+  display: inline-block; background: var(--brand); color: #fff; text-shadow: none;
+  font-size: 17px; padding: 8px 15px 7px; border-radius: 6px;
+  outline: 2px solid #fff; outline-offset: -6px;
+  box-shadow: 0 0 0 2px var(--brand-deep);
+}
+.btn { border-radius: 6px; }
+.pagefoot { border-radius: 7px; }
+#menu { border-radius: 7px; }
+#menu a { border-radius: 4px; }

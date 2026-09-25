@@ -37,10 +37,10 @@
      pasting these links into Slack and iMessage are exactly the audience for the last
      sentence. The account claim stays scoped to its path (D-086) — "no account to look". -->
 <meta property="og:description" content="A private map with the whole trip on it — stops, notes, photos. Open the link they sent you, no account to look. An AI assistant can read it and add to it too.">
-<meta property="og:image" content="https://thistripbtw.us/og.png?v=2">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=2">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=3">
 <meta name="description" content="A private map with the whole trip on it. Open the link you were sent.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Someone shared a trip with you">
@@ -70,15 +70,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="this trip">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icon-180.png?v=1">
+<link rel="apple-touch-icon" href="/icon-180.png?v=2">
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=6"><!-- design system palette (D-030) -->
+<link rel="stylesheet" href="/tokens.css?v=7"><!-- design system palette (D-030) -->
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
 <style>
   :root{
     /* brand palette driven by the design system (D-030 tokens.css); semantic names kept so rules don't change */
-    --pine:var(--color-brand-teal,#035A83); --pine-deep:var(--color-brand-teal-deep,#024260); --accent:var(--color-brand-orange,#F7B304); --card:#fff; --tabbg:#EFEDE5;
+    --pine:var(--color-brand-teal,#0A4DA2); --pine-deep:var(--color-brand-teal-deep,#073A7A); --accent:var(--color-brand-orange,#F26A1B); --card:#fff; --tabbg:#EFEDE5;
     --sheet:#FCFBF8; --ink:#333333; --ink-soft:#6B675F;
     --line:#E4E1D8;
     --truck:#F2A900; --truck-deep:#B57F00;
@@ -97,7 +97,7 @@
     color-scheme: dark;
     --sheet:#171B21; --card:#1F252D; --ink:#E9EAE6; --ink-soft:#9BA1A8;
     --line:#2C333C; --tabbg:#242B34;
-    --pine-text:#4FC2D8;                  /* 6.4:1 on the dark card — was 2.52:1 (audit F11) */
+    --pine-text:#8CBAF7;                  /* D-193: the lifted blue, was cyan #4FC2D8. 7.7:1 on the dark card, 8.6:1 on the sheet */
     --danger:#F08A72;                     /* was 2.71:1 on dark */
     --truck:#F2A900; --truck-deep:#F2A900;
     --rental:#5FA8DC; --rental-deep:#5FA8DC;
@@ -115,6 +115,7 @@
     text-align:center;font-size:13px;font-weight:600;padding:calc(env(safe-area-inset-top) + 6px) 12px 6px;
     transform:translateY(-100%);transition:transform .25s ease;pointer-events:none}
   #offline.show{transform:translateY(0)}
+  [data-theme="dark"] #offline{color:#141414}   /* white on the dark --danger #F08A72 was 2.45:1; ink is 7.53:1 (2026-09-14 sweep) */
 
   /* ── top bar: highway sign ─────────────────────────────── */
   #topbar{position:fixed;top:0;left:0;right:0;z-index:20;
@@ -301,7 +302,7 @@
      Gold, because D-061 makes it the attention colour and its text is ink at 10:1 — and
      deliberately NOT the pill shape of #viewTag, which would read as the same kind of label.
      A live state and a permission notice should not look alike. */
-  #editTag{background:var(--accent,#F7B304);color:#141414;
+  #editTag{background:var(--accent,#F26A1B);color:#141414;
     font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.12em;
     text-transform:uppercase;border-radius:6px;padding:6px 10px;
     box-shadow:0 3px 10px rgba(0,0,0,.22);display:none;white-space:nowrap}
@@ -324,7 +325,7 @@
   body.can-preview:not(.readonly) #editTag{display:inline-flex}
   /* Previewing is a state you are HOLDING, not a place you are stuck — the pill says so with the
      accent's edge, so it never reads as the flat grey a real viewer sees. */
-  body.can-preview.readonly #viewTag{box-shadow:0 3px 10px rgba(0,0,0,.22), inset 0 0 0 2px var(--accent,#F7B304)}
+  body.can-preview.readonly #viewTag{box-shadow:0 3px 10px rgba(0,0,0,.22), inset 0 0 0 2px var(--accent,#F26A1B)}
   @media (max-width:430px){ #editTag .lbl{display:none} #editTag{padding:6px 8px} }
   #menuBtn{background:var(--card);color:var(--ink);border-radius:50%;width:40px;height:40px;
     font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,.22)}
@@ -513,9 +514,9 @@
      teal do. Full width and 44px because it is a control. Mirrors .crewhint on /new. */
   .joinhint{display:block;width:calc(100% - 24px);margin:2px 12px 10px;padding:11px 12px;
     min-height:44px;text-align:left;font-family:var(--body);font-size:13px;line-height:18px;
-    color:var(--color-brand-teal,#035A83);background:none;cursor:pointer;
-    border:1.5px dashed var(--color-brand-teal,#035A83);border-radius:11px}
-  .joinhint:active{background:rgba(3,90,131,.08)}
+    color:var(--color-brand-teal,#0A4DA2);background:none;cursor:pointer;
+    border:1.5px dashed var(--color-brand-teal,#0A4DA2);border-radius:11px}
+  .joinhint:active{background:rgba(10,77,162,.08)}
   html:not([data-sky="day"]) .joinhint{color:#8FC2D6;border-color:#8FC2D6}
   /* 44px target, per DESIGN.md — the dismiss is the control someone in a hurry reaches for. */
   #keepBar #keepX{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;
@@ -675,7 +676,7 @@
   .card{background:var(--card);border:2px solid var(--ink);border-radius:var(--radius);
     margin-bottom:8px;overflow:hidden;position:relative}
   /* no colored side bars — cards read as complete highway signs (border only, D-022) */
-  .card.focus{box-shadow:0 0 0 3px rgba(3,107,131,.65)}
+  .card.focus{box-shadow:0 0 0 3px rgba(10,77,162,.65)}
   .card-top{display:flex;align-items:center;gap:8px;padding:10px 34px 0 16px}   /* right pad clears the corner tag */
   .stopnum{flex:none;width:26px;height:26px;border-radius:50%;color:#fff;
     display:flex;align-items:center;justify-content:center;
@@ -1304,18 +1305,19 @@
      type and nothing to open, so both controls have to actually go. */
   .gate-in[hidden],.gate-btn[hidden]{display:none}
   .bigsign{border:3px solid #fff;outline:3px solid var(--pine-deep);
-    border-radius:14px;padding:18px 30px}
+    border-radius:7px;padding:18px 30px}
   .bigsign h1{font-family:var(--disp);font-weight:700;font-size:38px;
     letter-spacing:.06em;text-transform:uppercase;line-height:1}
   .bigsign small{font-family:var(--disp);font-size:13px;letter-spacing:.2em;
-    text-transform:uppercase;display:block;background:var(--accent);
-    margin:-18px -30px 8px;padding:5px 30px 4px;border-radius:11px 11px 0 0}
+    text-transform:uppercase;display:block;background:var(--accent);color:#141414;
+    margin:-18px -30px 8px;padding:5px 30px 4px;border-radius:4px 4px 0 0}
   #gate p,#namegate p{max-width:320px;font-size:15px;opacity:.9}
   .gate-in{width:min(320px,80vw);font-size:18px;text-align:center;padding:13px 14px;
     border-radius:10px;border:0;background:#fff;color:#333333;letter-spacing:.02em}
   .gate-in::placeholder{color:#6B675F}   /* 2.95:1 -> 5.6:1 */
   .gate-in:focus{outline:3px solid var(--accent)}
-  .gate-btn{background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;
+  .gate-btn{background:var(--accent);color:#141414;   /* D-193: ink on the orange, never white (white was 1.84:1 on the old gold) */
+    font-family:var(--disp);font-weight:700;
     font-size:16px;letter-spacing:.08em;text-transform:uppercase;
     border-radius:10px;padding:13px 26px}
   #gateErr{color:#FFD9CF;font-size:14px;max-width:320px;min-height:18px}
@@ -1467,7 +1469,7 @@
 <div id="offline" role="status" aria-live="polite"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 21.6 20H2.4z"/><path d="M12 9.6v4.2M12 17.1v.01"/></svg> Offline — your changes may not be saving. Reconnecting…</div>
 
 <header id="topbar">
-  <a id="sign" href="/" title="this trip, btw — home" aria-label="this trip, btw — home"><img src="/logo.svg?v=2" width="164" height="184" alt=""></a>
+  <a id="sign" href="/" title="this trip, btw — home" aria-label="this trip, btw — home"><img src="/logo.svg?v=4" width="164" height="164" alt=""></a>
   <div id="topright">
     <span id="viewTag" title="view-only link"><span class="lbl">View only</span></span>
     <span id="editTag" title="You have the edit link. Anything you change here is live straight away for everyone holding a link to this trip."><span class="dot"></span>Editing<span class="lbl"> · live</span></span>
@@ -1701,7 +1703,7 @@
 
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
 <script src="/legs.js?v=3"></script>
-<script src="/ring.js?v=3"></script>
+<script src="/ring.js?v=4"></script>
 <script src="/sheet.js?v=1"></script>
 <script src="/places.js?v=7"></script>
 <script>

@@ -51,7 +51,7 @@
 
     ".ttbr .seg{cursor:pointer}",
     ".ttbr .seg .wedge{fill:var(--card,#fff);stroke:var(--ink,#141414);stroke-width:2;transition:fill .1s}",
-    ".ttbr .seg:hover .wedge,.ttbr .seg:focus-visible .wedge{fill:var(--color-brand-orange,#F7B304)}",
+    ".ttbr .seg:hover .wedge,.ttbr .seg:focus-visible .wedge{fill:var(--color-brand-orange,#F26A1B)}",
     ".ttbr .seg:focus-visible{outline:none}",
     ".ttbr .seg:focus-visible .wedge{stroke-width:3.5}",
     ".ttbr .seg .lbl{font-family:var(--font-family-display,\"Barlow Condensed\",sans-serif);",
@@ -59,14 +59,14 @@
     "  pointer-events:none;text-anchor:middle;dominant-baseline:middle}",
     ".ttbr .seg .gly{fill:none;stroke:var(--ink,#141414);stroke-width:1.9;stroke-linecap:round;",
     "  stroke-linejoin:round;pointer-events:none}",
-    ".ttbr .hub{fill:var(--color-brand-teal,#035A83);stroke:#fff;stroke-width:3}",
+    ".ttbr .hub{fill:var(--color-brand-teal,#0A4DA2);stroke:#fff;stroke-width:3}",
     ".ttbr .hub-t{font-family:var(--font-family-display,\"Barlow Condensed\",sans-serif);font-weight:700;",
     "  font-size:10px;letter-spacing:.12em;text-transform:uppercase;fill:rgba(255,255,255,.66);",
     "  text-anchor:middle}",
     ".ttbr .hub-p{font-family:var(--font-family-display,\"Barlow Condensed\",sans-serif);font-weight:700;",
     "  fill:#fff;text-anchor:middle}",
     ".ttbr .hub-back{cursor:pointer}",
-    ".ttbr .hub-back:hover .hub{fill:var(--color-brand-teal-deep,#024260)}",
+    ".ttbr .hub-back:hover .hub{fill:var(--color-brand-teal-deep,#073A7A)}",
 
     /* Typing gets a card. A ring cannot hold a keyboard. */
     ".ttbr-ask{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);",
@@ -79,14 +79,14 @@
     ".ttbr-ask input{width:100%;min-height:46px;padding:11px 13px;border:2px solid var(--line,#d8d8d8);",
     "  border-radius:11px;background:var(--sheet,var(--card,#fff));color:var(--ink,#141414);",
     "  font-size:16px;font-family:var(--font-family-body,\"Barlow\",system-ui,sans-serif)}",   /* canonical: --body is a pages.css/quick.html alias and new.html loads neither */
-    ".ttbr-ask input:focus{outline:0;border-color:var(--color-brand-teal,#035A83)}",
+    ".ttbr-ask input:focus{outline:0;border-color:var(--color-brand-teal,#0A4DA2)}",
     ".ttbr-ask .row{display:flex;gap:8px;margin-top:11px}",
     ".ttbr-ask button{flex:1;min-height:46px;border-radius:11px;",
     "  font-family:var(--font-family-display,\"Barlow Condensed\",sans-serif);font-weight:700;font-size:14px;",
     "  letter-spacing:.05em;text-transform:uppercase;border:2px solid var(--line,#d8d8d8);",
     "  background:var(--card,#fff);color:var(--ink,#141414)}",
-    ".ttbr-ask button.go{background:var(--color-brand-orange,#F7B304);",
-    "  border-color:var(--color-brand-orange,#F7B304);color:#141414}"
+    ".ttbr-ask button.go{background:var(--color-brand-orange,#F26A1B);",
+    "  border-color:var(--color-brand-orange,#F26A1B);color:#141414}"
   ].join("");
 
   function injectCss() {

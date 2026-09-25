@@ -243,5 +243,67 @@ ok('a link over the ceiling gets a long-link note at all', $jsNote !== '' && $ph
 ok('and both servers word it identically', $jsNote === $phpNote,
    "js:  $jsNote\n      php: $phpNote");
 
+/* ── 1.3.3: annotations and output schemas ────────────────────────────────────────────────
+   Both are new SURFACE, so both are new places to drift. The rule they add: a tool that
+   declares an output schema must return structuredContent on every non-error result, and the
+   two servers must return the SAME structuredContent for the same arguments — otherwise the
+   npx path and the hosted path hand code two different objects for one itinerary, which is the
+   text-level bug this file was written for, one layer down. */
+$annotated = [];
+foreach ($byName as $n => $t) {
+    $a = $t['annotations'] ?? null;
+    if (!is_array($a) || !isset($a['title'], $a['readOnlyHint'], $a['destructiveHint'],
+                                $a['idempotentHint'], $a['openWorldHint'])) $annotated[] = $n;
+    if (!isset($t['outputSchema']['type'])) $annotated[] = $n . ' (no output schema)';
+}
+ok('every tool carries full annotations and an output schema', $annotated === [], implode(', ', $annotated));
+
+/* The honest ones, asserted rather than assumed: only the writer is not read-only, and only the
+   three that reach thistripbtw.us are open-world. Change the server and this test says so. */
+ok('add_to_kept_trip is the only tool that is not read-only',
+   array_keys(array_filter($byName, fn($t) => ($t['annotations']['readOnlyHint'] ?? true) === false)) === ['add_to_kept_trip']);
+$open = array_keys(array_filter($byName, fn($t) => ($t['annotations']['openWorldHint'] ?? false) === true));
+sort($open);
+ok('exactly the three network tools are open-world', $open === ['add_to_kept_trip', 'find_place', 'read_kept_trip'],
+   implode(',', $open));
+ok('nothing is marked destructive — there is no delete tool (D-072)',
+   array_filter($byName, fn($t) => ($t['annotations']['destructiveHint'] ?? false) === true) === []);
+
+/* The PHP mirror serves the committed schema files, so this also proves the files were
+   regenerated after the .mjs changed — a stale file would lose the annotations here. */
+$phpByName = [];
+foreach (($phpList['result']['tools'] ?? []) as $t) $phpByName[$t['name']] = $t;
+$mismatch = [];
+foreach ($byName as $n => $t) {
+    if (($phpByName[$n]['annotations'] ?? null) != ($t['annotations'] ?? null)) $mismatch[] = "$n annotations";
+    if (($phpByName[$n]['outputSchema'] ?? null) != ($t['outputSchema'] ?? null)) $mismatch[] = "$n outputSchema";
+}
+ok('both servers publish the same annotations and output schemas', $mismatch === [], implode(', ', $mismatch));
+
+/* structuredContent, compared the way the URLs above are: through tools/call on both sides. */
+$structured = function (array $args, bool $js) {
+    if ($js) {
+        $req = json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+                            'params'=>['name'=>'build_trip_link','arguments'=>$args]]);
+        $out = shell_exec("printf '%s\\n' " . escapeshellarg($req) . ' | node '
+             . escapeshellarg(dirname(__DIR__) . '/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null');
+        $j = json_decode(trim(explode("\n", trim((string)$out))[0]), true);
+        return $j['result']['structuredContent'] ?? null;
+    }
+    $r = mcp_handle(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+                     'params'=>['name'=>'build_trip_link','arguments'=>$args]]);
+    return $r['result']['structuredContent'] ?? null;
+};
+$sc = $structured($shortTrip, true);
+ok('build_trip_link returns structuredContent matching its schema',
+   is_array($sc) && isset($sc['link'], $sc['legs']) && str_starts_with((string)$sc['link'], 'https://') && $sc['legs'] === 1,
+   json_encode($sc));
+ok('and both servers return the same structuredContent', $sc == $structured($shortTrip, false),
+   json_encode($sc) . ' vs ' . json_encode($structured($shortTrip, false)));
+
+/* A refusal has no structuredContent — the schema describes success, and an isError result that
+   carried a half-filled object would be worse than none. */
+ok('a refused build carries no structuredContent', $structured(['legs'=>[]], true) === null);
+
 echo "\n" . ($fail ? "\033[31m$fail failed\033[0m, " : '') . "\033[32m$pass\033[0m passed\n";
 exit($fail ? 1 : 0);

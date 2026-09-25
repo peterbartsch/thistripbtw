@@ -49,7 +49,9 @@ function og_card_render(string $name): ?string {
     $x = (int)((1200 - $w) / 2) - $b[0];
     $y = 400;                                   // baseline, clear of the sign and the band
 
-    $ink = imagecolorallocate($im, 0xF0, 0xF7, 0xFB);
+    /* D-193: the base is road-atlas paper now, so the name is sign ink, not the near-white it was
+       on the teal field. #141414 on #F3ECDD is 16:1. */
+    $ink = imagecolorallocate($im, 0x14, 0x14, 0x14);
     imagettftext($im, $size, 0, $x, $y, $ink, $font, $name);
 
     ob_start();

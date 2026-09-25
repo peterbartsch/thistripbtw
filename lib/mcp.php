@@ -487,7 +487,10 @@ function mcp_handle(array $msg): ?array {
                 $r = mcp_read_link($args);
                 return mcp_ok($id, ['content' => [['type' => 'text',
                     'text' => $r['summary'] . "\n\nAs build_trip_link arguments:\n"
-                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]],
+                    /* The same data the text carries, in the shape tools/list promises. Text for
+                       the model, structuredContent for code — see the .mjs for the rule. */
+                    'structuredContent' => ['trip' => $r['trip'], 'legs' => $r['legs'], 'summary' => $r['summary']]]);
             } catch (\Throwable $e) {
                 return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not read that: ' . $e->getMessage()]], 'isError' => true]);
             }
@@ -495,19 +498,22 @@ function mcp_handle(array $msg): ?array {
         $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
         if ($name === 'find_place') {
             try { $r = mcp_find_place($args);
-                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary'] . "\n\nAs data:\n```json\n" . json_encode($r['results'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary'] . "\n\nAs data:\n```json\n" . json_encode($r['results'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]],
+                    'structuredContent' => ['results' => $r['results'], 'summary' => $r['summary']]]);
             } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not find that: ' . $e->getMessage()]], 'isError' => true]); }
         }
         if ($name === 'amend_trip_link') {
             try { $r = mcp_amend_link($args); $c = $r['changed'];
                 $what = implode(', ', array_filter([$c['added'] ? "added {$c['added']}" : null, $c['removed'] ? 'removed one' : null,
                     $c['replaced'] ? 'replaced the legs' : null, $c['name'] ? 'renamed' : null, $c['origin'] ? 'moved the start' : null])) ?: 'no change';
-                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => "Trip link ({$r['legs']} " . ($r['legs'] === 1 ? 'leg' : 'legs') . ", $what):\n{$r['url']}\n\nThis replaces the earlier link — give the person this one." . mcp_long_link_note($r['url'])]]]);
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => "Trip link ({$r['legs']} " . ($r['legs'] === 1 ? 'leg' : 'legs') . ", $what):\n{$r['url']}\n\nThis replaces the earlier link — give the person this one." . mcp_long_link_note($r['url'])]],
+                    'structuredContent' => ['link' => $r['url'], 'legs' => $r['legs'], 'changed' => $r['changed']]]);
             } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not amend that: ' . $e->getMessage()]], 'isError' => true]); }
         }
         if ($name === 'add_to_kept_trip') {
             try { $r = mcp_add_to_kept($args);
-                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary']]]]);
+                return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $r['summary']]],
+                    'structuredContent' => ['id' => $r['id'], 'stops' => $r['stops'], 'summary' => $r['summary']]]);
             } catch (\Throwable $e) { return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not add that: ' . $e->getMessage()]], 'isError' => true]); }
         }
         if ($name === 'read_kept_trip') {
@@ -516,7 +522,8 @@ function mcp_handle(array $msg): ?array {
                 $r = mcp_read_kept($args);
                 return mcp_ok($id, ['content' => [['type' => 'text',
                     'text' => $r['summary'] . "\n\nThe trip as data:\n"
-                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]]]);
+                            . "```json\n" . json_encode($r['trip'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n```"]],
+                    'structuredContent' => ['trip' => $r['trip'], 'stops' => $r['stops'], 'summary' => $r['summary']]]);
             } catch (\Throwable $e) {
                 return mcp_ok($id, ['content' => [['type' => 'text', 'text' => 'Could not read that: ' . $e->getMessage()]], 'isError' => true]);
             }
@@ -529,7 +536,8 @@ function mcp_handle(array $msg): ?array {
                   . "Give this to the person rather than opening it yourself. It costs nothing and "
                   . "asks for nothing; if they want it to last, they can keep it from that page."
                   . mcp_long_link_note($r['url']);
-            return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $text]]]);
+            return mcp_ok($id, ['content' => [['type' => 'text', 'text' => $text]],
+                                'structuredContent' => ['link' => $r['url'], 'legs' => $r['legs']]]);
         } catch (\Throwable $e) {
             /* A tool error is a RESULT with isError, not a JSON-RPC error. The model reads it,
                fixes the argument and calls again — a protocol error would just look broken. */

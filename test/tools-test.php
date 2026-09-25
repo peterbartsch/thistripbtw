@@ -1,9 +1,35 @@
 <?php
 /** Unit tests for lib/tools.php — no DB, no network: the write path is injected. */
+/* SECURE_ACCESS, or this test stops halfway and says nothing about it. lib/tools.php pulls in
+   flights.php → varstore.php lazily, and varstore's guard is `exit('forbidden')` — so the run
+   ended mid-file, printed 'forbidden' after a stray headers-already-sent warning, and still
+   exited 0. That is the `test-tools` flake logged twice in TODO_PETE: not flaky at all, just a
+   guard doing its job to a caller that never claimed to be the app. Defining it is what every
+   other PHP test here does. */
+define('SECURE_ACCESS', true);
 // chat.php reads config via env(); api.php loads config.php before it in production.
 // The tests exercise chat.php standalone, so stub it with defaults only.
 if (!function_exists('env')) { function env($k, $d = null) { return $d; } }
 require __DIR__ . '/../lib/tools.php';
+
+/* Strip comments with PHP's OWN tokenizer, never a regex (2026-09-24). A regex cannot tell a
+   comment from a slash-star inside a string or a regex literal, and lib/chat.php has 23 opens
+   against 20 closes for exactly that reason. The old one here ate 8 KB of real code, INCLUDING
+   the whole of chat_rate_ok(), so the two assertions below about hashing the address were
+   reading an empty string. They failed loudly only because this file stopped running before
+   reaching them (the SECURE_ACCESS bug above) — written the other way round they would have
+   PASSED on nothing, which is the version of this bug that never gets found. A test that cannot
+   see the code it asserts on is worse than no test.
+   (Writing this comment broke the file once: the sample regex it used to quote contains a
+   star-slash, which closed the comment early. Hence the prose.) */
+function src_no_comments(string $file): string {
+    $out = '';
+    foreach (token_get_all(file_get_contents($file)) as $t) {
+        if (is_array($t)) { if (in_array($t[0], [T_COMMENT, T_DOC_COMMENT], true)) continue; $out .= $t[1]; }
+        else $out .= $t;
+    }
+    return $out;
+}
 
 $pass = 0; $fail = 0;
 function ok(string $what, bool $cond) {
@@ -142,9 +168,11 @@ ok('history keeps the MOST RECENT turns', chat_sanitize_history($long)[CHAT_MAX_
 ok('garbage history is empty, not fatal', chat_sanitize_history('nope') === [] && chat_sanitize_history(null) === []);
 
 // the promise "your conversation is never stored" has to be checkable
-$chatSrc = preg_replace('~/\*.*?\*/|//[^\n]*~s', '', file_get_contents(__DIR__ . '/../lib/chat.php'));
+$chatSrc = src_no_comments(__DIR__ . '/../lib/chat.php');
+/* SQL keywords as SQL, not as substrings: `UPDATE` alone matched `var_update()`, the file-lock
+   counter helper, and called it a database write. */
 ok('chat.php never writes to the database at all',
-   !preg_match('/\bq\(|INSERT|UPDATE|DELETE FROM/i', $chatSrc));
+   !preg_match('/\bq\(|\bINSERT\s+INTO\b|\bDELETE\s+FROM\b|\bUPDATE\s+`?\w+`?\s+SET\b/i', $chatSrc));
 // It does write one file — the month's token counter. Assert that is the ONLY write, and
 // that what goes into it is a count, never anything derived from the conversation.
 preg_match_all('/(file_put_contents|fwrite|fopen)\s*\(([^;]*)/i', $chatSrc, $writes);
@@ -155,8 +183,13 @@ $targets = array_map('trim', $writes[2] ?? []);
 // them can receive anything derived from the conversation.
 ok('every write targets a variable path, never a literal',
    !preg_match('/(fopen|file_put_contents|fwrite)\s*\(\s*[\'"]/', $chatSrc));
-ok('every write encodes a plain structure, not message data',
-   count($targets) > 0 && count(array_filter($targets, fn($t) => str_contains($t, 'json_encode'))) === count($targets));
+/* The counters moved behind var_update() (lib/varstore.php), which holds one lock across the
+   read and the write — so chat.php now performs NO file write of its own. The property this
+   asserts is unchanged and stronger: nothing here opens a file, and the only persistence is a
+   call that takes a path and a closure returning a plain array. */
+ok('chat.php performs no file write of its own', count($targets) === 0);
+ok('its only persistence is var_update, which writes a plain structure under a lock',
+   str_contains($chatSrc, 'var_update('));
 ok('the counters live under var/, not beside user data',
    substr_count($chatSrc, "/var'") + substr_count($chatSrc, "'/var") >= 1
    || str_contains($chatSrc, "dirname(__DIR__) . '/var'"));
@@ -216,7 +249,7 @@ ok('per-IP cap exists and is small', CHAT_DRAFT_PER_IP > 0 && CHAT_DRAFT_PER_IP 
 ok('a missing address never locks anyone out', chat_rate_ok('') === true);
 
 // the address must never be recoverable from what we keep
-$rateSrc = preg_replace('~/\*.*?\*/|//[^\n]*~s', '', file_get_contents(__DIR__ . '/../lib/chat.php'));
+$rateSrc = $chatSrc;
 preg_match('/function chat_rate_ok.*?\n\}/s', $rateSrc, $m);
 $fn = $m[0] ?? '';
 ok('the raw address is hashed before it is stored', str_contains($fn, "hash('sha256'"));
