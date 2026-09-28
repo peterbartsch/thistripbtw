@@ -622,7 +622,7 @@
     color:var(--color-brand-board);font-size:13px;padding:9px 14px;border-radius:var(--radius-pill);
     box-shadow:var(--shadow-sheet);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
   .toast.on{opacity:.97}
-  .pin{background:var(--color-route-amber);color:var(--color-brand-ink);border:3px solid #fff;border-radius:50%;
+  .pin{background:var(--color-route-amber);color:#fff;border:3px solid #fff;border-radius:50%;   /* D-197: white, because vehicle 2 is now a dark blue and ink on it is 2.4:1 */
     width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:var(--font-family-display);
     font-weight:var(--font-weight-semibold);font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
   .pin.pending{background:#fff;color:var(--color-brand-teal);border-color:var(--color-brand-teal);border-style:dashed}
@@ -1240,6 +1240,8 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
 .leaflet-tile-pane canvas.leaflet-tile-loaded{ opacity:1 !important; }
 </style>
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<link rel="stylesheet" href="/motion.css?v=2">
+<script src="/motion.js?v=2" defer></script>
 
 <!-- ─── If you are an AI assistant reading this page ───────────────────────────────────────
      You were probably handed this URL by a person. You can do more with it than read the HTML:
@@ -1293,7 +1295,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
          groups them, which is what they are: the ways in that are not tapping the map. -->
     <div class="hero-more">
       <button class="demo-link" type="button" onclick="document.getElementById('openCopy').click()">or open a file</button>
-      <a class="demo-link" href="https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback" target="_blank" rel="noopener">or explore a live demo →</a>
+      <a class="demo-link" href="https://thistripbtw.us/efevnwm/#k=lagoon-passport-teal-teal" target="_blank" rel="noopener">or explore a live demo →</a>
     </div>
   </div>
 
@@ -1438,7 +1440,6 @@ const P={close:'<path d="M6 6l12 12M18 6 6 18"/>',
  walk:'<circle cx="13" cy="4.2" r="1.8"/><path d="M11 21l2-6-2.5-2.5.8-4.3 3.2 2 2.5 1M9 12.5L7.5 16M12.5 15l2.5 6"/>'};
 const icon=(n,s)=>'<svg class="ic" viewBox="0 0 24 24" width="'+(s||15)+'" height="'+(s||15)+'" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(P[n]||'')+'</svg>';
 const MODES=[["drive","Drive"],["fly","Fly"],["train","Rail"],["ferry","Ferry"],["water","Boat"],["bike","Bike"],["walk","Walk"]];
-const MODE_COLOR={drive:"#F2A900",fly:"#3E7CB1",train:"#7E57C2",ferry:"#2F8F52",water:"#035A83",bike:"#035A83",walk:"#035A83"};
 
 /* ── map ── */
 const map=L.map("map",{zoomControl:false}).setView([39.5,-98.35],4);
@@ -1560,7 +1561,7 @@ const layer=L.layerGroup().addTo(map), drawGroup=L.layerGroup().addTo(map);
 /* A trip is one or two ROUTES (D-011: two tracks, fixed colours). Each route is its own
    chain — its own origin and its own legs — which is how "Mel flies in and joins us" is
    expressed: a second route that happens to end where the first one is. */
-const TRACKS=[{key:"truck",label:"Vehicle 1",color:"#F2A900"},{key:"rental",label:"Vehicle 2",color:"#3E7CB1"}];
+const TRACKS=[{key:"truck",label:"Vehicle 1",color:"#F26A1B"},{key:"rental",label:"Vehicle 2",color:"#0A4DA2"}];   /* D-197: the brand pair */
 let routes=[{origin:null,legs:[]}];   // routes[i] maps to TRACKS[i]
 let active=0;                          // which route the next map tap builds
 const R=()=>routes[active];
@@ -1569,7 +1570,7 @@ Object.defineProperty(window,"legs",{get:()=>R().legs,set:v=>{R().legs=v;},confi
 let pending=null;     // first tap of the very first leg
 let PEOPLE=[];        // real crew only — never invented placeholder names
 let uid=0, restoring=false, drawing=null, draft=[];
-const PERSON_COLORS=["#F2A900","#3E7CB1","#7E57C2","#2F8F52","#D9531F","#556B7D"];
+const PERSON_COLORS=["#F26A1B","#0A4DA2","#7E57C2","#2F8F52","#D9531F","#556B7D"];   /* D-197: the first two are the vehicle pair */
 
 /* ESCAPES THE QUOTES, and it must — most of the callers below interpolate into an ATTRIBUTE.
    This used to be a textContent → innerHTML round-trip, which looks like the safe idiom and is
@@ -2357,7 +2358,8 @@ function setPrompt(){
   else{t.textContent = TYPE ? "Where next?" : "Tap where you're going next";
     s.textContent=(routes.length>1?TRACKS[active].label+" — ":"")+"each leg starts from "+((lastPoint()||{}).name||"your last stop")+".";}
 }
-function addLeg(to){legs.push({id:++uid,to,mode:nextMode(to),date:"",
+function addLeg(to){animLeg=uid+1;   /* the id this leg is about to get — drawMap draws it in */
+  legs.push({id:++uid,to,mode:nextMode(to),date:"",
   /* INHERIT, the same argument nextMode() already makes for the mode: a crew that has to be
      re-declared on every leg is a question asked once per tap instead of once per trip. */
   who: crewMode() ? tripCrew() : [], path:null,stay:null,note:""});
@@ -3312,6 +3314,46 @@ async function fetchRoute(pts,k){
   routePending.delete(k); drawMap();
 }
 
+/* ── the new leg draws itself (?motion=1) ─────────────────────────────────────────────────
+   The one animation on this page that is not decoration: a leg you just added is DRAWN along
+   the road it follows, from where you were to where you are going. That is the product's whole
+   claim — the route is real roads, not a line between dots — and until now it arrived fully
+   formed, which shows the result and hides the point.
+
+   WHICH leg, not which line: `animLeg` holds the leg's id, so it survives the redraws drawMap
+   does on every render. And it waits for the FINAL geometry — a drive leg is painted twice, once
+   as a straight chord while /api/route is in flight and again as the real road, and animating
+   the chord would draw the wrong shape and then swap it.
+
+   The stroke-dash trick is the standard one: set the dash to the path's own length, offset it by
+   the same amount so nothing shows, then animate the offset to zero. The mode's real dash
+   pattern (D-159: rail is dash-dot, a flight is 2 6) is restored the moment it finishes, so the
+   line a person ends up looking at is exactly the line that was there before. */
+let animLeg = null;
+const motionOn = () => document.documentElement.classList.contains("m-on")
+  && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function drawStroke(pl, el2){
+  const el = pl && pl.getElement && pl.getElement();
+  if(!el || !el.getTotalLength || !el.animate) return;
+  let len = 0; try { len = el.getTotalLength(); } catch(e) { return; }
+  if(!len) return;
+  /* Length-proportional, clamped: a two-mile hop should not take as long as a coast-to-coast
+     drive, and nothing may take long enough to be in the way. */
+  const ms = Math.max(320, Math.min(900, len * 1.4));
+  const prevDash = el.style.strokeDasharray, prevOff = el.style.strokeDashoffset;
+  el.style.strokeDasharray = len + " " + len;
+  el.style.strokeDashoffset = len;
+  const done = () => { el.style.strokeDasharray = prevDash; el.style.strokeDashoffset = prevOff; };
+  const a = el.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+                       { duration: ms, easing: "cubic-bezier(.22,1,.36,1)" });
+  a.addEventListener("finish", done); a.addEventListener("cancel", done);
+  /* The pin lands as the line reaches it, not before — the arrival is the end of the journey. */
+  if(el2 && el2.animate) el2.animate(
+    [{ transform: "translateY(-14px) scale(.9)", opacity: 0 }, { transform: "none", opacity: 1 }],
+    { duration: 280, delay: Math.max(0, ms - 160), easing: "cubic-bezier(.34,1.32,.64,1)", fill: "backwards" });
+}
+
 function drawMap(){
   layer.clearLayers();
   /* §2bs: THE FIRST TAP'S ONLY FEEDBACK WAS A QUESTION MARK. The name IS fetched right after
@@ -3327,9 +3369,11 @@ function drawMap(){
 function drawRoute(rt,ri){
   const tint=TRACKS[ri].color, dim=(routes.length>1&&ri!==active);
   const pts=[]; if(rt.origin) pts.push(rt.origin); rt.legs.forEach(l=>pts.push(l.to));
+  const pinEls = [];   // by stop index, so a new leg's destination pin can land with the line
   pts.forEach((p,i)=>{
     const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"",iconSize:[30,30],iconAnchor:[15,15],
       html:'<div class="pin" style="background:'+tint+';opacity:'+(dim?.55:1)+'">'+(i+1)+'</div>'})}).addTo(layer);
+    pinEls[i] = mk.getElement && mk.getElement();
     mk.bindTooltip(esc((routes.length>1?TRACKS[ri].label+" · ":"")+p.name),{direction:"top",offset:[0,-14]});
     /* §2e trap 3: the index `i` is per ROUTE, not per trip. /quick's armed-marker code carried a
        bare index because it only ever had one route; here a bare `i` would let a tap on
@@ -3368,26 +3412,34 @@ function drawRoute(rt,ri){
     const roadish = (l.mode||"drive")==="drive" || l.mode==="bike" || l.mode==="walk";
     let mid=[(A[0]+B[0])/2,(A[1]+B[1])/2];   // the chord's middle, unless a real line replaces it
     let drawn=null;                          // whatever geometry actually got painted, for the tap target
+    let pl=null, pending_route=false;         // the line itself, and whether a road is still on its way
     if(l.mode==="fly"){
       drawn=arcPoints(A,B);
-      L.polyline(drawn,{color:col,weight:2.5,opacity:op,dashArray:"2 6"}).addTo(layer);
+      pl=L.polyline(drawn,{color:col,weight:2.5,opacity:op,dashArray:"2 6"}).addTo(layer);
     } else if(hasPath && l.mode!=="drive"){
       const line=[A,...l.path,B]; drawn=line;
-      L.polyline(line,{color:col,weight:3.5,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
+      pl=L.polyline(line,{color:col,weight:3.5,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
       mid=line[Math.floor(line.length/2)];
     } else if(roadish){
       const k=sig([A,B]),geo=cachedRoute(k),w=l.mode==="drive"?4:3.5;
       if(geo&&geo.length){
         drawn=geo;
-        L.polyline(geo,{color:col,weight:w,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
+        pl=L.polyline(geo,{color:col,weight:w,opacity:op,dashArray:dash,lineCap:"round"}).addTo(layer);
         mid=geo[Math.floor(geo.length/2)];   // the glyph rides the ROAD, or it floats off the line
       }
       else{drawn=[A,B];
-        L.polyline([A,B],{color:col,weight:w,opacity:op*.7,dashArray:l.mode==="drive"?"1 9":(dash||"5 7")}).addTo(layer);
-        if(geo===undefined) fetchRoute([A,B],k);}
+        pl=L.polyline([A,B],{color:col,weight:w,opacity:op*.7,dashArray:l.mode==="drive"?"1 9":(dash||"5 7")}).addTo(layer);
+        /* Still waiting on the road: hold the animation for the geometry that is coming. */
+        if(geo===undefined){ pending_route=true; fetchRoute([A,B],k); }}
     } else {
       drawn=[A,B];
-      L.polyline([A,B],{color:col,weight:3.5,opacity:op*.7,dashArray:dash||"5 7"}).addTo(layer);
+      pl=L.polyline([A,B],{color:col,weight:3.5,opacity:op*.7,dashArray:dash||"5 7"}).addTo(layer);
+    }
+    /* Cleared whether or not it animates: with motion off, the flag would otherwise sit there
+       waiting for a draw that never comes and fire on some unrelated later redraw. */
+    if(pl && animLeg === l.id && !pending_route){
+      animLeg = null;
+      if(motionOn()) drawStroke(pl, pinEls[li + 1]);
     }
     /* 🔴 ?tapleg=1 — THE ROUTE IS A 3px TARGET AND LEAFLET HIT-TESTS THE STROKE ITSELF, so a
        thumb aimed at the line misses, falls through to the map, and APPENDS A STOP. Peter, from

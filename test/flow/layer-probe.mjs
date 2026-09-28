@@ -25,7 +25,7 @@ import { createHash } from "node:crypto";
 import { launch } from "./cdp.mjs";
 
 const [lat, lng, z] = [+(process.argv[2] ?? 39.35), +(process.argv[3] ?? -120.35), +(process.argv[4] ?? 10)];
-const URL = (process.env.TTB_TRIP ?? "https://thistripbtw.us/efevnwm/#k=treeline-downpour-rolling-switchback");
+const URL = (process.env.TTB_TRIP ?? "https://thistripbtw.us/efevnwm/#k=lagoon-passport-teal-teal");
 const OUT = process.env.TTB_OUT ?? "/tmp";
 
 const INVENTORY = `(()=>{ let world=0, trip=0, n=0; map.eachLayer(l=>{ n++;

@@ -81,8 +81,8 @@
     --pine:var(--color-brand-teal,#0A4DA2); --pine-deep:var(--color-brand-teal-deep,#073A7A); --accent:var(--color-brand-orange,#F26A1B); --card:#fff; --tabbg:#EFEDE5;
     --sheet:#FCFBF8; --ink:#333333; --ink-soft:#6B675F;
     --line:#E4E1D8;
-    --truck:#F2A900; --truck-deep:#B57F00;
-    --rental:#3E7CB1; --rental-deep:#2C5A82;
+    --truck:#F26A1B; --truck-deep:#B8480A;      /* D-197: the brand pair on the map too */
+    --rental:#0A4DA2; --rental-deep:#073A7A;
     --danger:#B3402A;
     --radius:14px;
     --disp:"Barlow Condensed","Arial Narrow",sans-serif;
@@ -99,8 +99,8 @@
     --line:#2C333C; --tabbg:#242B34;
     --pine-text:#8CBAF7;                  /* D-193: the lifted blue, was cyan #4FC2D8. 7.7:1 on the dark card, 8.6:1 on the sheet */
     --danger:#F08A72;                     /* was 2.71:1 on dark */
-    --truck:#F2A900; --truck-deep:#F2A900;
-    --rental:#5FA8DC; --rental-deep:#5FA8DC;
+    --truck:#F26A1B; --truck-deep:#F26A1B;
+    --rental:#5B8FE0; --rental-deep:#5B8FE0;   /* lifted: the day blue is 2.2:1 on the night basemap, this is 5.5:1 */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;overscroll-behavior:none}
@@ -405,7 +405,7 @@
     max-width:38vw;overflow:hidden;text-overflow:ellipsis;opacity:.92}
   .edgechip span{overflow:hidden;text-overflow:ellipsis}
   .pin.truck{background:var(--truck);color:#3A2A00}
-  .pin.rental{background:var(--rental)}
+  .pin.rental{background:var(--rental);color:#fff}   /* D-197: white on the darker blue */
   .pin.is-here{outline:3px solid rgba(232,72,45,.0)}
   /* ::BEFORE, not ::after — and this is the whole bug Peter reported twice ("the concentric
      circles are centered on the GPS point, not the center of the marker").
@@ -1767,8 +1767,8 @@ if (hashKey) history.replaceState(null, "", location.pathname + location.search)
 let CURRENT_NAME = localStorage.getItem("ttb_name") || "";
 
 const TRACK_COLORS = {
-  light:{truck:"#F2A900", rental:"#3E7CB1"},
-  dark: {truck:"#F2A900", rental:"#5FA8DC"}
+  light:{truck:"#F26A1B", rental:"#0A4DA2"},
+  dark: {truck:"#F26A1B", rental:"#5B8FE0"}   /* D-197; the night blue is lifted or it is 2.2:1 on the dark basemap */
 };
 const trackColor = t => TRACK_COLORS[document.documentElement.dataset.theme==="dark"?"dark":"light"][t];
 /* A leg you travel under your own power is not the vehicle, and drawing it in the vehicle's
@@ -4092,7 +4092,7 @@ let replayFollow=true, replayPanning=false, replayPanT=null;   // the map follow
 /* person1 was the RETIRED D-022 accent while person2 was already exactly vehicle 2's route
    blue — so switching the replay from by-vehicle to by-person moved entity 1's colour and
    not entity 2's. Matched to route/amber, which is what vehicle 1 draws with. */
-const PERSON_PALETTE=["#F2A900","#3E7CB1","#7B4FA3","#2E9E6B","#D2544B","#4B8B9E","#C9721C","#A24E86"];
+const PERSON_PALETTE=["#F26A1B","#0A4DA2","#7B4FA3","#2E9E6B","#D2544B","#4B8B9E","#C9721C","#A24E86"];   /* D-197: first two follow the vehicles */
 // everyone who has a stop (+ roster), in a stable order → guarantees distinct colors, no hash collisions
 function personRoster(){
   const seen=[]; const push=n=>{ n=n||"—"; if(n!=="—" && !seen.includes(n)) seen.push(n); };
@@ -4217,8 +4217,17 @@ function drawDocHead(){
   mt.hidden = !bits.length;
 }
 
-function render(stops){
-  allStops=stops;
+/* `stops` DEFAULTS TO WHAT IS ALREADY LOADED, and that default is a bug fix (2026-09-27).
+   The preview-as-viewer toggle calls `render()` bare to repaint the chrome — and the first
+   thing this function did was `allStops = stops`, so a bare call wiped the entire stop list
+   to `undefined`. Nothing failed at that moment; the next write to touch the list threw
+   "undefined is not an object (evaluating 'allStops.forEach')" and the toast said
+   "Not saved" — which is how Peter hit it trying to edit a date on the demo trip after
+   toggling preview. The comment by that toggle already warned about this exact message
+   arriving from `emitAll()`; the toggle then reintroduced it through the front door.
+   `|| []` is the belt: allStops is a list or it is empty, never undefined. */
+function render(stops = allStops){
+  allStops = stops || [];
   if(document.activeElement && listEl.contains(document.activeElement)) return; // don't clobber mid-edit
   if(replayT!=null && !replayFrames().keys.includes(replayT)) closeReplay();  // timeline changed under us
   drawDocHead(); syncOpenPill(); drawMap(); drawList(); syncReplayBtn();

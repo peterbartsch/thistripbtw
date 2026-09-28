@@ -14,7 +14,7 @@
    A local run is for driving a NEW flow while you write it. A green board only means something
    against the deployed site. */
 export const BASE = process.env.TTB_BASE || "https://thistripbtw.us";
-const DEMO = "/efevnwm/#k=treeline-downpour-rolling-switchback";
+const DEMO = "/efevnwm/#k=lagoon-passport-teal-teal";
 
 /* Shared steps — the ring and the sheet behave the same on both builder flows. */
 /* THE RING CLOSES FROM ITS HUB, NOT FROM THE FAB — `body.ringing #fab{display:none}`, so the FAB
@@ -394,7 +394,7 @@ export const FLOWS = [
        session (13.8%, then 14.4% with the layers removed, then 0% everywhere) and the artifact is
        unmistakable in an image. Instrument first, then the product. */
     title: "False water vs overzoom factor — one centre, z8 to z11 (§2bv)",
-    url: "/efevnwm/#k=treeline-downpour-rolling-switchback",
+    url: "/efevnwm/#k=lagoon-passport-teal-teal",
     steps: [
       /* PIN THE SKY AND RELOAD. theme.js picks night/dawn/day/dusk off the WALL CLOCK, so a run at
          02:00 renders a dark map and a run at 13:00 a light one — and the reported bug is a DAY

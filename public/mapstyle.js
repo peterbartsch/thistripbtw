@@ -7,7 +7,7 @@
  *
  * ── THE ONE RULE THAT DECIDES EVERY COLOUR HERE ────────────────────────────────────────────
  * THE BASEMAP MUST RECEDE. It is the paper, not the drawing. What matters on this map is the
- * route and the pins: amber #F2A900, blue #3E7CB1, rail purple #8A6FB0, self-powered teal
+ * route and the pins: vehicle orange #F26A1B, vehicle blue #0A4DA2 (D-197), rail purple, self-powered teal
  * #1B9AAA, gold stops, teal signs. A basemap with any saturation of its own fights all six.
  * That is why CARTO's Positron and Dark Matter are the two styles this product chose in the
  * first place, and matching their restraint matters more than matching their exact greys.

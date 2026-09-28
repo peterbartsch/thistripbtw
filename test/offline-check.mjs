@@ -7,7 +7,7 @@
 import { launch } from "./flow/cdp.mjs";
 
 const BASE = process.env.TTB_BASE || "https://thistripbtw.us";
-const TRIP = "/efevnwm/#k=treeline-downpour-rolling-switchback";
+const TRIP = "/efevnwm/#k=lagoon-passport-teal-teal";
 const out  = [];
 const say  = (k, v) => { out.push([k, v]); console.log("  " + k.padEnd(34) + v); };
 
@@ -65,7 +65,7 @@ say("OFFLINE — canvas opacity (D-167)", await p.eval(
    on it at all. The first run of this file threw there and it read like a broken kill switch. */
 await p.send("Network.emulateNetworkConditions",
   { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
-await p.goto(BASE + "/efevnwm/?nosw=1#k=treeline-downpour-rolling-switchback", 6000);
+await p.goto(BASE + "/efevnwm/?nosw=1#k=lagoon-passport-teal-teal", 6000);
 await new Promise(r => setTimeout(r, 2500));
 say("?nosw=1 removed the worker", await p.eval(
   `navigator.serviceWorker.getRegistrations().then(r=>r.length===0)`));

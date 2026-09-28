@@ -362,16 +362,16 @@ html.scrolled .minimark { opacity: 1; transform: none; pointer-events: auto; }
    inset from it, and its headings are plates. So: 3px edge and 7px corners on the sheet, the
    inset rule by day (on the dark skies the edge is already light on dark and a second line is
    noise), and h2 on a blue plate in white type. Buttons take 6px corners. */
-.pagebody.sheet { border-width: 3px; border-radius: 7px; }
-html[data-sky="day"] .pagebody.sheet {
-  outline: 1.5px solid rgba(20,20,20,.22); outline-offset: -8px;
-  box-shadow: 0 2px 0 rgba(20,20,20,.12), 0 8px 18px rgba(80,60,20,.08);
-}
+/* D-196: the sheet keeps a SURFACE — prose on the bare sky is the problem it was built to fix —
+   but not a frame. A tester read the set as "cookie cutter", and it was: every panel on every
+   page wore the same 3px sign border, which leaves nothing for an actual sign to stand out
+   against. The steps and the pricing tiers keep theirs; this does not. */
+.pagebody.sheet { border: 0; outline: 0; box-shadow: none; border-radius: 10px; }
 /* the callout inside a sheet stays a callout, not a sign in a sign */
 .pagebody.sheet .card { border-left-width: 5px; border-radius: 0 4px 4px 0; }
 .pagebody h2 {
   display: inline-block; background: var(--brand); color: #fff; text-shadow: none;
-  font-size: 17px; padding: 8px 15px 7px; border-radius: 6px;
+  font-size: 16px; padding: 7px 14px 6px; border-radius: 6px;
   outline: 2px solid #fff; outline-offset: -6px;
   box-shadow: 0 0 0 2px var(--brand-deep);
 }
@@ -379,3 +379,8 @@ html[data-sky="day"] .pagebody.sheet {
 .pagefoot { border-radius: 7px; }
 #menu { border-radius: 7px; }
 #menu a { border-radius: 4px; }
+
+/* D-196: a heading that is a sentence stays a sentence. Uppercase is for the plates, the buttons
+   and the small labels — thirty uppercase elements down one page is how a set of pages starts
+   sounding like one long shout. */
+.pagebody h3 { text-transform: none; letter-spacing: .01em; font-size: 21px; }

@@ -31,10 +31,10 @@
   --color-steel-4: #AEBEC8;
 
   /* ── route — functional vehicle tracks (D-011) ── */
-  --color-route-amber:      #F2A900;
-  --color-route-amber-deep: #B57F00;
-  --color-route-blue:       #3E7CB1;
-  --color-route-blue-deep:  #2C5A82;
+  --color-route-amber:      #F26A1B;   /* D-197: vehicle 1 is the brand orange. The token NAME predates it, like --color-brand-teal holding a blue */
+  --color-route-amber-deep: #B8480A;
+  --color-route-blue:       #0A4DA2;   /* D-197: vehicle 2 is the brand blue */
+  --color-route-blue-deep:  #073A7A;
   --color-route-rail:       #8A6FB0;
   --color-route-self:       #1B9AAA;
   --color-route-self-deep:  #147A86;   /* the same hue, for TEXT — see tokens.json */

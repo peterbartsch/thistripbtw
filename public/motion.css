@@ -1,0 +1,97 @@
+/* motion.css — the CSS half of the microinteractions. DEFAULT since D-195 (2026-09-26).
+   Pairs with motion.js: JS owns anything that needs timing or a trigger, CSS owns anything a
+   pointer can do on its own. Everything is scoped to html.m-on, which motion.js adds — so a
+   page that loads this file and never runs the script is unchanged.
+
+   Every rule here is a TRANSITION on an already-correct resting state, never an @keyframes that
+   holds an element somewhere. If the animation never runs, the page still reads. */
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* The road draws itself downward, once, when the column comes into view. Clip rather than
+     height: a height change would reflow the whole column beside it; a clip is composited. */
+  html.m-on main.wrap::before {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1.1s cubic-bezier(.22, 1, .36, 1);
+  }
+  html.m-on.m-road-drawn main.wrap::before { clip-path: inset(0 0 0 0); }
+
+  /* The stops on that road arrive with it. */
+  html.m-on main.wrap section h2::before,
+  html.m-on #pricing::before {
+    transform: scale(.4);
+    opacity: 0;
+    transition: transform .34s cubic-bezier(.34, 1.32, .64, 1) .5s, opacity .3s ease .5s;
+  }
+  html.m-on.m-road-drawn main.wrap section h2::before,
+  html.m-on.m-road-drawn #pricing::before { transform: none; opacity: 1; }
+
+  /* A sign you can press. The plates already have a pressed edge; this makes the press real —
+     the plate goes down onto its own shadow, exactly as .cta and .buy already do. */
+  html.m-on .card,
+  html.m-on .step,
+  html.m-on .principle,
+  html.m-on .start-go {
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), box-shadow .18s ease;
+  }
+  @media (hover: hover) {
+    html.m-on #pricing .card:hover,
+    html.m-on .step:hover,
+    html.m-on .principle:hover,
+    html.m-on .start-go:hover { transform: translateY(-2px); }
+    /* The chosen tier is already lifted 10px by D-193's layout — lift it from where it is,
+       rather than snapping it back down to meet the others. */
+    html.m-on #pricing .card.mid:hover { transform: translateY(-12px); }
+  }
+
+  /* The mile marker turns to face you — a real one is a flat plate you pass, and the hover is
+     the closest a page gets to passing it. Tiny: 2 degrees, not a spin. */
+  @media (hover: hover) {
+    html.m-on #pricing .card .price::after {
+      transition: transform .22s cubic-bezier(.34, 1.32, .64, 1);
+      transform-origin: center right;
+    }
+    html.m-on #pricing .card:hover .price::after { transform: rotate(-2deg) translateY(-1px); }
+  }
+
+  /* Links in prose: the underline grows from the left rather than fading in, so it reads as
+     drawn. Backgrounds, not borders — a border-bottom cannot be animated from one side. */
+  html.m-on .pagebody a:not(.btn) {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1.5px;
+    transition: background-size .22s cubic-bezier(.22, 1, .36, 1);
+    text-decoration: none;
+  }
+  html.m-on .pagebody a:not(.btn):hover { background-size: 100% 1.5px; }
+
+  /* The orange tick on the promise plate lands rather than appears. .pillars li is revealed by
+     motion.js; the tick is 60ms behind its own line, which is what makes it read as a tick
+     being made rather than a bullet that was always there. */
+  html.m-on .pillars li::before {
+    transition: transform .3s cubic-bezier(.34, 1.32, .64, 1) 60ms;
+  }
+  @media (hover: hover) {
+    html.m-on .promise:hover .pillars li::before { transform: translateY(-50%) scale(1.06); }
+  }
+
+  /* The menu opens from its own corner, not from nowhere. */
+  /* `display` is in the transition list with allow-discrete, and there is a @starting-style for
+     the entry frame — without both, a menu going display:none → block has nothing to animate
+     FROM and the open would simply appear. The closing frame needs no starting-style. */
+  html.m-on #menu.show {
+    transform: none; opacity: 1;
+    transition: transform .16s cubic-bezier(.22, 1, .36, 1), opacity .16s ease;
+    transform-origin: top right;
+  }
+  @starting-style {
+    html.m-on #menu.show { transform: scale(.96) translateY(-4px); opacity: 0; }
+  }
+}
+
+/* Reduced motion: every transition above is already inside a no-preference query, so there is
+   nothing to undo. This block exists to say so — and to catch the one thing JS sets. */
+@media (prefers-reduced-motion: reduce) {
+  html.m-on main.wrap::before { clip-path: none; }
+}

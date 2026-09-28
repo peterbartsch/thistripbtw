@@ -6,13 +6,13 @@
     "url": "https://github.com/peterbartsch/thistripbtw-mcp",
     "source": "github"
   },
-  "version": "1.3.3",
+  "version": "1.3.4",
   "websiteUrl": "https://thistripbtw.us/for-agents",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "thistripbtw-mcp",
-      "version": "1.3.3",
+      "version": "1.3.4",
       "transport": {
         "type": "stdio"
       }
