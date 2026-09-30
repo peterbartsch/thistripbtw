@@ -120,14 +120,14 @@ if (count($segs) === 2 && $segs[1] === 'manifest.json'
 }
 
 /* static content pages: /privacy, /about, /mission, /help, /what-you-get, /account, /tutorials */
-if (count($segs) === 1 && in_array($slug, ['privacy','about','mission','help','terms','faq','what-you-get','account','for-agents','agent-ready','reset','starts','tutorials'], true)
+if (count($segs) === 1 && in_array($slug, ['privacy','about','mission','help','terms','faq','what-you-get','account','for-agents','agent-ready','reset','starts','recipes','tutorials'], true)
     && is_file(PUBLIC_DIR . '/' . $slug . '.html')) {
   serve_html(PUBLIC_DIR . '/' . $slug . '.html'); exit;
 }
 
 /* static assets at root: /demo.jpg, /og.png, /site.css, etc. (single segment, known ext, exists in public/).
    Trip slugs are [a-z2-9]{7} with no dot, so this never shadows a trip. */
-if (count($segs) === 1 && preg_match('/\.(jpg|jpeg|png|gif|webp|svg|css|ico|js|json|xml|txt|woff2?)$/i', $slug)
+if (count($segs) === 1 && preg_match('/\.(jpg|jpeg|png|gif|webp|svg|css|ico|js|json|xml|txt|md|woff2?)$/i', $slug)
     && is_file(PUBLIC_DIR . '/' . $slug)) {
   serve_asset(PUBLIC_DIR . '/' . $slug); exit;
 }
@@ -455,7 +455,23 @@ function serve_html($file, $strip = null, $ogSlug = null) {
     echo "not found";
     return;
   }
+  /* An agent that asked for markdown gets markdown of the same page (2026-09-28). Strict: the
+     Accept header must NAME text/markdown, because `*​/*` is what every browser sends and serving
+     source to a person would be the worst version of this feature. Never for app.html — see
+     lib/markdown.php. */
+  if (basename($file) !== 'app.html' && ($_SERVER['HTTP_ACCEPT'] ?? '') !== '') {
+    /* REQUIRE BEFORE CALLING, and the first version of this did not: it asked
+       md_wants_markdown() one line above the require, so every page 500'd — the API's error
+       handler dressed it as JSON, which is why it looked like a routing bug rather than a
+       missing function. The cheap Accept test above keeps the file off the path for the
+       requests that cannot want it. */
+    require_once __DIR__ . '/lib/markdown.php';
+    if (md_wants_markdown($_SERVER['HTTP_ACCEPT']) && md_serve($file)) return;
+    /* Falling through to HTML is deliberate: a page that produced no usable markdown is better
+       served as the page than as an empty file with a 200 on it. */
+  }
   header('Content-Type: text/html; charset=utf-8');
+  header('Vary: Accept');              // the same URL has two representations now
   header('Cache-Control: no-cache');   // revalidate so deploys show without a hard refresh
   header('X-Content-Type-Options: nosniff');
   header('X-Frame-Options: DENY');
@@ -473,7 +489,10 @@ function serve_html($file, $strip = null, $ogSlug = null) {
   if (basename($file) !== 'app.html') {
     header('Link: </llms.txt>; rel="describedby"; type="text/plain", '
          . '</.well-known/mcp.json>; rel="service-desc"; type="application/json", '
-         . '</for-agents>; rel="service-doc"; type="text/html"', false);
+         . '</for-agents>; rel="service-doc"; type="text/html", '
+         /* Same URL, other representation — RFC 8288's own word for it. An agent that reads
+            headers now learns markdown is on offer without having to guess and retry. */
+         . '<' . htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/', ENT_QUOTES) . '>; rel="alternate"; type="text/markdown"', false);
   }
   // CSP. app.html needs its external origins (Leaflet, Carto tiles, OSRM, Nominatim, Spotify);
   // landing + content pages are locked down tight.

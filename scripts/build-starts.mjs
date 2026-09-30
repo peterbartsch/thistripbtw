@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * build-starts.mjs — generates public/starts.html and the block of links in llms.txt.
+ * build-starts.mjs — fills the shape cards in public/starts.html and the block in llms.txt.
  *
  * BLANK STARTS, not itineraries (Peter, 2026-07-29: "lots of blank start templates to show the
  * wide utility for this to agents"). Each one is a SHAPE — two vehicles converging, a rail
@@ -121,80 +121,36 @@ const link = (s) => `${SITE}/new#t=start&d=` + enc({
 
 const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/* ── the page ─────────────────────────────────────────────────────────────── */
-const cards = SHAPES.map((s) => `      <li class="start">
+/* ── the page ────────────────────────────────────────────────────────────────────────────
+   THIS FILLS TWO LISTS INSIDE THE EXISTING PAGE. IT DOES NOT WRITE THE PAGE.
+   Until 2026-09-29 it did, from a template that stopped being edited in July — Google Fonts, a
+   text wordmark instead of the shield, no OG tags, the old stylesheet versions, none of the
+   lighter look — while the real page was hand-edited for two months. One accidental run then
+   replaced all of that with the July version. So the chrome stays in public/starts.html, owned by
+   whoever edits pages, and this script owns only what it knows: the cards.
+   The page shows FEATURED first and the rest under <details> (review §1b.6: twelve options on a
+   page whose job is reducing friction is too many for a person; a crawler still reads all twelve). */
+const FEATURED = ["two-vehicles", "road-trip", "crew-joins", "fly-then-drive"];
+const card = (s) => `      <li class="start">
         <a class="start-go" href="/new#t=start&amp;d=${enc({ n: s.title, o: { name: s.o[0], lat: s.o[1], lng: s.o[2] }, l: s.l.map(([n2, la, lo, m]) => ({ to: { name: n2, lat: la, lng: lo }, mode: m })) })}">
           <b>${esc(s.title)}</b>
           <span>${esc(s.blurb)}</span>
           <em>${s.l.length} leg${s.l.length > 1 ? "s" : ""} &middot; open and change everything &rarr;</em>
         </a>
-      </li>`).join("\n");
+      </li>`;
+const byId = Object.fromEntries(SHAPES.map((s) => [s.id, s]));
+for (const id of FEATURED) if (!byId[id]) throw new Error(`FEATURED names a shape that does not exist: ${id}`);
+const top = FEATURED.map((id) => card(byId[id])).join("\n");
+const rest = SHAPES.filter((s) => !FEATURED.includes(s.id)).map(card).join("\n");
 
-const page = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Starting points — this trip, btw</title>
-<meta name="description" content="Blank starting shapes for a trip: road trip, two vehicles meeting, rail, bike tour, a move. Open one and change everything — free, no account.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23035A83'/%3E%3Cpath d='M0 68h100v16a16 16 0 0 1-16 16H16A16 16 0 0 1 0 84z' fill='%23F7B304'/%3E%3C/svg%3E">
-<style>
-  .starts{list-style:none;display:grid;gap:12px;margin:0;padding:0}
-  .start-go{display:block;padding:15px 17px;text-decoration:none;border-radius:12px;
-    background:var(--card);border:2px solid var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
-  .start-go b{display:block;font-family:var(--font-family-display);font-weight:700;
-    font-size:19px;letter-spacing:.02em;color:var(--ink)}
-  .start-go span{display:block;margin:3px 0 7px;font-size:14.5px;color:var(--soft);line-height:1.5}
-  .start-go em{font-style:normal;font-family:var(--font-family-display);font-weight:700;
-    font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--link)}
-  .start-go:hover{transform:translateY(-1px)}
-</style>
-<link rel="stylesheet" href="/tokens.css?v=2">
-<link rel="stylesheet" href="/sky.css?v=4">
-<link rel="stylesheet" href="/pages.css?v=21">
-<script>var h=new Date().getHours(),s=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";document.documentElement.setAttribute("data-sky",s);</script>
-</head>
-<body>
-<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu">&#9776;</button>
-<nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a>
-</nav>
-
-<header class="pagehead">
-  <a class="sign" href="/"><b>this trip, btw</b></a>
-  <h1>Starting points</h1>
-  <p class="lede">Shapes, not itineraries. Open one and change every part of it.</p>
-</header>
-
-<main class="pagebody sheet">
-  <section>
-    <p>None of these is a recommendation &mdash; they are the <strong>shapes</strong> trips come
-    in, with placeholder places you replace. Opening one costs nothing and asks for nothing: no
-    account, no card, no email. It is yours to edit the moment it loads, and only yours until
-    you decide to keep it.</p>
-    <ul class="starts">
-${cards}
-    </ul>
-  </section>
-
-  <section>
-    <h2>If you are an assistant</h2>
-    <p>Each of these is an ordinary <code>#d=</code> handover link &mdash; the same format
-    described on <a href="/for-agents">the agent page</a>. Hand one to someone as a starting
-    point, or read them as worked examples of the range: two vehicles converging, a canoe leg,
-    a rail loop, a crew joining partway. Build your own the same way.</p>
-  </section>
-</main>
-
-<footer class="pagefoot"><a href="/">home</a><span class="sep">&middot;</span><a href="/about">about</a><span class="sep">&middot;</span><a href="/for-agents">for agents</a><span class="sep">&middot;</span><a href="/help">help</a><span class="sep">&middot;</span><a href="/faq">faq</a><span class="sep">&middot;</span><a href="/privacy">privacy</a><span class="sep">&middot;</span><a href="/terms">terms</a><br><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
-<script src="/pages.js?v=1"></script>
-</body>
-</html>
-`;
-
-writeFileSync(new URL("../public/starts.html", import.meta.url), page);
+const pagePath = new URL("../public/starts.html", import.meta.url);
+let html = readFileSync(pagePath, "utf8");
+const lists = html.match(/<ul class="starts">[\s\S]*?<\/ul>/g) || [];
+if (lists.length !== 2)
+  throw new Error(`expected exactly two <ul class="starts"> in public/starts.html, found ${lists.length} — the page has been restructured; update this script rather than the page`);
+let k = 0;
+html = html.replace(/<ul class="starts">[\s\S]*?(\n[ \t]*)<\/ul>/g, (m, ind) => `<ul class="starts">\n${k++ === 0 ? top : rest}${ind}</ul>`);
+writeFileSync(pagePath, html);
 
 /* ── the llms.txt block, between markers so this is re-runnable ───────────── */
 const llmsPath = new URL("../public/llms.txt", import.meta.url);
@@ -206,6 +162,8 @@ const BEGIN = "<!--starts-->", END = "<!--/starts-->";
 const block = [
   BEGIN,
   "## Starting shapes",
+  "",
+  `What to say, with worked examples and the links they produce: ${SITE}/recipes`,
   "",
   `Ready-made starting points at ${SITE}/starts — each card is an ordinary \`#d=\` link you can`,
   "hand someone, and together they show the range this format carries. Shapes, not itineraries:",
@@ -219,5 +177,5 @@ llms = llms.includes(BEGIN)
   : llms.replace("## Pages", block + "\n\n## Pages");
 writeFileSync(llmsPath, llms);
 
-console.log(`${SHAPES.length} starting shapes → public/starts.html + llms.txt block`);
+console.log(`${SHAPES.length} starting shapes → the two lists in public/starts.html + the llms.txt block`);
 for (const s of SHAPES) console.log(`  ${s.id.padEnd(16)} ${link(s).length} chars`);

@@ -21,7 +21,10 @@ const root = new URL("..", import.meta.url).pathname;
 let pass = 0, fail = 0;
 const ok = (what, cond, detail) => {
   if (cond) { pass++; console.log("  ok   " + what); }
-  else { fail++; console.log("  FAIL " + what + (detail ? " — " + detail : "")); }
+  else { fail++; /* "✗", because that is the character CLAUDE.md's quiet form counts — `make check | grep -c ✗`.
+     This printed "FAIL" alone until 2026-09-29, and a real drift (the sky tokens after D-202)
+     read as 0 ✗ for a whole session; the deploy gate caught it, the quiet form did not. */
+  console.log("  ✗ FAIL " + what + (detail ? " — " + detail : "")); }
 };
 
 /** Flatten a DTCG tree to { "brand.teal": "#035A83", … }, colours only. */

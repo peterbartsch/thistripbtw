@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-air="tool">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -72,7 +72,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="/icon-180.png?v=2">
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=7"><!-- design system palette (D-030) -->
+<link rel="stylesheet" href="/tokens.css?v=8"><!-- design system palette (D-030) -->
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
 <style>
@@ -1456,6 +1456,7 @@
      is no registered link relation for MCP to rely on yet. -->
 <link rel="mcp" href="/.well-known/mcp.json">
 <meta name="mcp-server" content="https://thistripbtw.us/mcp">
+<link rel="stylesheet" href="/air.css?v=3">
 </head>
 <body>
 
@@ -1477,7 +1478,7 @@
     <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"></button>
   </div>
   <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/recipes">What to say</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 </header>
 
@@ -3655,7 +3656,7 @@ if(PM_DIAG){
      injected only AFTER the renderer's onload. This fetches it directly (which needs no script
      tag and no chain) and reports again at 15s, which separates "never arrived" from "arrived
      late" from "arrived and failed to execute". */
-  fetch("/mapstyle.js?v=11", {cache:"no-store"})
+  fetch("/mapstyle.js?v=12", {cache:"no-store"})
     .then(r => r.text().then(t => say("mapstyle fetch: HTTP " + r.status + ", " + t.length + " bytes, "
         + (t.indexOf("ttbMapStyle") > -1 ? "contains ttbMapStyle" : "MISSING ttbMapStyle"))))
     .catch(e => say("mapstyle fetch FAILED: " + e.name + " " + e.message));
@@ -3797,7 +3798,7 @@ if(PM_FLAG){
      fall back to the library's default grey theme and look like a styling bug. */
   s.onload = () => {
     const st = document.createElement("script");
-    st.src = "/mapstyle.js?v=11";
+    st.src = "/mapstyle.js?v=12";
     st.onload = () => { try{ applyTheme(); }catch(e){} };
     st.onerror = () => { try{ applyTheme(); }catch(e){} };   // unstyled beats blank
     document.head.appendChild(st);
@@ -3951,7 +3952,7 @@ function applyTheme(){
      prefers-color-scheme still says light. */
   { let tc = document.querySelector('meta[name="theme-color"]');
     if(!tc){ tc = document.createElement("meta"); tc.name = "theme-color"; document.head.appendChild(tc); }
-    tc.content = darkMode ? "#14181D" : "#F5F6F4"; }
+    tc.content = darkMode ? "#2A2F3A" : "#F5F6F4"; }
   document.getElementById("themeBtn").innerHTML = icon(darkMode ? "sun" : "moon", 18);
   if(tileLayer) map.removeLayer(tileLayer);
   if(pmDetail){ map.removeLayer(pmDetail); pmDetail = null; }   // D-087 applies to the second layer too

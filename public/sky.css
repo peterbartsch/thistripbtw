@@ -4,15 +4,18 @@
    twelve pages that load pages.css it was UNDEFINED — measured 2026-08-02 on /for-agents:
    `#menu a:hover{background:var(--ground)}` resolved to nothing and the menu hover did
    nothing at all. One definition per sky fixes every one of them at once. */
-/* D-193, 2026-09-14: day is road-atlas PAPER, not a blue sky. The blue field was the thing that
+/* D-202, 2026-09-29: THE FOUR BLOCKS BELOW ARE THE LIGHTER LOOK. Day is near-white, and the three
+   dark skies are graphite with a whisper of their hour rather than saturated gradients — night had
+   been called "blackhole mode". The history in the comments around them is kept as history.
+   D-193, 2026-09-14: day is road-atlas PAPER, not a blue sky. The blue field was the thing that
    read as thios.co's hero. Contours are a separate layer on body (below), so this gradient stays
    the plain token value that structured-test compares. */
-html[data-sky="day"]  {--sky:linear-gradient(172deg,#F7F2E7 0%,#F3ECDD 60%,#EFE6D2 100%);
-  --card:#fff;--ink:#333333;--soft:#5f6b70;--line:#DDD3BF;--ground:#F4EEE1}
-html[data-sky="dawn"] {--sky:linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
-  --card:rgba(28,34,42,.82);--ink:#F2F3EF;--soft:#C7CDD3;--line:rgba(255,255,255,.16);--pine:#8CBAF7;--ground:#1B2129}
-html[data-sky="dusk"] {--sky:linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
-  --card:rgba(26,20,38,.80);--ink:#FBF6EF;--soft:#E7D8CB;--line:rgba(255,255,255,.18);--pine:#8CBAF7;--ground:#1A1424}
+html[data-sky="day"]{--sky:linear-gradient(172deg,#FFFFFF 0%,#F6F7F9 40%,#F6F7F9 100%);
+  --card:#FFFFFF;--ink:#1D1D1F;--soft:#62666D;--line:rgba(0,0,0,.09);--ground:#EEF0F3}
+html[data-sky="dawn"]{--sky:linear-gradient(172deg,#2A323C 0%,#21272F 45%,#21272F 100%);
+  --card:#2E3641;--ink:#F5F5F7;--soft:#B8BEC6;--line:rgba(255,255,255,.10);--pine:#8CBAF7;--ground:#38414D}
+html[data-sky="dusk"]{--sky:linear-gradient(172deg,#322C36 0%,#25222A 45%,#25222A 100%);
+  --card:#352F3A;--ink:#F7F5F3;--soft:#C2BAC0;--line:rgba(255,255,255,.10);--pine:#8CBAF7;--ground:#403945}
 /* Peter, 2026-08-05: night wants "darker purples and blues". The old ramp
    (#14121E/#1A1730/#26203A) was a desaturated purple-grey that read as flat charcoal — three
    stops that were nearly the same colour, so it barely resolved as a gradient at all.
@@ -24,8 +27,8 @@ html[data-sky="dusk"] {--sky:linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D953
    on a long page the only thing above the fold is its darkest slice. A sky nobody scrolls far
    enough to see is not a sky. These stops are chromatic from 0%: dark, but recognisably blue at
    the top of the very first screen. */
-html[data-sky="night"]{--sky:linear-gradient(172deg,#0A0F2A 0%,#131240 38%,#1D1652 70%,#281B5C 100%);
-  --card:rgba(28,34,42,.85);--ink:#EAEBE7;--soft:#AAB0B7;--line:rgba(255,255,255,.14);--pine:#8CBAF7;--ground:#14181D}
+html[data-sky="night"]{--sky:linear-gradient(172deg,#262B36 0%,#1F232C 45%,#1F232C 100%);
+  --card:#2C313D;--ink:#F5F5F7;--soft:#B6BBC4;--line:rgba(255,255,255,.10);--pine:#8CBAF7;--ground:#353B48}
 
 /* `color-scheme` is what the BROWSER reads, and it is not the same thing as the
    prefers-color-scheme queries elsewhere in this project: those ask what the OS wants, this
@@ -53,13 +56,9 @@ html{min-height:100%}
    ignores the second declaration is no worse off than it is today. */
 body{background:var(--sky, var(--ground)) no-repeat;background-size:100% 100%;min-height:100%;
      min-height:100dvh}
-/* D-193: the paper carries contour lines — a 900px tile, generated from a periodic height field
-   so its edges meet. Day only; the dark skies stay clean gradients. */
-html[data-sky="day"] body{background:url(/road-contours.svg?v=1) 0 0/900px 900px repeat,
-  var(--sky) 0 0/100% 100% no-repeat;background-color:#F4EEE1}
+/* D-202: the contour paper is gone. Day is a flat near-white that the cards lift off. */
+html[data-sky="day"] body{background-color:#F6F7F9}
 .card,.priv,.pagefoot{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-/* text sitting on the sky gets a subtle shadow on the darker skies */
-html:not([data-sky="day"]) body{text-shadow:0 1px 2px rgba(0,0,0,.32)}
 
 /* lede: balance the lines, avoid a one-word orphan */
 .lede{text-wrap:balance}

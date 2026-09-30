@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-air="tool">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,8 +7,8 @@
 <meta name="description" content="Build your trip on a private map — nothing to install, no sign-up to build.">
 <link rel="stylesheet" href="/fonts.css?v=1">
 <link rel="stylesheet" href="/vendor/leaflet-1.9.4/leaflet.min.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=7">
-<link rel="stylesheet" href="/sky.css?v=12">
+<link rel="stylesheet" href="/tokens.css?v=8">
+<link rel="stylesheet" href="/sky.css?v=13">
 <link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
 <style>
   /* the one mark (2026-08-02) — same file as every other page, splash size */
@@ -1240,8 +1240,8 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
 .leaflet-tile-pane canvas.leaflet-tile-loaded{ opacity:1 !important; }
 </style>
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
-<link rel="stylesheet" href="/motion.css?v=2">
-<script src="/motion.js?v=2" defer></script>
+<link rel="stylesheet" href="/motion.css?v=4">
+<script src="/motion.js?v=4" defer></script>
 
 <!-- ─── If you are an AI assistant reading this page ───────────────────────────────────────
      You were probably handed this URL by a person. You can do more with it than read the HTML:
@@ -1260,6 +1260,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
      is no registered link relation for MCP to rely on yet. -->
 <link rel="mcp" href="/.well-known/mcp.json">
 <meta name="mcp-server" content="https://thistripbtw.us/mcp">
+<link rel="stylesheet" href="/air.css?v=3">
 </head>
 <body class="pre">
 
@@ -1308,7 +1309,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
       <button id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
     </div>
     <nav id="menu">
-      <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+      <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/recipes">What to say</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
     </nav>
 
     <div class="maprap">
@@ -1386,6 +1387,9 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
 <script src="/legs.js?v=3"></script>
 <script src="/places.js?v=7"></script>
+<!-- WebMCP: the page offers its own actions to a browser-side agent. Feature-detected; on a
+     browser without navigator.modelContext it registers nothing and costs one 5KB file. -->
+<script src="/webmcp.js?v=1" defer></script>
 <!-- BODY-LEVEL on purpose. Its predecessor lived inside .maprap, whose z-index:0 is
      load-bearing for Leaflet's panes, and so the whole toolbar sat under .railwrap at 16 —
      which is why three of its seven buttons could not be tapped for months. Out here there
@@ -1542,7 +1546,7 @@ if(PM){
   const s=document.createElement("script");
   s.src="/vendor/protomaps-leaflet-4.1.1/protomaps-leaflet.js?v=1";
   s.onload=()=>{ const st=document.createElement("script");
-    st.src="/mapstyle.js?v=11";
+    st.src="/mapstyle.js?v=12";
     st.onload=()=>setBase(baseIsDark);
     st.onerror=()=>setBase(baseIsDark);
     document.head.appendChild(st); };
@@ -4150,6 +4154,15 @@ try{ watchPromptHeight(); }catch(e){}
   /* Returns `{why}` rather than a bare null, because the three ways this fails need three
      different sentences — "add a leg" is a lie when the real problem is that the trip is too big
      to fit in a URL. */
+  /* EXPOSED ON PURPOSE (2026-09-28), and it is the only export this page makes.
+     `webmcp.js` registers the page's own actions as tools for a browser-side agent, and the rule
+     there is that every tool goes through THESE functions rather than a second implementation —
+     a parallel encoder would drift from this one the way lib/mcp.php would drift from the .mjs
+     without its parity test. addLeg, routes, render and frameTrip are already reachable (function
+     declarations and top-level `let` are global bindings); this one is nested inside boot(), so
+     it needs saying out loud. Read-only from the agent's side: it builds a link and validates it
+     by decoding it, and changes nothing. */
+  window.sendableDraft = sendableDraft;
   function sendableDraft(){
     const e = encodeDraft(); if(!e) return { why:"empty" };
     if(e.json.length > 60000) return { why:"toobig" };   // the decoder's own ceiling

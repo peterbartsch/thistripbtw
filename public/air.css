@@ -1,0 +1,275 @@
+/* air.css — the lighter look, DEFAULT since D-202 (2026-09-29). Every page carries
+ * data-air on <html> ("page" on the marketing set, "tool" on /new and the trip page); the
+ * surfaces themselves live in sky.css. It began as a ?air=1 prototype, which is why every rule
+ * is scoped under html[data-air].
+ *
+ * Peter, 2026-09-29: "too clunky and dark (dark mode is almost blackhole mode) — I want it all
+ * to feel lighter and more modern."
+ *
+ * WHAT MOVES AND WHAT DOES NOT.
+ *   · The two brand hues do not move. Blue #0A4DA2 and orange #F26A1B are D-193's and the
+ *     distance-from-thios numbers depend on them.
+ *   · Surfaces move: the ground is a quiet near-white, cards are white with a hairline and a
+ *     soft shadow, and nothing wears a 2-3px ink frame.
+ *   · Dark stops being black. The three dark skies become graphite with a whisper of their hour
+ *     (cool at dawn, warm at dusk, blue at night), with raised cards a clear step lighter.
+ *   · Type on the marketing pages is the system face, sentence case, tight tracking. Uppercase
+ *     condensed type is most of what "clunky" was.
+ *   · Orange is the action and the only orange. After dark links are the lifted blue.
+ *
+ * Load order: tokens.css, sky.css, pages.css, then this.
+ */
+
+/* ── 1. surfaces ─────────────────────────────────────────────────────────────────────── */
+html[data-air] body{background:var(--sky) no-repeat;background-size:100% 100%;text-shadow:none!important}
+html[data-air][data-sky="day"] body{background:var(--sky) no-repeat;background-color:#F6F7F9}
+html[data-air] *{text-shadow:none!important}
+/* after dark a link is the lifted blue, not orange: orange is the thing to press and nothing else */
+html[data-air][data-sky="night"],html[data-air][data-sky="dawn"],html[data-air][data-sky="dusk"]{--link:#8CBAF7}
+
+html[data-air]{
+  --air-r:22px;                 /* cards */
+  --air-r-sm:14px;              /* inputs, small panels */
+  --air-shadow:0 0 0 1px var(--line),0 1px 2px rgba(0,0,0,.04),0 12px 32px -8px rgba(0,0,0,.10);
+  --air-shadow-lift:0 0 0 1px var(--line),0 2px 4px rgba(0,0,0,.05),0 22px 48px -12px rgba(0,0,0,.16);
+  --air-tint:rgba(10,77,162,.08);
+  --air-tint-ink:var(--brand,#0A4DA2);
+}
+html[data-air]:not([data-sky="day"]){
+  --air-shadow:0 0 0 1px var(--line),0 12px 32px -10px rgba(0,0,0,.35);
+  --air-shadow-lift:0 0 0 1px rgba(255,255,255,.16),0 22px 48px -12px rgba(0,0,0,.45);
+  --air-tint:rgba(140,186,247,.14);
+  --air-tint-ink:#8CBAF7;
+}
+
+/* ── 2. type — the marketing set only ─────────────────────────────────────────────────── */
+html[data-air="page"]{
+  --air-font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --disp:var(--air-font);--body:var(--air-font);
+  --font-family-display:var(--air-font);--font-family-body:var(--air-font);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html[data-air="page"] body{font-family:var(--air-font);letter-spacing:-.005em}
+html[data-air="page"] :is(h1,h2,h3,.tag,.btn,.cta,.cta2,.buy,.pillars li,.phone-cap,.receipts span,
+  .sentby a,.card h3,.term,.once,.pick,#menu a,.pagebody td:first-child,.linkbox b,.tool){
+  text-transform:none;letter-spacing:-.01em}
+
+/* ── 3. chrome: the two round buttons and the menu ────────────────────────────────────── */
+html[data-air] :is(#menuBtn,#themeBtn,#acctBtn){
+  border:0;background:color-mix(in srgb,var(--card) 72%,transparent);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  box-shadow:0 0 0 1px var(--line),0 4px 14px -4px rgba(0,0,0,.12)}
+html[data-air] #menu{border:0;border-radius:18px;padding:8px;
+  background:color-mix(in srgb,var(--card) 86%,transparent);
+  backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);
+  box-shadow:var(--air-shadow-lift)}
+html[data-air] #menu a{border-radius:11px;font-size:15px;font-weight:500;padding:11px 18px}
+
+/* ── 4. buttons: one pill ─────────────────────────────────────────────────────────────── */
+html[data-air="page"] :is(.btn,.cta,.buy){
+  border-radius:999px;box-shadow:none;font-weight:600;font-size:17px;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),filter .18s,box-shadow .18s}
+html[data-air="page"] :is(.btn,.cta,.buy):hover{filter:brightness(1.05);transform:scale(1.015)}
+html[data-air="page"] :is(.btn,.cta,.buy):active{transform:scale(.98);box-shadow:none}
+html[data-air="page"] .cta{padding:16px 30px;font-size:18px;
+  box-shadow:0 10px 26px -10px rgba(242,106,27,.55)}
+html[data-air="page"] .cta span{font-size:14px;font-weight:500;opacity:.72}
+html[data-air="page"] :is(.cta2,.btn-quiet){border:0;border-radius:999px;box-shadow:none;
+  background:var(--air-tint);color:var(--air-tint-ink);font-weight:600;font-size:16px;padding:14px 24px}
+html[data-air="page"] :is(.cta2,.btn-quiet):hover{background:color-mix(in srgb,var(--air-tint-ink) 16%,transparent);
+  color:var(--air-tint-ink);box-shadow:none}
+html[data-air="page"] #pricing .card:not(.mid) .buy{background:var(--air-tint);color:var(--air-tint-ink);box-shadow:none}
+html[data-air="page"] #pricing .card:not(.mid) .buy:hover{background:color-mix(in srgb,var(--air-tint-ink) 16%,transparent)}
+
+/* ── 5. the landing page ──────────────────────────────────────────────────────────────── */
+html[data-air="page"] header.hero{padding-top:88px}
+html[data-air="page"] .brand-logo{height:min(132px,28vw)}
+html[data-air="page"] .tag{font-size:clamp(34px,6.2vw,58px);font-weight:700;line-height:1.06;
+  letter-spacing:-.03em;max-width:15ch;margin-top:38px;text-wrap:balance}
+html[data-air="page"] .lead{font-size:clamp(19px,2.4vw,23px);font-weight:400;color:var(--soft);
+  line-height:1.35;margin-top:22px;letter-spacing:-.012em}
+html[data-air="page"] .lead span{font-size:15px;margin-top:8px;opacity:.9}
+html[data-air="page"] .cta-row{gap:14px;margin-top:36px}
+html[data-air="page"] .phone{margin-top:64px;border-radius:30px;padding:8px;background:#16181D;
+  box-shadow:0 0 0 1px rgba(0,0,0,.10),0 40px 80px -24px rgba(16,24,40,.35)}
+html[data-air="page"] .phone-screen{border-radius:22px}
+html[data-air="page"] .phone-cap{font-size:14px;font-weight:500;color:var(--soft)}
+
+html[data-air="page"] :is(.promise,.sentby){border-top:1px solid var(--line)}
+html[data-air="page"] .sentby{margin-top:64px}
+html[data-air="page"] .sentby b{font-size:21px;font-weight:600;letter-spacing:-.015em;color:var(--ink)}
+html[data-air="page"] .sentby p{color:var(--soft)}
+html[data-air="page"] .sentby a{font-size:16px;font-weight:500;color:var(--link)}
+html[data-air="page"] .sentby a span{border-bottom:0}
+html[data-air="page"] .sentby a:hover span{text-decoration:underline;text-underline-offset:3px}
+html[data-air="page"] .pillars li{font-size:17px;font-weight:600;letter-spacing:-.01em;padding-left:38px}
+html[data-air="page"] .pillars li::first-letter{text-transform:uppercase}
+html[data-air="page"] .pillars li::before{width:26px;height:26px;border-radius:50%;
+  background:var(--air-tint);color:var(--air-tint-ink);font-size:14px}
+html[data-air="page"] .closer{border-top:1px solid var(--line);font-weight:500;font-size:16px;color:var(--soft)}
+
+/* headings are words, not plates */
+html[data-air="page"] :is(section h2,.pagebody h2){
+  display:block;background:none;color:var(--ink);outline:0;box-shadow:none;border-radius:0;padding:0;
+  font-weight:700;letter-spacing:-.025em;line-height:1.1}
+html[data-air="page"] section h2{font-size:clamp(28px,4.4vw,40px);margin:clamp(64px,11vw,104px) 0 26px}
+html[data-air="page"] .pagebody h2{font-size:26px;margin:0 0 14px}
+html[data-air="page"] .pagebody h3{font-size:19px;font-weight:600;letter-spacing:-.015em}
+
+/* steps */
+html[data-air="page"] .steps{margin-top:0;gap:18px;row-gap:18px}
+html[data-air="page"] :is(.step,#pricing .card,.saidbox,.priv){
+  border:0;outline:0;border-radius:var(--air-r);background:var(--card);box-shadow:var(--air-shadow)}
+html[data-air="page"] .step{padding:26px 24px 28px}
+html[data-air="page"] .step .n{position:static;display:inline-flex;width:34px;height:34px;padding:0;margin:0 0 16px;
+  border-radius:50%;background:var(--air-tint);color:var(--air-tint-ink);box-shadow:none;
+  font-size:16px;font-weight:600;letter-spacing:0}
+html[data-air="page"] .step .n::before{content:none}
+html[data-air="page"] .step h3{font-size:21px;font-weight:600;letter-spacing:-.018em}
+html[data-air="page"] .step .addr{background:var(--ground);color:var(--ink);border-radius:9px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;font-weight:500;letter-spacing:0;padding:7px 11px}
+
+html[data-air="page"] .saidbox{padding:24px 26px;margin-top:34px}
+html[data-air="page"] .saidbox .then{border-top:1px solid var(--line)}
+html[data-air="page"] .alsotry code{border:0;border-radius:9px;background:var(--ground);padding:4px 10px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px}
+html[data-air="page"] .receipts span{border:0;border-radius:999px;background:var(--ground);font-weight:500;font-size:13px}
+
+/* pricing */
+html[data-air="page"] #pricing .card{padding:30px 26px 26px}
+html[data-air="page"] #pricing .card.mid{box-shadow:0 0 0 2px var(--accent),0 24px 56px -18px rgba(242,106,27,.35)}
+html[data-air="page"] .card h3{font-size:21px;font-weight:600;letter-spacing:-.018em;color:var(--ink)}
+html[data-air="page"] .card .term{font-size:14px;font-weight:400;letter-spacing:0;margin-top:3px}
+html[data-air="page"] .price{font-size:60px;font-weight:700;letter-spacing:-.035em;margin-top:18px}
+html[data-air="page"] .price .cur,html[data-air="page"] .price .cents{font-weight:600;letter-spacing:-.01em}
+html[data-air="page"] .once{font-size:13px;font-weight:500;letter-spacing:0}
+html[data-air="page"] .pick{border-radius:999px;font-size:12px;font-weight:600;letter-spacing:0;padding:5px 12px}
+html[data-air="page"] #pricing .card .price::after{width:auto;padding:5px 11px;border-radius:999px;
+  background:var(--air-tint);color:var(--air-tint-ink);outline:0;box-shadow:none;
+  font-size:13px;font-weight:600;letter-spacing:0;line-height:1.2;white-space:nowrap;transform:none!important}
+html[data-air="page"] #pricing .card:nth-child(1) .price::after{content:"1 year"}
+html[data-air="page"] #pricing .card:nth-child(2) .price::after{content:"5 years"}
+html[data-air="page"] #pricing .card:nth-child(3) .price::after{content:"10 years"}
+html[data-air="page"] .feat li::before{border-color:var(--air-tint-ink)}
+html[data-air="page"] .priv{padding:34px 32px}
+html[data-air="page"] .priv strong{font-family:inherit;letter-spacing:-.01em}
+html[data-air="page"] .freeline{font-size:17px}
+html[data-air="page"] .stripe-badge{border:0;box-shadow:var(--air-shadow)}
+html[data-air="page"] #claim{border:0;border-radius:var(--air-r);box-shadow:var(--air-shadow-lift)}
+html[data-air="page"] #claim input{border-radius:var(--air-r-sm)}
+html[data-air="page"] .linkbox{border:0;border-radius:var(--air-r-sm)}
+
+/* ── 6. the content pages ─────────────────────────────────────────────────────────────── */
+html[data-air="page"] .pagehead h1{font-size:clamp(34px,6.4vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1.06}
+html[data-air="page"] .pagehead .lede{font-size:19px;line-height:1.4;max-width:36ch;letter-spacing:-.01em}
+html[data-air="page"] .pagehead .sign img{height:84px}
+html[data-air="page"] .pagebody.sheet{border:0;border-radius:28px;padding:36px 32px 40px;
+  background:var(--card);box-shadow:var(--air-shadow)}
+html[data-air="page"] .pagebody.sheet .card{border:0;border-radius:var(--air-r-sm);background:var(--air-tint);padding:18px 20px}
+html[data-air="page"] .pagebody :is(.card,.block){border-radius:var(--air-r)}
+html[data-air="page"] .pagefoot{border:0;border-radius:var(--air-r);box-shadow:var(--air-shadow)}
+html[data-air="page"] .pagefoot a,html[data-air="page"] footer a{font-weight:500}
+html[data-air="page"] .tool{border-radius:999px;background:var(--air-tint)!important;color:var(--air-tint-ink)!important;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px;font-weight:500;padding:4px 10px}
+html[data-air="page"] .recipe{border-top:1px solid var(--line)}
+html[data-air="page"] .say{font-size:21px;font-weight:600;letter-spacing:-.018em}
+@media (max-width:520px){
+  html[data-air="page"] .pagebody.sheet{padding:26px 20px 30px;border-radius:24px}
+  html[data-air="page"] header.hero{padding-top:72px}
+}
+
+/* ── 7. /new — surfaces only; its type stays, its layouts were measured against it ─────── */
+html[data-air="tool"][data-sky="night"],html[data-air="tool"][data-sky="dusk"],html[data-air="tool"][data-sky="dawn"]{
+  --n-surface:#2A2F3A;--n-raised:#343A47;--n-line:rgba(255,255,255,.12);--n-ink:#F5F5F7;--n-ink-soft:#B6BBC4}
+html[data-air="tool"][data-sky="day"] .hero{background:var(--sky) no-repeat;background-color:#F6F7F9}
+html[data-air="tool"] .hero h1{text-transform:none;letter-spacing:-.02em;color:var(--ink)}
+html[data-air="tool"] .hero p{color:var(--soft)}
+html[data-air="tool"] .hero .cta{border-radius:999px;
+  box-shadow:0 10px 26px -10px rgba(242,106,27,.55)}
+html[data-air="tool"] .hero .cta:hover:not(:disabled){box-shadow:0 12px 30px -10px rgba(242,106,27,.6)}
+
+/* ── 8. the trip page ─────────────────────────────────────────────────────────────────── */
+html[data-air="tool"]:not([data-theme="dark"]){
+  --sheet:#FFFFFF;--card:#FFFFFF;--tabbg:#F0F1F4;--ink:#1D1D1F;--ink-soft:#62666D;--line:#E6E7EB;--radius:18px}
+html[data-air="tool"][data-theme="dark"]{
+  --sheet:#262B36;--card:#2F3542;--tabbg:#363D4B;--ink:#F5F5F7;--ink-soft:#B6BBC4;--line:#3D4453;--radius:18px}
+
+/* ── 9. the map's own ground, so the page and the basemap are one surface (mapstyle.js darkAir) ── */
+html[data-air][data-sky="night"] #map,html[data-air][data-sky="dusk"] #map,html[data-air][data-sky="dawn"] #map,
+html[data-air][data-theme="dark"] #map{background:#2A2F3A}
+
+/* ── 10. the tools lose their ink frames ──────────────────────────────────────────────────
+   Every one of these wore `2px solid ink`. The WIDTH stays and the colour goes transparent, so
+   no box changes size by a pixel — these layouts were measured (make flow) and a border that
+   shrinks moves things. The hairline and the lift come from a shadow, which takes no space. */
+html[data-air="tool"]{--air-line:rgba(0,0,0,.10)}
+html[data-air="tool"][data-sky="night"],html[data-air="tool"][data-sky="dusk"],html[data-air="tool"][data-sky="dawn"],
+html[data-air="tool"][data-theme="dark"]{--air-line:rgba(255,255,255,.13)}
+html[data-air="tool"] :is(.name-trip,.popen,.psearch input,.card,.fld,.chip,.denselist,.keeptier,.askwrap,
+  .chat-in textarea,.hero-alt,#menu,#replayCard,#openSheet,#readPrint,#infoBack,#infoBody .card,#fabArc .fa,
+  .bar #themeBtn,.bar #menuBtn,.card.zoom .zoombtn){
+  border-color:transparent;
+  box-shadow:0 0 0 1px var(--air-line),0 6px 18px -8px rgba(0,0,0,.18)}
+html[data-air="tool"] :is(.fld,.chip,.psearch input,.chat-in textarea,.name-trip):focus-visible,
+html[data-air="tool"] .chip.sel{box-shadow:0 0 0 2px var(--color-brand-teal,#0A4DA2)}
+html[data-air="tool"] :is(#fab,#playMap,#photoMap,#playBtn){border-color:transparent;
+  box-shadow:0 8px 22px -8px rgba(0,0,0,.35)}
+html[data-air="tool"] body.flowsheet .railwrap{border-top-color:transparent;
+  box-shadow:0 -1px 0 var(--air-line),0 -14px 34px -14px rgba(0,0,0,.22)}
+html[data-air="tool"] .railwrap::before,html[data-air="tool"] .railwrap::after{border-color:transparent}
+html[data-air="tool"] :is(#keepBar,#infoHead){border-bottom-color:var(--air-line)}
+html[data-air="tool"] #sheet #keepBar{border-color:var(--air-line)}
+html[data-air="tool"] :is(.card,.denselist,.keeptier,.askwrap,#replayCard,#infoBody .card){border-radius:18px}
+html[data-air="tool"] :is(.fld,.psearch input,.chat-in textarea){border-radius:13px}
+html[data-air="tool"] .hero-alt{box-shadow:none;background:rgba(10,77,162,.08)}
+html[data-air="tool"] .signbtn:not(.cta){box-shadow:none;border-radius:999px}
+/* the hard-coded night surfaces in /new, a step up with everything else */
+html[data-air="tool"]:not([data-sky="day"]) :is(.prompt b,.prompt span){background:rgba(44,49,61,.9)}
+html[data-air="tool"]:not([data-sky="day"]) .keepbar{background:rgba(38,43,54,.72)}
+
+/* ── 11. the content pages' own components (each page styles these inline) ──────────────── */
+html[data-air="page"] :is(.pagebody > .card,.principle,.start-go,main > .card,form.card,.card.acct){
+  border:0;border-radius:var(--air-r);background:var(--card);box-shadow:var(--air-shadow)}
+html[data-air="page"] body .card:not(.pagebody.sheet .card):not(#pricing .card){border:0;border-radius:var(--air-r);box-shadow:var(--air-shadow)}
+html[data-air="page"] .start-go:hover{box-shadow:var(--air-shadow-lift)}
+html[data-air="page"] :is(.orline,.newhere h2,label,.tag,th,.principle h2,.start-go em,.more-shapes>summary,
+  .mins,.compare td::before,.pagebody h3){text-transform:none;letter-spacing:-.005em}
+html[data-air="page"] :is(help,.pagebody) h2{border-left:0}
+html[data-air="page"] th{border-bottom:1px solid var(--line);font-weight:600;color:var(--soft);font-size:13px}
+html[data-air="page"] .pagebody td{border-color:var(--line)}
+html[data-air="page"] label{font-weight:500;font-size:14px;color:var(--soft)}
+html[data-air="page"] .pagebody input:not([type=checkbox]):not([type=radio]){border-width:1px;border-radius:var(--air-r-sm)}
+html[data-air="page"] .pagebody :is(.mins,.tag){border:0;background:var(--ground)}
+
+/* ── 12. the tools' type (D-203) ─────────────────────────────────────────────────────────
+   /new and the trip page were held back from section 2 because their layouts were measured
+   against Barlow Condensed. Measured before this shipped: uppercase condensed with .08em
+   tracking sets about as wide as the system face in sentence case at the same size, so the
+   boxes hold. Screen only — PRINT IS THE ARTIFACT and keeps the type it was designed in.
+   Three things stay signs and keep the sign face: the gate (.bigsign), the direction sign
+   on /new (.reassure), and the numerals on the map pins.
+   `data-type-off` on <html> switches this section off, which is how it was measured. */
+@media screen{
+  html[data-air="tool"]:not([data-type-off]){
+    --air-font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --disp:var(--air-font);--body:var(--air-font);
+    --font-family-display:var(--air-font);--font-family-body:var(--air-font);
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  html[data-air="tool"]:not([data-type-off]) body{font-family:var(--air-font)}
+  html[data-air="tool"]:not([data-type-off]) body :not(.bigsign):not(.bigsign *):not(.reassure):not(.reassure *):not(.pin):not(.pin *):not(.cluster):not(.cluster *){
+    text-transform:none!important;letter-spacing:-.005em!important}
+  html[data-air="tool"]:not([data-type-off]) :is(.bigsign,.reassure,.pin,.cluster),
+  html[data-air="tool"]:not([data-type-off]) :is(.bigsign,.reassure,.pin,.cluster) *{
+    font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+  /* Labels whose SOURCE text is lowercase because uppercase used to hide it. The universal rule
+     above is on elements, so ::first-letter is free to capitalise. */
+  html[data-air="tool"]:not([data-type-off]) :is(#sheetGrab b,.railhead h2,.ctype,label.f,.empty b,.moretog,.addtile,
+    .tab,.note-title,.field label,.set-h,#takeTitle,#setTitle,#infoTitle,.chipbtn,.track-chip,.openbtn,.set-btn,
+    #readBtn,#addBtn,.here-btn,.addstay)::first-letter{text-transform:uppercase}
+  html[data-air="tool"]:not([data-type-off]) :is(#sheetGrab b,.ctype,.moretog,.chipbtn,.track-chip){display:inline-block}
+  html[data-air="tool"]:not([data-type-off]) .name-trip{font-size:16px;font-weight:600}
+  html[data-air="tool"] .leaflet-bar{border:0!important;border-radius:14px;overflow:hidden;
+    box-shadow:0 0 0 1px var(--air-line),0 6px 18px -8px rgba(0,0,0,.18)}
+  html[data-air="tool"] .leaflet-bar a{border-bottom-color:var(--air-line)}
+  /* the one element the measurement caught: the offline banner wrapped to two lines at 390 */
+  html[data-air="tool"]:not([data-type-off]) #offline{font-size:12px}
+}

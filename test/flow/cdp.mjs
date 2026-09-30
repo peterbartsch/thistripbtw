@@ -181,9 +181,17 @@ export async function launch({ headless = true, port = 9337 } = {}) {
     async reset(origin) {
       await send("Page.navigate", { url: origin + "/new" });
       await new Promise(r => setTimeout(r, 900));
+      /* `.catch()` ON THE PROMISE, not only try/catch around the call — and Chrome 154 is what
+         taught us the difference. It now denies `indexedDB.databases()` in this context, and the
+         denial arrives as a REJECTED PROMISE: the surrounding try/catch never sees it, so the
+         page logged `SecurityError` plus an `Uncaught (in promise)` and the flow run reported two
+         findings on /new that the site had nothing to do with. The harness was failing its own
+         subject. Storage that cannot be enumerated also cannot be dirty, so swallowing is right
+         here rather than merely convenient. */
       await page.eval(`(()=>{ try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
-        try{ indexedDB.databases && indexedDB.databases().then(ds =>
-          ds.forEach(d => indexedDB.deleteDatabase(d.name))); }catch(e){} return 1; })()`);
+        try{ indexedDB.databases && indexedDB.databases()
+          .then(ds => ds.forEach(d => indexedDB.deleteDatabase(d.name)))
+          .catch(()=>{}); }catch(e){} return 1; })()`);
     },
 
     async close() {

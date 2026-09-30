@@ -221,6 +221,8 @@ test-mcp: ## Self-test the MCP server (no deps, no network)
 test-tools: ## Unit-test the chat-agent tool adapter (no DB, no network)
 	@php test/tools-test.php
 	@php test/mcp-parity.php
+	@php test/markdown-test.php
+	@node test/webmcp-test.mjs
 	@php test/structured-test.php
 	@php test/mail-header-test.php
 	@php test/chat-rate-test.php

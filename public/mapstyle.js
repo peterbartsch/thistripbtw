@@ -118,6 +118,52 @@
     roads_label_minor_halo: '#0C1016'
   };
 
+  /* NIGHT, LIGHTER (?air=1, 2026-09-29). Peter: "dark mode is almost blackhole mode." The night
+     map above is land at #121821, which on a phone in a dark room is a hole with a line in it.
+     This is graphite: the land is the page's own dark surface (air.css), water sits a step
+     BELOW it and bluer so a lake is a shape rather than a void, and roads a step above. Same
+     nineteen keys, same relationships, about twice the luminance. Read from the attribute
+     the data-air attribute on <html> (static since D-202), at call time — not from location.search, which the host has already
+     rewritten by the time this file runs (see BRAND below). */
+  var darkAir = {
+    earth:      '#2A2F3A',
+    glacier:    '#353B47',
+    beach:      '#322F36',
+    sand:       '#322F36',
+    park_b:     '#2A3438',
+    scrub_b:    '#2C3339',
+    industrial: '#2F3440',
+    school:     '#2F333F',
+    hospital:   '#33323E',
+    zoo:        '#2A3436',
+    aerodrome:  '#303643',
+    runway:     '#3D4553',
+    pier:       '#333A47',
+    buildings:  '#343B48',
+    water:      '#1D2634',
+    wetland:    '#2B333B',
+    major:      '#5A6677',   /* 2.4:1 on the land: present, and the route line still wins */
+    pedestrian: '#3D4553',
+    railway:    '#3D4553',
+    boundaries: '#556072',
+
+    city_label:             '#D3DBE4',
+    city_label_halo:        '#22262F',
+    city_circle:            '#7E8FA2',
+    city_circle_stroke:     '#22262F',
+    state_label:            '#97A4B2',
+    state_label_halo:       '#22262F',
+    country_label:          '#A3B0BD',
+    ocean_label:            '#5D7488',
+    roads_label_major:      '#AEBAC6',
+    roads_label_major_halo: '#22262F',
+    roads_label_minor:      '#8D9AA8',
+    roads_label_minor_halo: '#22262F'
+  };
+  function isAir() {
+    try { return w.document.documentElement.hasAttribute("data-air"); } catch (e) { return false; }
+  }
+
   /* ── OUR OWN RULES, and the library's are unusable here ────────────────────────────────
    * protomapsL.paintRules(theme) looked like the obvious way to do this and produces a map with
    * NOTHING on it but land and water. Its filters read `pmap:kind`; the Protomaps basemap v4
@@ -142,7 +188,7 @@
   function rules(night) {
     var P = w.protomapsL;
     if (!P) return null;
-    var th = branded(night ? dark : light, night);
+    var th = branded(night ? (isAir() ? darkAir : dark) : light, night);
     var K = function (f) { return f.props.kind; };
     var has = function (list) { return function (z, f) { return list.indexOf(K(f)) !== -1; }; };
     /* `kind` OR `kind_detail`, because the archive uses both and which one depends on the zoom.

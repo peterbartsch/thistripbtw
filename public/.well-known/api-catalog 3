@@ -1,0 +1,16 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://thistripbtw.us/mcp",
+      "service-desc": [
+        { "href": "https://thistripbtw.us/.well-known/mcp.json", "type": "application/json" }
+      ],
+      "service-doc": [
+        { "href": "https://thistripbtw.us/for-agents", "type": "text/html" }
+      ],
+      "describedby": [
+        { "href": "https://thistripbtw.us/llms.txt", "type": "text/plain" }
+      ]
+    }
+  ]
+}

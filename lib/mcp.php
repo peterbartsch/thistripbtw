@@ -363,12 +363,29 @@ function mcp_amend_link(array $input): array {
     $r = mcp_read_link(['link' => (string)($input['link'] ?? '')]);
     $trip = $r['trip'];
     $next = ['name' => $trip['name'] ?? '', 'origin' => $trip['origin'], 'legs' => $trip['legs']];
-    $changed = ['name' => false, 'origin' => false, 'replaced' => false, 'added' => 0, 'removed' => false];
+    $changed = ['name' => false, 'origin' => false, 'replaced' => false, 'added' => 0, 'updated' => 0, 'removed' => false];
     if (array_key_exists('name', $input))   { $next['name']   = $input['name'];   $changed['name'] = true; }
     if (array_key_exists('origin', $input)) { $next['origin'] = $input['origin']; $changed['origin'] = true; }
     if (array_key_exists('legs', $input))   { $next['legs']   = mcp_legs_of(['legs' => $input['legs']]); $changed['replaced'] = true; }
     $add = mcp_legs_of(['legs' => $input['add'] ?? null]);
     if ($add) { $next['legs'] = array_merge($next['legs'], $add); $changed['added'] = count($add); }
+    /* D-204: change one leg without resending the rest. Mirrors amendLink() exactly: after
+       legs/add, before remove; `set` merges, null clears. */
+    if (array_key_exists('update', $input)) {
+        $ups = $input['update'];
+        if (!is_array($ups) || ($ups !== [] && array_keys($ups) !== range(0, count($ups) - 1))) $ups = [$ups];
+        foreach ($ups as $u) {
+            $idx = is_array($u) ? ($u['leg'] ?? null) : null; $n = count($next['legs']);
+            if (!is_int($idx) || $idx < 1 || $idx > $n) throw new RuntimeException("update.leg must be a leg number from 1 to $n");
+            $set = $u['set'] ?? null;
+            if (!is_array($set) || ($set !== [] && array_keys($set) === range(0, count($set) - 1)))
+                throw new RuntimeException('update.set must be an object of leg fields to change, e.g. {"lodging":"Red Cliffs Lodge"}');
+            $leg = $next['legs'][$idx - 1];
+            foreach ($set as $k => $v) { if ($v === null) unset($leg[$k]); else $leg[$k] = $v; }
+            $next['legs'][$idx - 1] = $leg;
+            $changed['updated']++;
+        }
+    }
     if (array_key_exists('remove', $input)) {
         $idx = $input['remove']; $n = count($next['legs']);
         if (!is_int($idx) || $idx < 1 || $idx > $n) throw new RuntimeException("remove must be a leg number from 1 to $n");
@@ -481,6 +498,22 @@ function mcp_handle(array $msg): ?array {
 
     if ($method === 'tools/call') {
         $name = (string)($params['name'] ?? '');
+        /* ── how often each tool is actually called (D-198) ──────────────────────────────────
+           Until now the only MCP number was `kept_read`, so the tool that matters most —
+           build_trip_link — was invisible: Glama reports calls through ITS gateway only, npx runs
+           on somebody else's machine and reports nothing at all, and the hosted endpoint counted
+           nothing. Every listing, description and directory submission was being judged against
+           an instrument that could not see the thing it was supposed to improve.
+           SAME SHAPE AS D-187, and deliberately no richer: one byte appended to
+           var/tally/YYYY-MM-DD.mcp_<tool>. No arguments, no link, no trip, no address, no session
+           and no ordering — a count, not a record. The name comes from OUR OWN list below, never
+           from the caller, so a stranger cannot create files by inventing tool names.
+           COUNTED AT THE CALL, not at the result: a refusal is still an agent reaching for this
+           tool, which is exactly what these numbers are for. */
+        if (in_array($name, ['build_trip_link','find_place','amend_trip_link','read_trip_link','read_kept_trip','add_to_kept_trip'], true)) {
+            require_once __DIR__ . '/tally.php';
+            tally('mcp_' . $name);
+        }
         if ($name === 'read_trip_link') {
             $args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
             try {

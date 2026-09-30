@@ -87,6 +87,8 @@ link. Discovery index: <https://thistripbtw.us/.well-known/agent-skills/index.js
 <!--starts-->
 ## Starting shapes
 
+What to say, with worked examples and the links they produce: https://thistripbtw.us/recipes
+
 Ready-made starting points at https://thistripbtw.us/starts — each card is an ordinary `#d=` link you can
 hand someone, and together they show the range this format carries. Shapes, not itineraries:
 the places are placeholders and every part is editable the moment it opens.

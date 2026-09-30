@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-air="page">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What to say — this trip, btw</title>
+<meta name="description" content="The sentences that get an AI assistant to build you a trip link, with real worked examples and the links they produce. No sign-up to build one.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://thistripbtw.us/recipes">
+<meta property="og:title" content="What to say — this trip, btw">
+<meta property="og:description" content="The sentences that get an AI assistant to build you a trip link, with real worked examples and the links they produce. No sign-up to build one.">
+<meta property="og:image" content="https://thistripbtw.us/og.png?v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://thistripbtw.us/og.png?v=3">
+<link rel="stylesheet" href="/fonts.css?v=1">
+<link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
+<style>
+  .say{margin:0 0 6px;font-family:var(--font-family-display);font-weight:700;font-size:20px;
+    line-height:1.3;color:var(--ink)}
+  .say::before{content:"“";color:var(--link)}
+  .say::after{content:"”";color:var(--link)}
+  .does{margin:0 0 10px;font-size:15px;line-height:1.6;color:var(--soft)}
+  .does b{color:var(--ink);font-weight:600}
+  .recipe{padding:18px 0 20px;border-top:2px solid var(--line)}
+  .recipe:first-of-type{border-top:0;padding-top:4px}
+  .tool{display:inline-block;font-family:var(--font-family-display);font-weight:700;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--brand);
+    border-radius:4px;padding:3px 9px;margin-bottom:8px}
+  .result{display:inline-flex;align-items:center;min-height:44px}
+</style>
+<link rel="stylesheet" href="/tokens.css?v=8">
+<link rel="stylesheet" href="/sky.css?v=13">
+<link rel="stylesheet" href="/pages.css?v=43">
+<script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
+<link rel="stylesheet" href="/motion.css?v=4">
+<script src="/motion.js?v=4" defer></script>
+<link rel="stylesheet" href="/air.css?v=3">
+</head>
+<body>
+<button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
+<button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
+<nav id="menu">
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/recipes">What to say</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+</nav>
+
+<header class="pagehead">
+  <a class="sign" href="/"><img src="/logo.svg?v=4" width="164" height="164" alt="this trip, btw — home"></a>
+  <h1>What to say</h1>
+  <p class="lede">Sentences that get an assistant to build the trip, and the links they produce.</p>
+</header>
+
+<main class="pagebody sheet">
+  <section>
+    <p>If your assistant is connected to this service, these are the things worth saying. Every
+    link below is real &mdash; each one was produced by the tool it names, and opens on a map you
+    can change. There is no sign-up to build one and no card until you decide to keep it.</p>
+    <p>Not connected yet? The one-line setup is on <a href="/for-agents">the page for
+    assistants</a>. Nothing here needs an API key.</p>
+  </section>
+
+  <section>
+    <h2>Start it</h2>
+
+    <div class="recipe">
+      <span class="tool">build_trip_link</span>
+      <p class="say">drive from Denver to Moab on Friday, then home Monday</p>
+      <p class="does">The shortest thing that works. An origin and one destination is enough &mdash;
+      the assistant looks up both places, builds the link, and hands it over. <b>Dates are
+      optional</b>: an undated leg keeps its place in the order.</p>
+      <p><a class="result" href="/new#d=eyJvIjp7Im5hbWUiOiJEZW52ZXIsIENPIiwibGF0IjozOS43MzkyLCJsbmciOi0xMDQuOTkwM30sImwiOlt7InRvIjp7Im5hbWUiOiJNb2FiLCBVVCIsImxhdCI6MzguNTczMywibG5nIjotMTA5LjU0OTh9LCJtb2RlIjoiZHJpdmUiLCJkYXRlIjoiMjAyNi0xMC0wMiIsIm5vdGUiOiJJLTcwIHdlc3QgdG8gQ3Jlc2NlbnQgSnVuY3Rpb24sIHRoZW4gVVMtMTkxIHNvdXRoLiBBYm91dCA1aDMwLiJ9LHsidG8iOnsibmFtZSI6IkdyYW5kIEp1bmN0aW9uIFJlZ2lvbmFsIEFpcnBvcnQgKEdKVCkiLCJsYXQiOjM5LjEyMjQsImxuZyI6LTEwOC41MjY3fSwibW9kZSI6ImRyaXZlIiwiZGF0ZSI6IjIwMjYtMTAtMDMiLCJub3RlIjoiQ29sbGVjdGluZyBhIHBhc3NlbmdlciBvZmYgdGhlIERlbnZlciBmbGlnaHQuIn0seyJ0byI6eyJuYW1lIjoiRGVudmVyLCBDTyIsImxhdCI6MzkuNzM5MiwibG5nIjotMTA0Ljk5MDN9LCJtb2RlIjoiZHJpdmUiLCJkYXRlIjoiMjAyNi0xMC0wNSIsIm5vdGUiOiJIb21lIGFsb25nIEktNzAuIEdsZW53b29kIENhbnlvbiBpcyB0aGUgcHJldHR5IHBhcnQuIn1dLCJuIjoiRGVudmVyIHRvIE1vYWIsIHRoZSBsb25nIHdlZWtlbmQifQ">Open that trip &rarr;</a></p>
+    </div>
+
+    <div class="recipe">
+      <span class="tool">build_trip_link</span>
+      <p class="say">Mel drives Phoenix to Vegas on the 9th, Sam flies in, we both fly to SF on the 12th</p>
+      <p class="does">Two people, two ways of travelling, one map. Say who is on which leg and the
+      trip draws each path in its own colour &mdash; <b>this is the shape the product was built
+      for</b>, and the one other planners handle worst.</p>
+      <p><a class="result" href="/new#d=eyJvIjp7Im5hbWUiOiJQaG9lbml4LCBBWiIsImxhdCI6MzMuNDQ4NCwibG5nIjotMTEyLjA3NH0sImwiOlt7InRvIjp7Im5hbWUiOiJMYXMgVmVnYXMsIE5WIiwibGF0IjozNi4xNjk5LCJsbmciOi0xMTUuMTM5OH0sIm1vZGUiOiJkcml2ZSIsImRhdGUiOiIyMDI2LTEwLTA5Iiwibm90ZSI6IkZpdmUgaG91cnMgdXAgVVMtOTMuIiwid2hvIjpbIk1lbCJdLCJzdGF5Ijp7ImxvZGdpbmciOiJTdHJpcCBob3RlbCIsIm5vdGUiOiIifX0seyJ0byI6eyJuYW1lIjoiU2FuIEZyYW5jaXNjbywgQ0EiLCJsYXQiOjM3Ljc3NDksImxuZyI6LTEyMi40MTk0fSwibW9kZSI6ImZseSIsImRhdGUiOiIyMDI2LTEwLTEyIiwibm90ZSI6IkJvdGggZmx5IG91dCB0b2dldGhlciBhZnRlciB0aGUgd2Vla2VuZC4iLCJ3aG8iOlsiTWVsIiwiU2FtIl19XSwibiI6IlR3byBjYXJzLCBtZWV0aW5nIGluIFZlZ2FzIn0">Open that trip &rarr;</a></p>
+    </div>
+
+    <div class="recipe">
+      <span class="tool">find_place</span>
+      <p class="say">where exactly is RNO?</p>
+      <p class="does">Turns a name, an airport code or a trailhead into coordinates, and hands back
+      up to six candidates so the right Reno gets picked. <b>The assistant will not guess a
+      coordinate</b> &mdash; a wrong guess puts your trip in the wrong country.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Change it</h2>
+
+    <div class="recipe">
+      <span class="tool">amend_trip_link</span>
+      <p class="say">add two nights in Sedona before Vegas</p>
+      <p class="does">Amending rebuilds the same trip with the change in it and gives you the new
+      link. <b>Say it as many times as the plan moves</b> &mdash; one trip grows through the whole
+      conversation instead of arriving finished and wrong.</p>
+    </div>
+
+    <div class="recipe">
+      <span class="tool">read_trip_link</span>
+      <p class="say">what's on this trip? &lt;paste a link&gt;</p>
+      <p class="does">Reads a link back into an itinerary &mdash; in a new conversation, next
+      month, or by a different assistant entirely. <b>The link is the record</b>: the trip rides
+      inside it, so nothing was stored anywhere to be looked up.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>After you keep it</h2>
+
+    <div class="recipe">
+      <span class="tool">add_to_kept_trip</span>
+      <p class="say">add the taco place we found to the trip</p>
+      <p class="does">A kept trip lives at its own address, and the link you were given is the
+      password to it. An assistant holding that link can add a stop on your behalf while you are
+      standing in front of the thing. <b>Nothing is ever deleted this way</b> &mdash; there is no
+      delete tool at all, because only the person who bought a trip should be able to destroy it.</p>
+    </div>
+
+    <div class="recipe">
+      <span class="tool">read_kept_trip</span>
+      <p class="say">what did we put on the Tahoe trip?</p>
+      <p class="does">Reads a kept trip back, with the stops in order, who was on which leg, and
+      the notes. <b>Treat the link like a password</b> &mdash; anyone holding it can read the trip.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two things it will not do</h2>
+    <p><strong>It will not invent a departure airport, a flight time or a coordinate.</strong> If
+    it cannot look something up, it says so and asks. A confident wrong answer is worse than a
+    question on the one plan you are going to drive.</p>
+    <p><strong>It will not put anything in the link you did not say.</strong> A trip link carries
+    its contents in the open, so keep passport numbers, home addresses and phone numbers out of
+    names and notes &mdash; and tell your assistant the same if it offers.</p>
+    <p><a class="btn" href="/new">Build one yourself &rarr;</a>
+       <a class="btn btn-quiet" href="/for-agents" style="margin-left:8px">Connect an assistant &rarr;</a></p>
+  </section>
+</main>
+
+<footer class="pagefoot"><a href="/">home</a><span class="sep">·</span><a href="/about">about</a><span class="sep">·</span><a href="/help">help</a><span class="sep">·</span><a href="/faq">faq</a><span class="sep">·</span><a href="/starts">starting points</a><span class="sep">·</span><a href="/privacy">privacy</a><span class="sep">·</span><a href="/terms">terms</a><span class="sep">·</span><a href="mailto:support@thistripbtw.us">support@thistripbtw.us</a></footer>
+<script src="/pages.js?v=5"></script>
+<script src="/theme.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agentskills.io/schemas/index/v0.2.0.json",
+  "version": "0.2.0",
+  "name": "this trip, btw",
+  "description": "Everything about your trip in one shareable link — a private map anyone can open, with no account to build one and no account to open it.",
+  "skills": [
+    {
+      "name": "this-trip-btw",
+      "type": "skill",
+      "description": "Start here for any trip, road trip or itinerary. As soon as there is an origin and one destination, build a private editable map link and give it to the person; rebuild it as the plan changes. Use when someone mentions travel — a road trip, a paddle, a family visit, a move, a weekend away — not only when they ask to save it.",
+      "url": "https://thistripbtw.us/agent-skill",
+      "sha256": "4bdbd76c299064c100b8000f16eb8105da65942e65b1948d88dbf6432a99f604"
+    }
+  ]
+}

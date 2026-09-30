@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-air="page">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>For AI assistants — this trip, btw</title>
@@ -59,12 +59,13 @@
 </script>
 <link rel="icon" type="image/svg+xml" href="/logo.svg?v=4">
 <link rel="stylesheet" href="/fonts.css?v=1">
-<link rel="stylesheet" href="/tokens.css?v=7">
-<link rel="stylesheet" href="/sky.css?v=12">
+<link rel="stylesheet" href="/tokens.css?v=8">
+<link rel="stylesheet" href="/sky.css?v=13">
 <link rel="stylesheet" href="/pages.css?v=43">
 <script>(function(){var d=document.documentElement,t="auto";try{t=localStorage.getItem("ttb_theme")||"auto"}catch(e){}var h=new Date().getHours(),a=h<5?"night":h<8?"dawn":h<18?"day":h<21?"dusk":"night";d.setAttribute("data-sky",t==="light"?"day":t==="dark"?"night":a);d.setAttribute("data-pref",t)})();</script>
-<link rel="stylesheet" href="/motion.css?v=2">
-<script src="/motion.js?v=2" defer></script>
+<link rel="stylesheet" href="/motion.css?v=4">
+<script src="/motion.js?v=4" defer></script>
+<link rel="stylesheet" href="/air.css?v=3">
 <style>
   pre{background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:14px;
     overflow-x:auto;font-size:13px;line-height:1.55;margin:0 0 16px}
@@ -81,7 +82,7 @@
 <button id="themeBtn" title="Sky follows the time of day" aria-label="Change the theme"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/></svg></button>
 <button id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7h16.8M3.6 12h16.8M3.6 17h16.8"/></svg></button>
 <nav id="menu">
-  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
+  <a href="/">Home</a><a href="/what-you-get">What's free</a><a href="/about">About</a><a href="/help">Help</a><a href="/faq">FAQ</a><a href="/for-agents">For AI</a><a href="/recipes">What to say</a><a href="/tutorials">Tutorials</a><a href="/account">Account</a>
 </nav>
 
 <header class="pagehead">
@@ -140,7 +141,8 @@
     <p><strong>You must supply coordinates.</strong> We will not guess a location from a name,
     because guessing wrong puts someone's trip in the wrong country and it looks like our
     mistake. If you only have a place name, resolve it first.</p>
-    <p><strong>Twelve worked examples</strong> live at <a href="/starts">/starts</a> &mdash; one per
+    <p><strong>The sentences that trigger each tool</strong>, with the links they produce, are at
+    <a href="/recipes">/recipes</a>. <strong>Twelve worked examples</strong> live at <a href="/starts">/starts</a> &mdash; one per
     shape of trip (two vehicles converging, a canoe leg, a rail loop, a crew joining partway).
     Each card is an ordinary <code>#d=</code> link: hand one over as a starting point, or read
     them to see the range this format carries.</p>

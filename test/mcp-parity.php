@@ -120,6 +120,17 @@ $jsAmend = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(
   . ' | node ' . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null') ?: '{}', true);
 $jsAmendUrl = preg_match('~(https://\S+#d=\S+)~', $jsAmend['result']['content'][0]['text'] ?? '', $mm) ? $mm[1] : '';
 ok('amend_trip_link builds the identical link on both servers', $jsAmendUrl !== '' && $jsAmendUrl === $amended['url'], substr($jsAmendUrl,0,60) . ' vs ' . substr($amended['url'],0,60));
+/* D-204: update must merge the same way on both servers — same link out, one leg changed. */
+$updArgs = ['link' => $sample['url'], 'update' => [['leg' => 1, 'set' => ['lodging' => 'Red Cliffs Lodge', 'note' => null]]]];
+$upd = mcp_amend_link($updArgs);
+$jsUpd = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
+    'params'=>['name'=>'amend_trip_link','arguments'=>$updArgs]]))
+  . ' | node ' . escapeshellarg(dirname(__DIR__).'/mcp/thistripbtw-mcp.mjs') . ' 2>/dev/null') ?: '{}', true);
+$jsUpdUrl = preg_match('~(https://\S+#d=\S+)~', $jsUpd['result']['content'][0]['text'] ?? '', $mm) ? $mm[1] : '';
+ok('amend_trip_link update builds the identical link on both servers', $jsUpdUrl !== '' && $jsUpdUrl === $upd['url'], substr($jsUpdUrl,0,60) . ' vs ' . substr($upd['url'],0,60));
+$updBack = mcp_read_link(['link' => $upd['url']])['trip']['legs'][0];
+ok('and it changed the one leg and nothing else', ($upd['changed']['updated'] ?? 0) === 1
+   && ($updBack['lodging'] ?? '') === 'Red Cliffs Lodge' && !isset($updBack['note']) && ($updBack['who'] ?? []) === ['Mel','Sam'] && ($updBack['date'] ?? '') === '2026-09-04');
 
 $jsRead = json_decode(shell_exec("printf '%s\n' " . escapeshellarg(json_encode(['jsonrpc'=>'2.0','id'=>1,'method'=>'tools/call',
     'params'=>['name'=>'read_trip_link','arguments'=>['link'=>$sample['url']]]]))

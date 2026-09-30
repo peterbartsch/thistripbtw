@@ -30,6 +30,17 @@ RewriteRule ^(lib|_agents|scripts|test|reference|_media|node_modules|var|\.wrang
 <FilesMatch "\.(env|sql|md|toml|sh|dist|example|lock)$">
   Require all denied
 </FilesMatch>
+# ONE EXCEPTION, and it is named rather than pattern-matched (D-200). /auth.md is a published
+# standard's fixed path — it has to be that filename at the root — and the blanket .md deny above
+# makes it a hard 403 no routing can undo, the same trap /skill and /mcp/readme already work
+# around by dropping the extension. This does not weaken the rule: it grants exactly one filename,
+# and every other .md in the tree (governance, READMEs, DECISIONS) stays denied. Its contents are
+# written to be public.
+# Every directive and every section tag on its own line, per the 2026-08-07 parse failure that
+# took photo serving down: a closing tag beside its directive throws out this entire file.
+<Files "auth.md">
+  Require all granted
+</Files>
 <FilesMatch "^(worker\.js|wrangler\.toml|\.dev\.vars)$">
   Require all denied
 </FilesMatch>

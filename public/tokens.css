@@ -43,10 +43,10 @@
   /* F-14, 2026-08-02: these now match sky.css EXACTLY. They described a ~162deg gradient
      nothing used while four tuned 172deg ones shipped, so /new invented a fifth. A token
      that disagrees with what renders is worse than no token — it invites a third value. */
-  --gradient-sky-dawn:  linear-gradient(172deg,#2C3A47 0%,#556B7D 55%,#AEBEC8 100%);
-  --gradient-sky-day:   linear-gradient(172deg,#F7F2E7 0%,#F3ECDD 60%,#EFE6D2 100%);   /* D-193: road-atlas paper */
-  --gradient-sky-night: linear-gradient(172deg,#0A0F2A 0%,#131240 38%,#1D1652 70%,#281B5C 100%);
-  --gradient-sky-dusk:  linear-gradient(172deg,#2A2450 0%,#8A3B6E 42%,#D9531F 74%,#F2A63B 100%);
+  --gradient-sky-dawn:  linear-gradient(172deg,#2A323C 0%,#21272F 45%,#21272F 100%);
+  --gradient-sky-day:   linear-gradient(172deg,#FFFFFF 0%,#F6F7F9 40%,#F6F7F9 100%);
+  --gradient-sky-night: linear-gradient(172deg,#262B36 0%,#1F232C 45%,#1F232C 100%);
+  --gradient-sky-dusk:  linear-gradient(172deg,#322C36 0%,#25222A 45%,#25222A 100%);
 
   /* ── type ── */
   --font-family-display: "Barlow Condensed", "Arial Narrow", sans-serif;

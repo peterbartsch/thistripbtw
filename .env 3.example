@@ -1,0 +1,44 @@
+# this trip, btw — environment template. Copy to .env (never committed) and fill in.
+# On the VPS this lives in the docroot but is denied by .htaccess (see rules).
+
+# MySQL (DreamHost MySQL host)
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=ttb_main
+DB_USER=ttb_user
+DB_PASS=
+
+# Stripe (secret key). Test key sk_test_... until launch, then live key.
+STRIPE_SECRET=
+
+# Stripe webhook signing secret (whsec_...), from the endpoint you create in the Stripe
+# dashboard. Without it /api/stripe-webhook answers 503 and records nothing. D-073.
+STRIPE_WEBHOOK_SECRET=
+
+# Apex host. thistripbtw.us in prod; leave default for that.
+APEX=thistripbtw.us
+
+# STRIPE_API_BASE — override ONLY for local smoke tests (points at a mock).
+# Leave unset in production so the real Stripe API is used.
+# STRIPE_API_BASE=http://127.0.0.1:4242
+
+# Outgoing mail: your host's authenticated SMTP relay, so they DKIM-sign what you send.
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=info@example.com
+SMTP_PASS=
+
+# The two addresses, and they are not interchangeable.
+#
+# MAIL_FROM is the ENVELOPE SENDER and must be the mailbox SMTP_USER authenticates as.
+# Every bounce comes back to it. It has to stay a real mailbox — if it is ever converted to a
+# forward-only address at the host, the SMTP login stops existing and all outgoing mail dies
+# silently, with send_mail() still returning true. That failure mode has happened once already
+# (the unquoted comma in the From display name, 2026-08-01) and went unnoticed for weeks.
+#
+# MAIL_REPLY_TO is where CUSTOMERS land when they hit reply, and it is the address published in
+# the site's mailto: links. Both default in lib/mail.php if unset — set them anyway. A default
+# that happens to be right is one refactor away from being wrong, and this one decides whether
+# a customer writing in reaches anybody.
+MAIL_FROM=info@example.com
+MAIL_REPLY_TO=support@example.com
