@@ -204,31 +204,9 @@
   body.ringing #playMap,body.reading #playMap{display:none}
   @media print{ #playMap{display:none!important} }
 
-  /* ── #fabArc: the FAB's own menu, growing OUT OF the button ─────────────────────────────
-     Peter, 2026-08-06: "rings grow from its center out, so not all 360 of those rings will be
-     visible... it needs to look like the nav, not the ring markers."
-     So this is NOT ring.js. ring.js draws an SVG wheel centred on a PLACE — it belongs to the
-     map, and using it here said the FAB was a map tool. These are the same round plates as
-     #themeBtn and #menuBtn, laid on a quarter-arc whose centre is the FAB itself. The corner
-     eats three quarters of the circle, which is the point: the visible arc points back at the
-     button it came from, so the menu reads as that button opening rather than as a thing that
-     appeared over the map. */
-  #fabArc{position:fixed;right:12px;z-index:32;width:44px;height:44px;
-    bottom:calc(var(--sheet-rest,112px) + 10px);
-    pointer-events:none}
-  body.sheet-shut #fabArc{bottom:84px}
-  #fabArc[hidden]{display:none}
-  #fabArc .fa{position:absolute;left:0;top:0;width:44px;height:44px;border-radius:50%;
-    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
-    background:var(--card);color:var(--ink);border:2px solid var(--ink);
-    box-shadow:0 3px 10px rgba(0,0,0,.22);pointer-events:auto;
-    font-family:var(--disp);font-weight:700;font-size:10.5px;letter-spacing:.06em;
-    text-transform:uppercase;
-    /* every plate starts ON the FAB and travels out — the growth Peter asked for */
-    transform:translate(0,0) scale(.4);opacity:0;
-    transition:transform .26s cubic-bezier(.2,1.1,.3,1),opacity .18s ease}
-  #fabArc.on .fa{opacity:1}
-  @media (prefers-reduced-motion:reduce){ #fabArc .fa{transition:none} }
+  /* ── The FAB's menu is goo-fab.js now (2026-10-13): a liquid tree, three levels deep, growing
+     out of the button the way the old #fabArc plates did, on the same quarter arc. The plates and
+     their goo are drawn by that file; only the veil below is still this page's. */
   /* The veil is the map going quiet, not a modal: no colour of its own beyond a dim, and one
      tap anywhere closes. */
   #fabVeil{position:fixed;inset:0;z-index:31;background:rgba(8,12,16,.42);
@@ -1691,7 +1669,6 @@
      predecessor there lived inside .maprap, whose z-index:0 traps its children under the rail,
      and three of seven buttons could not be tapped for months because of it. -->
 <div id="fabVeil"></div>
-<div id="fabArc" hidden aria-hidden="true"></div>
 <button id="photoMap" type="button" onclick="tapPhoto()" title="Add a photo"
   aria-label="Add a photo to this trip"></button>
 <button id="playMap" type="button" hidden onclick="tapPlay()" title="Play the trip"
@@ -1705,6 +1682,7 @@
 <script src="/vendor/leaflet-1.9.4/leaflet.min.js?v=1"></script>
 <script src="/legs.js?v=3"></script>
 <script src="/ring.js?v=4"></script>
+<script src="/goo-fab.js?v=2"></script>
 <script src="/sheet.js?v=1"></script>
 <script src="/places.js?v=7"></script>
 <script>
@@ -3194,17 +3172,47 @@ function fabItems(){
   if(!READONLY) items.push({key:"settings", label:"Settings"});
   return items;
 }
-let fabOpen=false;
+/* THE FAB IS A LIQUID TREE (goo-fab.js, 2026-10-13; Peter: "a click on the + gives 3 options,
+   clicking on any of those 3 loads a branch from it of more options"). The three doors and
+   what is behind each, built from state the way fabItems() always was, so a viewer never sees
+   a writer's verb:
+     Add   → Here · Photo · Play (when there is something to play)        writers only
+     Keep  → Read · Take it → Print · Calendar · Sheet · More… · Settings (writers)
+     Share → Share… · Copy link (one tap when the phone cannot share: it copies)
+   "Take it" is the branch that goes three deep: Print, the calendar file and the spreadsheet
+   act at once; "More…" opens the take-it sheet for the two rows that need it (offline map,
+   map file), which keep their own progress state there. */
+let gooFab = null;
+function fabTree(){
+  const keys = fabItems().map(it => it.key);
+  const tree = [];
+  if(keys.includes("here")){
+    const add = [{key:"here", label:"Here"}, {key:"photo", label:"Photo"}];
+    const play = document.getElementById("playMap");
+    if(play && !play.hidden) add.push({key:"replay", label:"Play"});
+    tree.push({key:"add", label:"Add", kids:add});
+  }
+  const keep = [{key:"read", label:"Read"},
+    {key:"take", label:"Take it", kids:[{key:"print", label:"Print"}, {key:"ics", label:"Calendar"}, {key:"csv", label:"Sheet"}, {key:"takemore", label:"More…"}]}];
+  if(keys.includes("settings")) keep.push({key:"settings", label:"Settings"});
+  tree.push({key:"keep", label:"Keep", kids:keep});
+  tree.push(navigator.share
+    ? {key:"sharing", label:"Share", kids:[{key:"share", label:"Share…"}, {key:"copy", label:"Copy link"}]}
+    : {key:"share", label:"Share"});
+  return tree;
+}
+function fabPick(key){
+  if(key === "print" || key === "ics" || key === "csv"){ takeAct(key, null); return; }
+  if(key === "takemore"){ openTake(); return; }
+  if(key === "copy"){
+    navigator.clipboard.writeText(`${TRIP_BASE}/#k=${KEY}`).catch(()=>{});
+    say("Link copied");
+    return;
+  }
+  tripAct(key);
+}
 function closeTripFab(){
-  if(!fabOpen) return;
-  fabOpen=false;
-  const arc=document.getElementById("fabArc"), veil=document.getElementById("fabVeil");
-  arc.classList.remove("on"); veil.classList.remove("on");
-  [...arc.children].forEach(b=>{ b.style.transform="translate(0,0) scale(.4)"; });
-  /* Hide only after the plates have travelled home, or they vanish mid-flight. */
-  setTimeout(()=>{ if(!fabOpen){ arc.hidden=true; arc.innerHTML=""; } }, 280);
-  const fab=document.getElementById("fab");
-  fab.setAttribute("aria-expanded","false");
+  if(gooFab) gooFab.close();
 }
 /* ── ?rdiag=1: what the phone can tell us that a desktop cannot ───────────────────────────
    Two counters, and the difference between them IS the diagnosis:
@@ -3238,40 +3246,11 @@ function rdiagPaint(){
 }
 
 function openTripFab(){
-  if(fabOpen){ closeTripFab(); return; }
-  const arc=document.getElementById("fabArc"), veil=document.getElementById("fabVeil");
-  const items=fabItems();
-  arc.innerHTML="";
-  /* A quarter turn, from straight up to straight left, because the FAB sits in the bottom-right
-     corner and those are the only directions with screen to grow into. Radius scales with the
-     count so three plates are not crowded and four are not flung to the edges. */
-  const R = 78 + 12*items.length;
-  items.forEach((it,k)=>{
-    const b=document.createElement("button");
-    b.type="button"; b.className="fa"; b.textContent=it.label;
-    b.setAttribute("aria-label", it.label);
-    const t = items.length===1 ? 0.5 : k/(items.length-1);      // 0 = up, 1 = left
-    const ang = -Math.PI/2 - t*(Math.PI/2);
-    b.dataset.tx = Math.round(Math.cos(ang)*R);
-    b.dataset.ty = Math.round(Math.sin(ang)*R);
-    b.addEventListener("click", e=>{ e.stopPropagation(); closeTripFab(); tripAct(it.key); });
-    arc.appendChild(b);
-  });
-  arc.hidden=false; arc.setAttribute("aria-hidden","false");
-  fabOpen=true;
-  document.getElementById("fab").setAttribute("aria-expanded","true");
-  /* A FORCED REFLOW, not requestAnimationFrame. The plates need their start position committed
-     before the end position is set — set and moved in one tick is a jump, not a transition —
-     and reading offsetWidth commits it synchronously. rAF was the first attempt and measured
-     dead: the plates sat at 18px (44 x the .4 start scale) at distance 0 with the veil still
-     off, because a callback that never runs leaves the menu half-built. A menu that opens is
-     worth more than one that animates, so this no longer depends on a frame arriving. */
-  void arc.offsetWidth;
-  veil.classList.add("on"); arc.classList.add("on");
-  [...arc.children].forEach((b,k)=>{
-    b.style.transitionDelay=(k*28)+"ms";
-    b.style.transform=`translate(${b.dataset.tx}px, ${b.dataset.ty}px) scale(1)`;
-  });
+  if(!gooFab){
+    if(typeof createGooFab !== "function") return;   // module absent: the button does nothing rather than throwing
+    gooFab = createGooFab({fab:"#fab", veil:"#fabVeil", z:32, onPick:fabPick});
+  }
+  gooFab.open(fabTree());
 }
 document.getElementById("fabVeil").addEventListener("click", closeTripFab);
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeTripFab(); });

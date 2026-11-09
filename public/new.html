@@ -1399,6 +1399,7 @@ body.calm.calm-open2 .calm-more.p{ display:none; }
   fill="currentColor" aria-hidden="true"><circle cx="5.6" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.4" cy="12" r="1.9"/></svg></button>
 
 <script src="/ring.js?v=4"></script>
+<script src="/goo-fab.js?v=2"></script>
 <script src="/sheet.js?v=1"></script>
 <script>
 /* Stripe payment links — mirror public/index.html #pricing (flip test→live together). */
@@ -2653,67 +2654,44 @@ function initFlow(){
    a pin because that ring is about that place; this one is a global menu about the trip, so
    anchoring it to a corner would only make place() pan the map to fit it. Centred, nothing
    moves. */
+/* THE FAB IS A LIQUID TREE (goo-fab.js, 2026-10-13; Peter: "a click on the + gives 3 options,
+   clicking on any of those 3 loads a branch from it of more options"). The ring (ring.js)
+   still belongs to the map: it picks a PLACE. This is the page's own menu, built from state
+   exactly as the ring's wedges were (§2bt: a door appears when the move it names is available
+   AND useful now), in three doors:
+     Add  → Describe · Near me · Add route (when a second vehicle is possible)
+     Edit → Undo · Hide/Show cards            (once there is something to undo or hide)
+     File → Open · Save · Print
+   /new's verbs run out at two levels; the tree goes to three on the trip page ("Take it"). */
+let gooFab = null;
 function openFab(){
-  const r = theRing(); if(!r) return;
-  const at = map.getCenter();
-  const drawer = () => r.open(at, "File", "this draft", [
-      { key:"open",  label:"Open"  },
-      { key:"save",  label:"Save"  },
-      { key:"print", label:"Print" }
-    ], it => {
-      r.close();
-      /* Open goes through the hidden <input type=file>; a real click on it is the only thing
-         a browser accepts as user intent for a file picker. */
-      if(it.key === "open")  document.getElementById("openCopy").click();
-      if(it.key === "save")  saveCopy();
-      if(it.key === "print"){ setPrintName(); window.print(); }
-    }, openFab);                       /* hub goes BACK to the top ring, not away */
-
-  /* §2bt: THE RING IS BUILT FROM STATE, NOT WRITTEN OUT. Peter, 2026-09-01: "the FAB needs to be
-     fully tuned to context - so menus match need - always." `app.html` has done this since §2bc —
-     `const items=[]; if(!READONLY) items.push(...)` — and this ring was the one left as a literal,
-     so on an EMPTY map it offered Undo with nothing to undo and Hide with nothing to hide: two
-     dead wedges out of five, on the loudest control on the page.
-     The rule is need, not taste: a wedge appears when the move it names is available AND useful
-     now. Empty map means the need is BEGINNING, so the three ways in are the whole menu. Once a
-     leg exists the need changes, and `Add route` — the SECOND VEHICLE, which D-011 and the
-     Kishwaukee case exist for — stops being buried in the rail and joins the ring.
-     Flag-gated with the rest of §2br/§2bs; the literal is what runs without `?find=1`. */
+  if(!gooFab){
+    if(typeof createGooFab !== "function") return;
+    gooFab = createGooFab({fab:"#fab", z:910, onPick:fabPick});
+  }
   const FIND = document.body.classList.contains("find");
   const hasLeg = routes.some(rt => rt.legs.length) || !!origin;
-  const wedges = [];
-  wedges.push({ key:"describe", label:"Describe" });
-  wedges.push({ key:"near",     label:"Near me"  });
-  /* 🔴 ?crew=1 — MOVE 4 OF SIX. "A second vehicle" (D-011, the Kishwaukee case) was the last
-     move nothing taught, and the reason turned out not to be discoverability: `Add route` IS in
-     this ring, and it is gated on `FIND`. `?find=1` is not the default, so on the page everyone
-     actually gets, the wedge never exists and the only route to a second vehicle is scrolling to
-     a dashed tile at the bottom of the sheet — which D-183 deliberately left in the scroll.
-     THE CONTEXT-TUNING PETER ASKED FOR IS IN THE SAME BRANCH. "The FAB needs to be fully tuned to
-     context — so menus match need, always" (2026-09-01), and `!FIND || hasLeg` does exactly that
-     — for `?find=1` only. On the default the ring offers Undo and Hide before there is anything
-     to undo or hide. One flag turns the tuning on for everyone and lets the wedge appear whenever
-     `canAddRoute()` says a second vehicle is possible. §2bt(b) is still Peter's decision, so this
-     is a candidate behind a flag and not a promotion. */
   const TUNED = FIND || document.body.classList.contains("crew");
-  if(!TUNED || hasLeg) wedges.push({ key:"undo", label:"Undo" });
-  /* "Hide cards" measured 2 of 6 sample points OUTSIDE its wedge — tested against the
-     annular path with isPointInFill, not against a bounding box, which is wider than the
-     shape at the label's radius and says everything fits. One word, like D-120's cut. */
-  if(!TUNED || hasLeg) wedges.push({ key:"cards", label: document.body.classList.contains("full") ? "Show" : "Hide" });
-  if(TUNED && canAddRoute()) wedges.push({ key:"route", label:"Add route" });
-  wedges.push({ key:"file", label:"File" });
-
-  r.open(at, "Trip", "what next", wedges, it => {
-      if(it.key === "file") return drawer();
-      r.close();
-      if(it.key === "describe") toggleAsk();
-      if(it.key === "near")     nearMe();
-      if(it.key === "undo")     undoLast();
-      if(it.key === "cards")    toggleFull();
-      /* The SAME function the rail tile calls — see addRoute(). */
-      if(it.key === "route") addRoute();
-    });
+  const add = [{key:"describe", label:"Describe"}, {key:"near", label:"Near me"}];
+  if(TUNED && canAddRoute()) add.push({key:"route", label:"Add route"});
+  const edit = [];
+  if(!TUNED || hasLeg) edit.push({key:"undo", label:"Undo"}, {key:"cards", label: document.body.classList.contains("full") ? "Show" : "Hide"});
+  const tree = [{key:"add", label:"Add", kids:add}];
+  if(edit.length) tree.push({key:"edit", label:"Edit", kids:edit});
+  tree.push({key:"file", label:"File", kids:[{key:"open", label:"Open"}, {key:"save", label:"Save"}, {key:"print", label:"Print"}]});
+  gooFab.open(tree);
+}
+function fabPick(key){
+  /* Open goes through the hidden <input type=file>; a real click on it is the only thing a
+     browser accepts as user intent for a file picker. */
+  if(key === "open")  document.getElementById("openCopy").click();
+  if(key === "save")  saveCopy();
+  if(key === "print"){ setPrintName(); window.print(); }
+  if(key === "describe") toggleAsk();
+  if(key === "near")     nearMe();
+  if(key === "undo")     undoLast();
+  if(key === "cards")    toggleFull();
+  if(key === "route")    addRoute();   /* the SAME function the rail tile calls */
 }
 
 /* ── the ring as the per-leg editor: mode, or insert a stop either side ─────────────────

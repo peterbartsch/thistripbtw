@@ -43,15 +43,17 @@ written for a human reading the repo:
 
 ### Or use the MCP server
 
-One tool, no key, and it just builds the link. **If your client takes a URL, that is the whole
-setup:**
+Six tools, no key, and the first one builds the link. **If your client takes a URL, that is the
+whole setup:**
 
 ```
 https://thistripbtw.us/mcp
 ```
 
-Streamable HTTP. Prefer to read the code first? It is one file with zero dependencies, under
-three hundred lines, and it runs locally without touching the network:
+Streamable HTTP. Prefer to read the code first? It is one file with zero dependencies. Building
+and reading a link is pure local work — the trip rides in the fragment, so nothing is sent. The
+three tools that reach past that (`find_place` and the two kept-trip tools) call this site and
+say so in their descriptions:
 
 ```bash
 claude mcp add thistripbtw -- npx -y thistripbtw-mcp
@@ -64,9 +66,9 @@ curl -O https://thistripbtw.us/mcp/thistripbtw-mcp.mjs
 claude mcp add thistripbtw -- node ./thistripbtw-mcp.mjs
 ```
 
-Both paths are the same tool and produce byte-identical links — a parity test runs them against
-each other on every build, so they cannot drift. The server has its own repository so it can be
-read in one sitting and embedded freely:
+Both paths carry the same six tools and produce byte-identical links — a parity test runs them
+against each other on every build, so they cannot drift. The server has its own repository so it
+can be read on its own and embedded freely:
 [**thistripbtw-mcp**](https://github.com/peterbartsch/thistripbtw-mcp) (MIT).
 
 There is also a discovery manifest at

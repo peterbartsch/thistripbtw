@@ -206,6 +206,7 @@ export const PROBE = `(() => {
        backtick ends it. That is what the first version of this comment did. */
     const carded = document.body.classList.contains("carded") || !!document.querySelector(".card.zoom")
                 || document.body.classList.contains("ringing")
+                || !!document.querySelector(".gfab:not([hidden])")   /* D-205: the FAB's tree dims the map on purpose, like the ring */
                 || document.body.classList.contains("asking");
     out.band = { px: best, top: Math.max(0, bestEnd - best), bottom: bestEnd, carded: carded,
                  hasLeg: document.body.classList.contains("hasleg") && !carded };

@@ -21,6 +21,9 @@ const DEMO = "/efevnwm/#k=lagoon-passport-teal-teal";
    is not even on screen while the ring is up, and clicking it was always going to miss. The hub is
    the centre button; the veil behind it is the second way out. */
 const closeRing = async p => {
+  /* THE FAB IS A LIQUID TREE NOW (D-205, goo-fab.js): its veil is the way out, as the ring's was.
+     The ring itself still opens from the map (a place), so both are handled here. */
+  if (await p.eval(`!!document.querySelector(".gfab:not([hidden])")`)) return p.click(".gfab-veil.on,#fabVeil.on", 700);
   if (!(await p.eval(`document.body.classList.contains("ringing")`))) return true;
   if (await p.click(".hub", 700)) return true;
   return p.click(".ttbr-veil.on", 700);
@@ -352,20 +355,23 @@ export const FLOWS = [
       /* THE CONTEXT-TUNING CLAIM. Peter, 2026-09-01: "the FAB needs to be fully tuned to context
          — so menus match need, always." On the default page it offered Undo and Hide before there
          was anything to undo or hide, because that tuning lived inside the ?find=1 branch. */
+      /* D-205: the FAB opens a tree of doors (Add · Edit · File); Undo and Hide live behind Edit,
+         which must not be offered until there is something to undo or hide. */
       { name: "CLAIM: it does not offer Undo before there is anything to undo", do: p => p.eval(`(()=>{
-          const seg=[...document.querySelectorAll(".ttbr .seg")].map(e=>(e.getAttribute("aria-label")||"").toLowerCase());
-          if(!seg.length) return "the FAB opened no ring at all";
-          const dead=seg.filter(s=>/undo|hide|show/.test(s));
-          return dead.length ? "the ring offers "+dead.join(" and ")+" on an empty trip" : true;})()`) },
+          const seg=[...document.querySelectorAll(".gfab-b")].map(e=>(e.getAttribute("aria-label")||"").toLowerCase());
+          if(!seg.length) return "the FAB opened no menu at all";
+          const dead=seg.filter(s=>/edit|undo|hide|show/.test(s));
+          return dead.length ? "the FAB offers "+dead.join(" and ")+" on an empty trip" : true;})()`) },
       { name: "close it", do: closeRing },
       { name: "type the origin and pick it", do: pickPlace("Evanston") },
       { name: "type the destination and pick it", do: pickPlace("Madison") },
-      { name: "open the ring now there is a trip", do: p => p.click("#fab", 1200) },
+      { name: "open the FAB now there is a trip", do: p => p.click("#fab", 1200) },
+      { name: "open its Add door — where a second vehicle lives (D-205)", do: p => p.click('.gfab-b[aria-label="Add"]', 1000) },
       { name: "CLAIM: a second vehicle is offered once one is possible", do: p => p.eval(`(()=>{
-          const seg=[...document.querySelectorAll(".ttbr .seg")].map(e=>e.getAttribute("aria-label")||"");
-          if(!seg.length) return "the FAB opened no ring at all";
+          const seg=[...document.querySelectorAll(".gfab-b")].map(e=>e.getAttribute("aria-label")||"");
+          if(!seg.length) return "the FAB opened no menu at all";
           return /route/i.test(seg.join(" ")) ? true
-            : "with a leg on the map the ring still does not offer a second route: "+seg.join(" · ");})()`) },
+            : "with a leg on the map the Add door still does not offer a second route: "+seg.join(" · ");})()`) },
       { name: "close it", do: closeRing },
       { name: "open the leg", do: async p => { await openList(p);
           return p.click(".dl-row:not(.dl-origin)", 1200); } },
@@ -450,8 +456,10 @@ export const FLOWS = [
          read as broken at 390x664, 390x844 and 1372x869 alike, and "broken at every size" should
          have been the tell. */
       { name: "find the list behind the pill", do: p => p.click("#openSheet") },
-      { name: "open the FAB ring", do: p => p.click("#fab") },
-      { name: "take it — every format on one sheet", do: p => p.click("[aria-label*='ake it'],[aria-label*='ake-it']") },
+      { name: "open the FAB", do: p => p.click("#fab", 1000) },
+      { name: "its Keep door (D-205)", do: p => p.click('.gfab-b[aria-label="Keep"]', 1000) },
+      { name: "take it — the third level: Print, Calendar, Sheet, More…", do: p => p.click('.gfab-b[aria-label="Take it"]', 1000) },
+      { name: "More… — every format on one sheet", do: p => p.click('.gfab-b[aria-label="More…"]', 1000) },
     ],
   },
   {
@@ -488,8 +496,9 @@ export const FLOWS = [
     steps: [
       { name: "type the origin and pick it", do: pickPlace("Evanston") },
       { name: "type the destination and pick it — that is leg one", do: pickPlace("Madison") },
-      { name: "open the ring, where describe lives once you are building", do: p => p.click("#fab", 1200) },
-      { name: "take the describe route", do: p => p.click('.ttbr .seg[aria-label="Describe"]', 1400) },
+      { name: "open the FAB, where describe lives once you are building", do: p => p.click("#fab", 1200) },
+      { name: "its Add door (D-205)", do: p => p.click('.gfab-b[aria-label="Add"]', 1000) },
+      { name: "take the describe route", do: p => p.click('.gfab-b[aria-label="Describe"]', 1400) },
       { name: "CLAIM: the panel does not draw over the trip list", do: p => p.eval(`(()=>{
           const ta=document.getElementById("askText"), row=document.querySelector(".dl-row");
           if(!ta) return "the describe panel did not open";
