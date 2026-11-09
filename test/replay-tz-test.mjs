@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-const app = readFileSync(new URL("../public/app.html", import.meta.url), "utf8");
+const app = readFileSync(new URL("../public/app.html", import.meta.url), "utf8") + readFileSync(new URL("../public/app-page.js", import.meta.url), "utf8");
 const m = app.match(/const end = new Date\(replayT\s*\+\s*("[^"]+")\)\.getTime\(\);/);
 
 let pass = 0, fail = 0;

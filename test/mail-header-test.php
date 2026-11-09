@@ -47,7 +47,13 @@ ok('it is wrapped, so a failed mail cannot fail a paid claim',
 /* ── the export button 404'd because a hand-built URL omitted /api/ ────────────────────────
    Every other call goes through api(), which appends it. Anything that builds a URL against
    API_BASE by hand must include it, and nothing in review makes that omission visible. */
-$app = file_get_contents(__DIR__ . '/../public/app.html');
+/* 2026-11-09: the trip page's script moved to app-page.js so the CSP can forbid inline script.
+   Both of this file's reads of app.html were really reads of its SCRIPT, and after the move this
+   one did not go red — it reported "0 found" and passed, because an empty haystack has no bad
+   needles. That is the dangerous half of the refactor: the loud failure below got fixed in
+   minutes, and this one would have sat green forever. Read the page and its script together. */
+$app = file_get_contents(__DIR__ . '/../public/app.html')
+     . file_get_contents(__DIR__ . '/../public/app-page.js');
 preg_match_all('#\$\{API_BASE\}([^`\'"]*)#', $app, $mm);
 $bad = array_values(array_filter($mm[1], fn($u) => !str_starts_with($u, '/api/')));
 ok('every hand-built API_BASE url includes /api/ (' . count($mm[1]) . ' found)', $bad === []);
@@ -57,7 +63,7 @@ if ($bad) foreach ($bad as $b) echo "      offending: \${API_BASE}$b\n";
    Quoting is correct CSV and still unsafe: a cell starting = + - @ is executed as a formula by
    Excel, LibreOffice and Sheets. The export exists so a trip can be expensed, so the likely
    reader is an employer or an accountant — outside the trip entirely. */
-$appjs = file_get_contents(__DIR__ . '/../public/app.html');
+$appjs = file_get_contents(__DIR__ . '/../public/app-page.js');
 ok('csvCell neutralises a leading = + - @ (X3)',
    str_contains($appjs, '/^[=+\\-@\\t\\r]/.test(t)'));
 ok('and it still doubles embedded quotes', str_contains($appjs, 'replace(/"/g, \'""\')'));

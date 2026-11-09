@@ -20,8 +20,8 @@
 import { readFileSync } from "node:fs";
 
 const root = new URL("..", import.meta.url).pathname;
-const app  = readFileSync(root + "public/app.html", "utf8");
-const nw   = readFileSync(root + "public/new.html", "utf8");
+const app  = readFileSync(root + "public/app.html", "utf8") + readFileSync(root + "public/app-page.js", "utf8");
+const nw   = readFileSync(root + "public/new.html", "utf8") + readFileSync(root + "public/new-tail.js", "utf8") + readFileSync(root + "public/new-page.js", "utf8");
 const legs = readFileSync(root + "public/legs.js",  "utf8");
 
 let pass = 0, fail = 0;

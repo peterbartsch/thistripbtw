@@ -14,7 +14,13 @@ const raw = readFileSync(new URL("../public/webmcp.js", import.meta.url), "utf8"
    commentary is testing the wrong document. This strip is deliberately simple, and it is checked
    below — webmcp.js contains no string or regex literal carrying a comment marker. */
 const src = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-const page = readFileSync(new URL("../public/new.html", import.meta.url), "utf8");
+/* 2026-11-09: the page's script moved out of new.html into new-page.js, so the CSP can forbid
+   inline script. "The page" is now both files, and this test asks what the page exports — so it
+   reads both. It went red on the move, which is the guard working: the export it checks is the
+   seam webmcp.js depends on, and a test that quietly stopped finding it would be worse than one
+   that fails. */
+const page = readFileSync(new URL("../public/new.html", import.meta.url), "utf8")
+           + readFileSync(new URL("../public/new-page.js", import.meta.url), "utf8");
 
 let pass = 0, fail = 0;
 const ok = (what, cond, detail) => {

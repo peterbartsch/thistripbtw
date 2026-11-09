@@ -6,13 +6,16 @@ help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n",$$1,$$2}'
 
-check: check-js check-decls check-css check-php check-secrets check-stripe check-links check-copy check-delete check-sitemap check-tokens check-mcp-version check-wellknown test-tools test-mcp ## All static checks (what CI runs)
+check: check-js check-decls check-css check-php check-secrets check-stripe check-links check-copy check-delete check-sitemap check-tokens check-mcp-version check-wellknown check-inline-script test-tools test-mcp ## All static checks (what CI runs)
 
 check-mcp-version: ## Fail if the MCP version disagrees across package.json, serverInfo and server.json
 	@node test/mcp-version.mjs
 
 check-wellknown: ## Fail if /.well-known/mcp.json has drifted from mcp/server.json
 	@node test/wellknown-drift.mjs
+
+check-inline-script: ## Fail if app.html or new.html regain inline script (CSP forbids it silently)
+	@bash scripts/check-inline-script.sh
 
 check-tokens: ## Fail if tokens.css or the Figma primitives drift from design/tokens.json
 	@node test/token-drift.mjs

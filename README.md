@@ -14,6 +14,12 @@ in this repo rather than an ad business.
 ![No Freemium](https://img.shields.io/badge/Freemium-Never-ED9F17.svg)
 ![Stack](https://img.shields.io/badge/Stack-PHP_8_+_MySQL-ED9F17.svg)
 
+![A trip on the map: a flight arc from Chicago to the Bay Area, numbered stops, two vehicles
+travelling as separate tracks — Sam's Subaru and Alex's rental — and a replay
+control](public/demo.jpg)
+
+*One trip, two vehicles, one link. The tracks separate and rejoin because real trips do.*
+
 ---
 
 ## If you are an agent
@@ -49,6 +55,15 @@ whole setup:**
 ```
 https://thistripbtw.us/mcp
 ```
+
+| tool | what it does |
+|---|---|
+| `build_trip_link` | an origin and legs in, a URL out — start here, as soon as there is one destination |
+| `amend_trip_link` | change a trip somebody already holds, so one link grows through a conversation |
+| `read_trip_link` | a link in, the itinerary back out as structured data, in any later conversation |
+| `find_place` | a name to coordinates, because the builder will not guess them |
+| `read_kept_trip` | read a trip that was bought, using the word phrase in its link |
+| `add_to_kept_trip` | add a stop to one |
 
 Streamable HTTP. Prefer to read the code first? It is one file with zero dependencies. Building
 and reading a link is pure local work — the trip rides in the fragment, so nothing is sent. The
@@ -106,8 +121,10 @@ you bought, and nothing else, until you delete it.
 
 ## Running it yourself
 
-PHP 8 and MySQL. **No frameworks, no build step, no npm in the client** — the trip app is a
-single HTML file with Leaflet. That is the whole stack, and it is deliberate.
+PHP 8 and MySQL. **No frameworks, no build step, no npm in the client** — the trip app is one
+HTML page and a plain classic script, with Leaflet. No bundler runs, ever: the file the browser
+fetches is the file in this repo, which is the point. That is the whole stack, and it is
+deliberate.
 
 ```bash
 cp .env.example .env     # fill in DB_* and STRIPE_SECRET
@@ -127,6 +144,8 @@ make test                # API smoke tests against local PHP + MySQL
 ├── lib/                 # accounts, chat, geocode, routing, mail, words
 ├── schema.mysql.sql     # trips, unified pins, notes, gate
 ├── public/              # every page; app.html is the trip client
+│   ├── app-page.js      # the trip page's script — a classic script, not a module
+│   ├── new-page.js      # the builder's, likewise (+ new-tail.js, sky-boot.js)
 │   ├── llms.txt         # the agent-facing contract
 │   └── for-agents.html
 ├── scripts/             # migrations, expiry, index builders

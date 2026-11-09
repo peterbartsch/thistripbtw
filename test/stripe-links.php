@@ -31,10 +31,19 @@ function links(string $text): array {
     return $out;
 }
 
-$html = links(file_get_contents("$root/public/new.html"));
+/* 2026-11-09: `const PAY` left new.html when the page's script was moved to new-page.js (so the
+   CSP can forbid inline script). This guard watched the HTML file alone and went red the moment
+   the links were one file further away — correctly: it could no longer see what it was asked to
+   compare. Read the page AND the script it now names, so the check follows the links rather than
+   the filename. Concatenating is right here: the question is what this page ships, and both files
+   are that page. If the script is ever split again, add it here or this goes red, which is the
+   failure we want — a silent pass would mean nobody is checking the money. */
+$page = file_get_contents("$root/public/new.html")
+      . file_get_contents("$root/public/new-page.js");
+$html = links($page);
 $php  = links(file_get_contents("$root/api.php"));
 
-ok('public/new.html declares a link for all three tiers', count($html) === 3, implode(',', array_keys($html)));
+ok('the new.html page declares a link for all three tiers', count($html) === 3, implode(',', array_keys($html)));
 ok('api.php PAY_LINKS declares a link for all three tiers', count($php) === 3, implode(',', array_keys($php)));
 ok('the two agree, tier for tier', $html === $php,
    'new.html=' . json_encode($html) . ' api.php=' . json_encode($php));

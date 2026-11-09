@@ -8,7 +8,7 @@
  * rather than by someone in California.
  */
 import { readFileSync } from "node:fs";
-const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8");
+const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8") + readFileSync(new URL("../public/new-page.js", import.meta.url), "utf8") + readFileSync(new URL("../public/new-tail.js", import.meta.url), "utf8");
 /* Pull a whole top-level function out by name: everything from its signature to the first
    closing brace in column 0. Fragile only if the source stops being formatted that way, in
    which case this throws loudly rather than testing a stale copy. */

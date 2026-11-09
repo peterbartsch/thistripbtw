@@ -72,8 +72,8 @@
     ".gfab-b{position:absolute;margin:0;padding:0;border:0;background:none;border-radius:50%;",
     "  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;",
     "  color:var(--ink,#141414);font-family:var(--disp,var(--font-family-display,\"Barlow Condensed\",sans-serif));",
-    "  font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;line-height:1.05;",
-    "  text-align:center;white-space:nowrap;-webkit-tap-highlight-color:transparent}",
+    "  font-weight:700;font-size:13px;letter-spacing:.03em;text-transform:uppercase;line-height:1.05;",
+    "  text-align:center;white-space:normal;padding:0 5px;-webkit-tap-highlight-color:transparent}",
     ".gfab-b:focus{outline:none}",
     ".gfab-b:focus-visible{box-shadow:0 0 0 3px var(--accent,var(--color-brand-orange,#F26A1B))}",
     /* The hub is the branch you are in: the same orange as the FAB, and its label says "back". */
@@ -125,8 +125,13 @@
     opts = opts || {};
     var fab = typeof opts.fab === "string" ? document.querySelector(opts.fab) : opts.fab;
     if (!fab) throw new Error("goo-fab: no fab element");
-    var size = opts.size || 44;
-    var radii = opts.radii || [86, 162, 238];
+    /* 64 px plates on rings 96, 180 and 264 (Peter, D-6 of the phone audit, 1 Nov 2026: "bigger
+       plates"). The words on a 44 px plate were 10.5 px, which a 55-plus owner at arm's length
+       cannot read — and this map gets used outdoors, in a vehicle, in sun. At 64 px the condensed
+       face carries every label here on one line. The rings grew with the plates so neighbouring
+       ones keep their gap. */
+    var size = opts.size || 64;
+    var radii = opts.radii || [96, 180, 264];
     var onPick = typeof opts.onPick === "function" ? opts.onPick : function () {};
     injectCss();
     ensureFilter();

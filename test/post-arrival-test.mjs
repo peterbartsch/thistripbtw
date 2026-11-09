@@ -20,7 +20,7 @@
 import { readFileSync } from "node:fs";
 
 const root = new URL("..", import.meta.url).pathname;
-const app  = readFileSync(root + "public/app.html", "utf8");
+const app  = readFileSync(root + "public/app.html", "utf8") + readFileSync(root + "public/app-page.js", "utf8");
 
 let pass = 0, fail = 0;
 const ok = (w, c) => { if (c) { pass++; console.log("  ok   " + w); }

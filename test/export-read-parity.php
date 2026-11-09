@@ -20,7 +20,7 @@ function ok(string $w, bool $c) { global $pass, $fail;
   if ($c) { $pass++; echo "  ✓ $w\n"; } else { $fail++; echo "  ✗ $w\n"; } }
 
 /* ── the vocabularies must match, word for word ─────────────────────────────────────── */
-$appSrc = file_get_contents("$root/public/app.html");
+$appSrc = file_get_contents("$root/public/app.html") . file_get_contents("$root/public/app-page.js");
 preg_match('/const READ_MODE = \{(.*?)\};/s', $appSrc, $m);
 ok('READ_MODE was found in app.html', !empty($m));
 $appModes = [];

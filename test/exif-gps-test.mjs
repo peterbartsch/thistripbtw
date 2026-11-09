@@ -37,7 +37,7 @@ function jpegWithGps(latDMS, ns, lngDMS, ew, {little=false}={}) {
 }
 
 // lift exifLatLng straight out of the shipped page — testing the real code, not a copy
-const html = readFileSync("public/app.html","utf8");
+const html = readFileSync("public/app.html","utf8") + readFileSync("public/app-page.js","utf8");
 const src = html.slice(html.indexOf("function exifLatLng"), html.indexOf("function milesBetween"));
 globalThis.FileReader = class { readAsArrayBuffer(b){ this.result = b.buffer.slice(b.byteOffset, b.byteOffset+b.byteLength); this.onload(); } };
 const exifLatLng = new Function(src + "; return exifLatLng;")();

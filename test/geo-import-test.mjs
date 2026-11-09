@@ -8,7 +8,7 @@
  * That is the assertion this file exists for.
  */
 import { readFileSync } from "node:fs";
-const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8");
+const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8") + readFileSync(new URL("../public/new-page.js", import.meta.url), "utf8") + readFileSync(new URL("../public/new-tail.js", import.meta.url), "utf8");
 const cut = (label) => {
   const i = src.indexOf(label);
   if (i < 0) throw new Error("not found in new.html: " + label);

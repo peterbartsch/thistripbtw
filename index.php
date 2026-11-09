@@ -508,7 +508,15 @@ function serve_html($file, $strip = null, $ogSlug = null) {
      clean. The 301 above meant nothing could reach them either way. */
   if (in_array(basename($file), ['app.html', 'new.html'], true)) {
     header("Content-Security-Policy: default-src 'self'; "
-      . "script-src 'self' 'unsafe-inline'; "
+      /* 2026-11-09: 'unsafe-inline' DROPPED from script-src. It covered two things, and both are
+         gone: the pages' own script (now app-page.js / new-page.js / new-tail.js / sky-boot.js,
+         moved out so this line could change) and 17 on*= attributes, which are inline script too
+         and are now data-act wired in those files. Both pages carry zero inline <script> and zero
+         on*= handlers — check-inline-script below fails the build if either comes back, because
+         one attribute added in a hurry would be silently unenforced otherwise.
+         `style-src` KEEPS its 'unsafe-inline': the inline <style> blocks are still there, and
+         conflating the two is how a tightening gets reverted wholesale when the CSS breaks. */
+      . "script-src 'self'; "
       . "style-src 'self' 'unsafe-inline'; "
       . "font-src 'self'; "
       /* `blob:` added 2026-08-07 for the offline tile cache, and it is the narrowest thing that

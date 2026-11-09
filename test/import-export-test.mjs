@@ -11,7 +11,7 @@
  */
 import { readFileSync } from "node:fs";
 
-const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8");
+const src = readFileSync(new URL("../public/new.html", import.meta.url), "utf8") + readFileSync(new URL("../public/new-page.js", import.meta.url), "utf8") + readFileSync(new URL("../public/new-tail.js", import.meta.url), "utf8");
 const m = src.match(/function importedFromExport\(d\)\{[\s\S]*?\n\}/);
 let pass = 0, fail = 0;
 const ok = (w, c) => { if (c) { pass++; console.log("  ok   " + w); }

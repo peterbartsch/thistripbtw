@@ -14,7 +14,7 @@
  */
 import { readFileSync } from "node:fs";
 
-const src = readFileSync(new URL("../public/app.html", import.meta.url), "utf8");
+const src = readFileSync(new URL("../public/app.html", import.meta.url), "utf8") + readFileSync(new URL("../public/app-page.js", import.meta.url), "utf8");
 const grab = (name) => {
   const m = src.match(new RegExp("function " + name + "\\([\\s\\S]*?\\n\\}", "m"));
   if (!m) throw new Error("could not extract " + name + " from app.html");
